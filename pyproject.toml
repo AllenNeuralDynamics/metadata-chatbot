@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "claude-metadata-chatbot"
+name = "metadata-chatbot"
 description = "Generated from aind-library-template"
 license = {text = "MIT"}
 requires-python = ">=3.7"
@@ -17,6 +17,16 @@ readme = "README.md"
 dynamic = ["version"]
 
 dependencies = [
+    'aind-data-access-api[full]==0.13.0',
+    'boto3',
+    'gradio',
+    'langchain-aws',
+    'langchain-community',
+    'motor',
+    'nest-asyncio',
+    'panel',
+    'pymongo',
+    'ragas'
 ]
 
 [project.optional-dependencies]
@@ -34,7 +44,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.dynamic]
-version = {attr = "claude_metadata_chatbot.__version__"}
+version = {attr = "metadata_chatbot.__version__"}
 
 [tool.black]
 line-length = 79
@@ -59,7 +69,7 @@ exclude = '''
 
 [tool.coverage.run]
 omit = ["*__init__*"]
-source = ["claude_metadata_chatbot", "tests"]
+source = ["metadata_chatbot", "tests"]
 
 [tool.coverage.report]
 exclude_lines = [
