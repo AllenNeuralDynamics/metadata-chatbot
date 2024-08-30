@@ -5,26 +5,36 @@ from config import toolConfig
 from botocore.exceptions import ClientError
 
 #Connecting to bedrock
-
-client = boto3.client("bedrock-runtime", region_name="us-west-2")
-model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
+'''
 bedrock = boto3.client(
     service_name="bedrock-runtime",
     region_name = 'us-west-2'
 )
+'''
 
-def get_completion(prompt, system_prompt=system_prompt, prefill=None):
+def get_completion(prompt, bedrock_client, system_prompt=system_prompt, prefill=None):
     
-    '''
-    Given a prompt, this function returns a reply to the question.
-    
-    :param prompt: String formatted question
-    :param system_prompt: String formatted system prompt 
-    :param prefill: String formatted prefill words to start Claude's reply
-    
-    :return: String formatted answer
-    '''
-    
+    """Given a prompt, this function returns a reply to the question.
+
+    Parameters
+    ----------
+    prompt: str 
+        Query given by the user to the chatbot
+    bedrock_client: variable
+        Initialization of boto3 bedrock client
+    system_prompt: str 
+        Commands to be given to the model, will determine model response
+    prefill: str 
+        Formatted prefill words to start Claude's reply
+
+    Returns
+    -------
+    str
+        Model's reply to prompt
+    """
+
+    model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
+
     messages = [{"role": "user", "content": [{"text": prompt}]}]
     
     inference_config = {
@@ -47,7 +57,7 @@ def get_completion(prompt, system_prompt=system_prompt, prefill=None):
         
 
     try:
-        response = bedrock.converse(**converse_api_params)
+        response = bedrock_client.converse(**converse_api_params)
         #print(response)
         
         response_message = response['output']['message']
@@ -111,36 +121,34 @@ def get_completion(prompt, system_prompt=system_prompt, prefill=None):
                                                 "toolConfig": toolConfig 
                                             }
 
-                    final_response = bedrock.converse(**converse_api_params) 
+                    final_response = bedrock_client.converse(**converse_api_params) 
                     #print(final_response)
                     final_response_text = final_response['output']['message']['content'][0]['text']
                     return(final_response_text)
-                    
-                    #eturn messages
-                    
-                    #return retrieved_info
-                    
-                #return messages
-                
-        
-        #return response_message
-        #return messages
-
         
     except ClientError as err:
         message = err.response['Error']['Message']
         print(f"A client error occured: {message}")
         
         
-def simple_chat(system_prompt = system_prompt):
+def simple_chat(bedrock_client, system_prompt = system_prompt):
     
-    '''
-    This function is able to take user input and provide a reply. Follows a typical chatbot format, where user can ask multiple questions in one iteration.
-    
-    :param system_prompt: String formatted system prompt 
-    
-    :return: String formatted answer
-    '''
+    """This function is able to demonstrate back and forth conversation given user input.
+
+    Parameters
+    ----------
+    bedrock_client: variable
+        Initialization of boto3 bedrock client
+    system_prompt: str 
+        Commands to be given to the model, will determine model response
+
+    Returns
+    -------
+    str
+        Model's reply to prompt
+    """
+
+    model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
     
     user_message = input("\nUser: ")
     messages = [{"role": "user", "content": [{"text": user_message}]}]
@@ -166,7 +174,7 @@ def simple_chat(system_prompt = system_prompt):
             converse_api_params["system"] = [{"text": system_prompt}]
             
 
-        response = bedrock.converse(**converse_api_params)
+        response = bedrock_client.converse(**converse_api_params)
 
         messages.append({"role": "assistant", "content": response['output']['message']['content']})
 

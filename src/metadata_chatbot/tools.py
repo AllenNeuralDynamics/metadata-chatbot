@@ -1,5 +1,5 @@
 from aind_data_access_api.document_db import MetadataDbClient
-from aind_data_access_api.document_db_ssh import DocumentDbSSHClient, DocumentDbSSHCredentials
+from aind_data_access_api.document_db_ssh import DocumentDbSSHClient
 
 API_GATEWAY_HOST = "api.allenneuraldynamics.org"
 DATABASE = "metadata_index"
@@ -11,13 +11,19 @@ docdb_api_client = MetadataDbClient(
    collection=COLLECTION,
 )
 
-def doc_retrieval(filter_query):
-    '''
-    Retrieves one document from DocDB. Ideal for queries for a specific document
-    
-    :param filter_query: MongoDB Query
-    :return: JSON File
-    '''
+def doc_retrieval(filter_query: dict) -> list:
+    """Given a MongoDB query, this function retrieves and returns the appropriate documents.
+
+    Parameters
+    ----------
+    filter_query
+        MongoDB query
+
+    Returns
+    -------
+    list
+        List of retrieved documents
+    """
     limit = 1000
     paginate_batch_size = 1000
     response = docdb_api_client.retrieve_docdb_records(
@@ -27,15 +33,27 @@ def doc_retrieval(filter_query):
     )
     return(response)
 
-def projection_retrieval(filter_query, field_name_list = None):
-    '''
-    Retrieves one document from DocDB. Ideal for queries for a specific document
-    
-    :param filter_query: MongoDB Query
-    :param field_name_list: List of field names to be inputted into the projection
-    :return: JSON File
-    '''
-    credentials = DocumentDbSSHCredentials()
+def projection_retrieval(credentials: object, filter_query: dict, field_name_list: list):
+    """Given a MongoDB query and list of projections, this function retrieves 
+    and returns the appropriate projections in the documents.
+
+    Parameters
+    ----------
+    credentials 
+        DocDB credentials, initialized through DocumentDbSSHCredentials
+
+    filter_query
+        MongoDB query
+
+    field_name_list
+        Field names to specifically retrieve from documents
+
+    Returns
+    -------
+    list
+        List of retrieved documents
+    """
+
     with DocumentDbSSHClient(credentials=credentials) as doc_db_client:
         filter = filter_query
         projection = {"name" : 1}
