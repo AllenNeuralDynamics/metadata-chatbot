@@ -1,0 +1,77 @@
+{
+   "additionalProperties": false,
+   "description": "Description of all procedures performed on a subject",
+   "properties": {
+      "describedBy": {
+         "const": "https://raw.githubusercontent.com/AllenNeuralDynamics/aind-data-schema/main/src/aind_data_schema/core/procedures.py",
+         "default": "https://raw.githubusercontent.com/AllenNeuralDynamics/aind-data-schema/main/src/aind_data_schema/core/procedures.py",
+         "title": "Describedby",
+         "type": "string"
+      },
+      "schema_version": {
+         "const": "0.13.14",
+         "default": "0.13.14",
+         "title": "Schema Version"
+      },
+      "subject_id": {
+         "description": "Unique identifier for the subject. If this is not a Allen LAS ID, indicate this in the Notes.",
+         "title": "Subject ID",
+         "type": "string"
+      },
+      "subject_procedures": {
+         "default": [],
+         "items": {
+            "discriminator": {
+               "mapping": {
+                  "Other Subject Procedure": "#/$defs/OtherSubjectProcedure",
+                  "Surgery": "#/$defs/Surgery",
+                  "Training": "#/$defs/TrainingProtocol",
+                  "Water restriction": "#/$defs/WaterRestriction"
+               },
+               "propertyName": "procedure_type"
+            },
+            "oneOf": [
+               {
+                  "$ref": "#/$defs/Surgery"
+               },
+               {
+                  "$ref": "#/$defs/TrainingProtocol"
+               },
+               {
+                  "$ref": "#/$defs/WaterRestriction"
+               },
+               {
+                  "$ref": "#/$defs/OtherSubjectProcedure"
+               }
+            ]
+         },
+         "title": "Subject Procedures",
+         "type": "array"
+      },
+      "specimen_procedures": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/SpecimenProcedure"
+         },
+         "title": "Specimen Procedures",
+         "type": "array"
+      },
+      "notes": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Notes"
+      }
+   },
+   "required": [
+      "subject_id"
+   ],
+   "title": "Procedures",
+   "type": "object"
+}

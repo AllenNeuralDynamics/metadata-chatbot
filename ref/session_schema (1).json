@@ -1,0 +1,246 @@
+{
+         
+   "additionalProperties": false,
+   "description": "Description of a physiology and/or behavior session",
+   "properties": {
+      "describedBy": {
+         "const": "https://raw.githubusercontent.com/AllenNeuralDynamics/aind-data-schema/main/src/aind_data_schema/core/session.py",
+         "default": "https://raw.githubusercontent.com/AllenNeuralDynamics/aind-data-schema/main/src/aind_data_schema/core/session.py",
+         "title": "Describedby",
+         "type": "string"
+      },
+      "schema_version": {
+         "const": "0.3.4",
+         "default": "0.3.4",
+         "title": "Schema Version"
+      },
+      "protocol_id": {
+         "default": [],
+         "description": "DOI for protocols.io",
+         "items": {
+            "type": "string"
+         },
+         "title": "Protocol ID",
+         "type": "array"
+      },
+      "experimenter_full_name": {
+         "description": "First and last name of the experimenter(s).",
+         "items": {
+            "type": "string"
+         },
+         "title": "Experimenter(s) full name",
+         "type": "array"
+      },
+      "session_start_time": {
+         "format": "date-time",
+         "title": "Session start time",
+         "type": "string"
+      },
+      "session_end_time": {
+         "anyOf": [
+            {
+               "format": "date-time",
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Session end time"
+      },
+      "session_type": {
+         "title": "Session type",
+         "type": "string"
+      },
+      "iacuc_protocol": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "IACUC protocol"
+      },
+      "rig_id": {
+         "title": "Rig ID",
+         "type": "string"
+      },
+      "calibrations": {
+         "default": [],
+         "description": "Calibrations of rig devices prior to session",
+         "items": {
+            "$ref": "#/$defs/Calibration"
+         },
+         "title": "Calibrations",
+         "type": "array"
+      },
+      "maintenance": {
+         "default": [],
+         "description": "Maintenance of rig devices prior to session",
+         "items": {
+            "$ref": "#/$defs/Maintenance"
+         },
+         "title": "Maintenance",
+         "type": "array"
+      },
+      "subject_id": {
+         "title": "Subject ID",
+         "type": "string"
+      },
+      "animal_weight_prior": {
+         "anyOf": [
+            {
+               "type": "number"
+            },
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "description": "Animal weight before procedure",
+         "title": "Animal weight (g)"
+      },
+      "animal_weight_post": {
+         "anyOf": [
+            {
+               "type": "number"
+            },
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "description": "Animal weight after procedure",
+         "title": "Animal weight (g)"
+      },
+      "weight_unit": {
+         "allOf": [
+            {
+               "$ref": "#/$defs/MassUnit"
+            }
+         ],
+         "default": "gram",
+         "title": "Weight unit"
+      },
+      "anaesthesia": {
+         "anyOf": [
+            {
+               "$ref": "#/$defs/Anaesthetic"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Anaesthesia"
+      },
+      "data_streams": {
+         "description": "A data stream is a collection of devices that are recorded simultaneously. Each session can include multiple streams (e.g., if the manipulators are moved to a new location)",
+         "items": {
+            "$ref": "#/$defs/Stream"
+         },
+         "title": "Data streams",
+         "type": "array"
+      },
+      "stimulus_epochs": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/StimulusEpoch"
+         },
+         "title": "Stimulus",
+         "type": "array"
+      },
+      "mouse_platform_name": {
+         "title": "Mouse platform",
+         "type": "string"
+      },
+      "active_mouse_platform": {
+         "description": "Is the mouse platform being actively controlled",
+         "title": "Active mouse platform",
+         "type": "boolean"
+      },
+      "headframe_registration": {
+         "anyOf": [
+            {
+               "$ref": "#/$defs/Affine3dTransform"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "description": "MRI transform matrix for headframe",
+         "title": "Headframe registration"
+      },
+      "reward_delivery": {
+         "anyOf": [
+            {
+               "$ref": "#/$defs/RewardDeliveryConfig"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Reward delivery"
+      },
+      "reward_consumed_total": {
+         "anyOf": [
+            {
+               "type": "number"
+            },
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Total reward consumed (mL)"
+      },
+      "reward_consumed_unit": {
+         "allOf": [
+            {
+               "$ref": "#/$defs/VolumeUnit"
+            }
+         ],
+         "default": "milliliter",
+         "title": "Reward consumed unit"
+      },
+      "notes": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Notes"
+      }
+   },
+   "required": [
+      "experimenter_full_name",
+      "session_start_time",
+      "session_type",
+      "rig_id",
+      "subject_id",
+      "data_streams",
+      "mouse_platform_name",
+      "active_mouse_platform"
+   ],
+   "title": "Session",
+   "type": "object"
+}

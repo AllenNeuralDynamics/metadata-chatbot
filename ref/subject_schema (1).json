@@ -1,0 +1,212 @@
+{     
+   "additionalProperties": false,
+   "description": "Description of a subject of data collection",
+   "properties": {
+      "describedBy": {
+         "const": "https://raw.githubusercontent.com/AllenNeuralDynamics/aind-data-schema/main/src/aind_data_schema/core/subject.py",
+         "default": "https://raw.githubusercontent.com/AllenNeuralDynamics/aind-data-schema/main/src/aind_data_schema/core/subject.py",
+         "title": "Describedby",
+         "type": "string"
+      },
+      "schema_version": {
+         "const": "0.5.9",
+         "default": "0.5.9",
+         "title": "Schema Version"
+      },
+      "subject_id": {
+         "description": "Unique identifier for the subject. If this is not a Allen LAS ID, indicate this in the Notes.",
+         "title": "Subject ID",
+         "type": "string"
+      },
+      "sex": {
+         "$ref": "#/$defs/Sex"
+      },
+      "date_of_birth": {
+         "format": "date",
+         "title": "Date of birth",
+         "type": "string"
+      },
+      "genotype": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "description": "Genotype of the animal providing both alleles",
+         "title": "Genotype"
+      },
+      "species": {
+         "discriminator": {
+            "mapping": {
+               "Callithrix jacchus": "#/$defs/CallithrixJacchus",
+               "Homo sapiens": "#/$defs/HomoSapiens",
+               "Macaca mulatta": "#/$defs/MacacaMulatta",
+               "Mus musculus": "#/$defs/MusMusculus",
+               "Rattus norvegicus": "#/$defs/RattusNorvegicus"
+            },
+            "propertyName": "name"
+         },
+         "oneOf": [
+            {
+               "$ref": "#/$defs/CallithrixJacchus"
+            },
+            {
+               "$ref": "#/$defs/HomoSapiens"
+            },
+            {
+               "$ref": "#/$defs/MacacaMulatta"
+            },
+            {
+               "$ref": "#/$defs/MusMusculus"
+            },
+            {
+               "$ref": "#/$defs/RattusNorvegicus"
+            }
+         ],
+         "title": "Species"
+      },
+      "alleles": {
+         "default": [],
+         "description": "Allele names and persistent IDs",
+         "items": {
+            "$ref": "#/$defs/PIDName"
+         },
+         "title": "Alleles",
+         "type": "array"
+      },
+      "background_strain": {
+         "anyOf": [
+            {
+               "$ref": "#/$defs/BackgroundStrain"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Background strain"
+      },
+      "breeding_info": {
+         "anyOf": [
+            {
+               "$ref": "#/$defs/BreedingInfo"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Breeding Info"
+      },
+      "source": {
+         "description": "Where the subject was acquired from. If bred in-house, use Allen Institute.",
+         "discriminator": {
+            "mapping": {
+               "Allen Institute": "#/$defs/AllenInstitute",
+               "Columbia University": "#/$defs/ColumbiaUniversity",
+               "Huazhong University of Science and Technology": "#/$defs/HuazhongUniversityOfScienceAndTechnology",
+               "Jackson Laboratory": "#/$defs/JacksonLaboratory",
+               "Janelia Research Campus": "#/$defs/JaneliaResearchCampus",
+               "New York University": "#/$defs/NewYorkUniversity",
+               "Other": "#/$defs/Other"
+            },
+            "propertyName": "name"
+         },
+         "oneOf": [
+            {
+               "$ref": "#/$defs/AllenInstitute"
+            },
+            {
+               "$ref": "#/$defs/ColumbiaUniversity"
+            },
+            {
+               "$ref": "#/$defs/HuazhongUniversityOfScienceAndTechnology"
+            },
+            {
+               "$ref": "#/$defs/JaneliaResearchCampus"
+            },
+            {
+               "$ref": "#/$defs/JacksonLaboratory"
+            },
+            {
+               "$ref": "#/$defs/NewYorkUniversity"
+            },
+            {
+               "$ref": "#/$defs/Other"
+            }
+         ],
+         "title": "Source"
+      },
+      "rrid": {
+         "anyOf": [
+            {
+               "$ref": "#/$defs/PIDName"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "description": "RRID of mouse if acquired from supplier",
+         "title": "RRID"
+      },
+      "restrictions": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "description": "Any restrictions on use or publishing based on subject source",
+         "title": "Restrictions"
+      },
+      "wellness_reports": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/WellnessReport"
+         },
+         "title": "Wellness Report",
+         "type": "array"
+      },
+      "housing": {
+         "anyOf": [
+            {
+               "$ref": "#/$defs/Housing"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Housing"
+      },
+      "notes": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Notes"
+      }
+   },
+   "required": [
+      "subject_id",
+      "sex",
+      "date_of_birth",
+      "species",
+      "source"
+   ],
+   "title": "Subject",
+   "type": "object"
+}

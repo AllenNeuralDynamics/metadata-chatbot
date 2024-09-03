@@ -1,0 +1,409 @@
+{
+
+   "additionalProperties": false,
+   "description": "Description of a rig",
+   "properties": {
+      "describedBy": {
+         "const": "https://raw.githubusercontent.com/AllenNeuralDynamics/aind-data-schema/main/src/aind_data_schema/core/rig.py",
+         "default": "https://raw.githubusercontent.com/AllenNeuralDynamics/aind-data-schema/main/src/aind_data_schema/core/rig.py",
+         "title": "Describedby",
+         "type": "string"
+      },
+      "schema_version": {
+         "const": "0.5.4",
+         "default": "0.5.4",
+         "title": "Schema Version"
+      },
+      "rig_id": {
+         "description": "Unique rig identifier, name convention: <room>-<apparatus name>-<date modified YYYYMMDD>",
+         "pattern": "^[a-zA-Z0-9]+_[a-zA-Z0-9-]+_\\d{8}$",
+         "title": "Rig ID",
+         "type": "string"
+      },
+      "modification_date": {
+         "format": "date",
+         "title": "Date of modification",
+         "type": "string"
+      },
+      "mouse_platform": {
+         "discriminator": {
+            "mapping": {
+               "Arena": "#/$defs/Arena",
+               "Disc": "#/$defs/Disc",
+               "Treadmill": "#/$defs/aind_data_schema__components__devices__Treadmill",
+               "Tube": "#/$defs/Tube",
+               "Wheel": "#/$defs/Wheel"
+            },
+            "propertyName": "device_type"
+         },
+         "oneOf": [
+            {
+               "$ref": "#/$defs/Disc"
+            },
+            {
+               "$ref": "#/$defs/Wheel"
+            },
+            {
+               "$ref": "#/$defs/Tube"
+            },
+            {
+               "$ref": "#/$defs/aind_data_schema__components__devices__Treadmill"
+            },
+            {
+               "$ref": "#/$defs/Arena"
+            }
+         ],
+         "title": "Mouse Platform"
+      },
+      "stimulus_devices": {
+         "default": [],
+         "items": {
+            "discriminator": {
+               "mapping": {
+                  "Monitor": "#/$defs/Monitor",
+                  "Olfactometer": "#/$defs/aind_data_schema__components__devices__Olfactometer",
+                  "Reward delivery": "#/$defs/RewardDelivery",
+                  "Speaker": "#/$defs/Speaker"
+               },
+               "propertyName": "device_type"
+            },
+            "oneOf": [
+               {
+                  "$ref": "#/$defs/Monitor"
+               },
+               {
+                  "$ref": "#/$defs/aind_data_schema__components__devices__Olfactometer"
+               },
+               {
+                  "$ref": "#/$defs/RewardDelivery"
+               },
+               {
+                  "$ref": "#/$defs/Speaker"
+               }
+            ]
+         },
+         "title": "Stimulus devices",
+         "type": "array"
+      },
+      "cameras": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/CameraAssembly"
+         },
+         "title": "Camera assemblies",
+         "type": "array"
+      },
+      "enclosure": {
+         "anyOf": [
+            {
+               "$ref": "#/$defs/Enclosure"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Enclosure"
+      },
+      "ephys_assemblies": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/EphysAssembly"
+         },
+         "title": "Ephys probes",
+         "type": "array"
+      },
+      "fiber_assemblies": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/FiberAssembly"
+         },
+         "title": "Inserted fiber optics",
+         "type": "array"
+      },
+      "stick_microscopes": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/CameraAssembly"
+         },
+         "title": "Stick microscopes",
+         "type": "array"
+      },
+      "laser_assemblies": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/LaserAssembly"
+         },
+         "title": "Laser modules",
+         "type": "array"
+      },
+      "patch_cords": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/Patch"
+         },
+         "title": "Patch cords",
+         "type": "array"
+      },
+      "light_sources": {
+         "default": [],
+         "items": {
+            "discriminator": {
+               "mapping": {
+                  "Lamp": "#/$defs/Lamp",
+                  "Laser": "#/$defs/Laser",
+                  "Light emitting diode": "#/$defs/LightEmittingDiode"
+               },
+               "propertyName": "device_type"
+            },
+            "oneOf": [
+               {
+                  "$ref": "#/$defs/Laser"
+               },
+               {
+                  "$ref": "#/$defs/LightEmittingDiode"
+               },
+               {
+                  "$ref": "#/$defs/Lamp"
+               }
+            ]
+         },
+         "title": "Light sources",
+         "type": "array"
+      },
+      "detectors": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/Detector"
+         },
+         "title": "Detectors",
+         "type": "array"
+      },
+      "objectives": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/Objective"
+         },
+         "title": "Objectives",
+         "type": "array"
+      },
+      "filters": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/Filter"
+         },
+         "title": "Filters",
+         "type": "array"
+      },
+      "lenses": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/Lens"
+         },
+         "title": "Lenses",
+         "type": "array"
+      },
+      "digital_micromirror_devices": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/DigitalMicromirrorDevice"
+         },
+         "title": "DMDs",
+         "type": "array"
+      },
+      "polygonal_scanners": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/PolygonalScanner"
+         },
+         "title": "Polygonal scanners",
+         "type": "array"
+      },
+      "pockels_cells": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/PockelsCell"
+         },
+         "title": "Pockels cells",
+         "type": "array"
+      },
+      "additional_devices": {
+         "default": [],
+         "items": {
+            "$ref": "#/$defs/Device"
+         },
+         "title": "Additional devices",
+         "type": "array"
+      },
+      "daqs": {
+         "default": [],
+         "items": {
+            "discriminator": {
+               "mapping": {
+                  "DAQ Device": "#/$defs/DAQDevice",
+                  "Harp device": "#/$defs/HarpDevice",
+                  "Neuropixels basestation": "#/$defs/NeuropixelsBasestation",
+                  "Open Ephys acquisition board": "#/$defs/OpenEphysAcquisitionBoard"
+               },
+               "propertyName": "device_type"
+            },
+            "oneOf": [
+               {
+                  "$ref": "#/$defs/HarpDevice"
+               },
+               {
+                  "$ref": "#/$defs/NeuropixelsBasestation"
+               },
+               {
+                  "$ref": "#/$defs/OpenEphysAcquisitionBoard"
+               },
+               {
+                  "$ref": "#/$defs/DAQDevice"
+               }
+            ]
+         },
+         "title": "Data acquisition devices",
+         "type": "array"
+      },
+      "calibrations": {
+         "items": {
+            "$ref": "#/$defs/Calibration"
+         },
+         "title": "Full calibration of devices",
+         "type": "array"
+      },
+      "ccf_coordinate_transform": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "description": "Path to file that details the CCF-to-lab coordinate transform",
+         "title": "CCF coordinate transform"
+      },
+      "origin": {
+         "anyOf": [
+            {
+               "$ref": "#/$defs/Origin"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Origin point for rig position transforms"
+      },
+      "rig_axes": {
+         "anyOf": [
+            {
+               "items": {
+                  "$ref": "#/$defs/Axis"
+               },
+               "maxItems": 3,
+               "minItems": 3,
+               "type": "array"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Rig axes"
+      },
+      "modalities": {
+         "items": {
+            "discriminator": {
+               "mapping": {
+                  "Behavior": "#/$defs/aind_data_schema_models__modalities__Behavior",
+                  "Behavior videos": "#/$defs/BehaviorVideos",
+                  "Confocal microscopy": "#/$defs/Confocal",
+                  "Electromyography": "#/$defs/Electromyography",
+                  "Extracellular electrophysiology": "#/$defs/Ecephys",
+                  "Fiber photometry": "#/$defs/Fib",
+                  "Fluorescence micro-optical sectioning tomography": "#/$defs/Fmost",
+                  "Intracellular electrophysiology": "#/$defs/Icephys",
+                  "Intrinsic signal imaging": "#/$defs/Isi",
+                  "Magnetic resonance imaging": "#/$defs/Mri",
+                  "Multiplexed error-robust fluorescence in situ hybridization": "#/$defs/Merfish",
+                  "Planar optical physiology": "#/$defs/POphys",
+                  "Scanned line projection imaging": "#/$defs/Slap",
+                  "Selective plane illumination microscopy": "#/$defs/Spim"
+               },
+               "propertyName": "name"
+            },
+            "oneOf": [
+               {
+                  "$ref": "#/$defs/aind_data_schema_models__modalities__Behavior"
+               },
+               {
+                  "$ref": "#/$defs/BehaviorVideos"
+               },
+               {
+                  "$ref": "#/$defs/Confocal"
+               },
+               {
+                  "$ref": "#/$defs/Ecephys"
+               },
+               {
+                  "$ref": "#/$defs/Electromyography"
+               },
+               {
+                  "$ref": "#/$defs/Fmost"
+               },
+               {
+                  "$ref": "#/$defs/Icephys"
+               },
+               {
+                  "$ref": "#/$defs/Isi"
+               },
+               {
+                  "$ref": "#/$defs/Fib"
+               },
+               {
+                  "$ref": "#/$defs/Merfish"
+               },
+               {
+                  "$ref": "#/$defs/Mri"
+               },
+               {
+                  "$ref": "#/$defs/POphys"
+               },
+               {
+                  "$ref": "#/$defs/Slap"
+               },
+               {
+                  "$ref": "#/$defs/Spim"
+               }
+            ]
+         },
+         "title": "Modalities",
+         "type": "array",
+         "uniqueItems": true
+      },
+      "notes": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Notes"
+      }
+   },
+   "required": [
+      "rig_id",
+      "modification_date",
+      "mouse_platform",
+      "calibrations",
+      "modalities"
+   ],
+   "title": "Rig",
+   "type": "object"
+}

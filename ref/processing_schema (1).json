@@ -1,0 +1,53 @@
+{
+
+   "additionalProperties": false,
+   "description": "Description of all processes run on data",
+   "properties": {
+      "describedBy": {
+         "const": "https://raw.githubusercontent.com/AllenNeuralDynamics/aind-data-schema/main/src/aind_data_schema/core/processing.py",
+         "default": "https://raw.githubusercontent.com/AllenNeuralDynamics/aind-data-schema/main/src/aind_data_schema/core/processing.py",
+         "title": "Describedby",
+         "type": "string"
+      },
+      "schema_version": {
+         "const": "0.4.8",
+         "default": "0.4.8",
+         "title": "Schema Version"
+      },
+      "processing_pipeline": {
+         "allOf": [
+            {
+               "$ref": "#/$defs/PipelineProcess"
+            }
+         ],
+         "description": "Pipeline used to process data",
+         "title": "Processing Pipeline"
+      },
+      "analyses": {
+         "default": [],
+         "description": "Analysis steps taken after processing",
+         "items": {
+            "$ref": "#/$defs/AnalysisProcess"
+         },
+         "title": "Analysis Steps",
+         "type": "array"
+      },
+      "notes": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Notes"
+      }
+   },
+   "required": [
+      "processing_pipeline"
+   ],
+   "title": "Processing",
+   "type": "object"
+}

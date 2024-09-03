@@ -1,0 +1,250 @@
+{
+      "subject_id": {
+         "description": "Unique identifier for the subject of data acquisition",
+         "pattern": "^[^_]+$",
+         "title": "Subject ID",
+         "type": "string"
+      },
+      "creation_time": {
+         "description": "Time that data files were created, used to uniquely identify the data",
+         "format": "date-time",
+         "title": "Creation Time",
+         "type": "string"
+      },
+      "label": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "description": "A short name for the data, used in file names and labels",
+         "title": "Label"
+      },
+      "name": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "description": "Name of data, conventionally also the name of the directory containing all data and metadata",
+         "title": "Name"
+      },
+      "institution": {
+         "description": "An established society, corporation, foundation or other organization that collected this data",
+         "discriminator": {
+            "mapping": {
+               "Allen Institute for Brain Science": "#/$defs/AllenInstituteForBrainScience",
+               "Allen Institute for Neural Dynamics": "#/$defs/AllenInstituteForNeuralDynamics",
+               "Columbia University": "#/$defs/ColumbiaUniversity",
+               "Huazhong University of Science and Technology": "#/$defs/HuazhongUniversityOfScienceAndTechnology",
+               "Janelia Research Campus": "#/$defs/JaneliaResearchCampus",
+               "New York University": "#/$defs/NewYorkUniversity",
+               "Other": "#/$defs/Other"
+            },
+            "propertyName": "name"
+         },
+         "oneOf": [
+            {
+               "$ref": "#/$defs/AllenInstituteForBrainScience"
+            },
+            {
+               "$ref": "#/$defs/AllenInstituteForNeuralDynamics"
+            },
+            {
+               "$ref": "#/$defs/ColumbiaUniversity"
+            },
+            {
+               "$ref": "#/$defs/HuazhongUniversityOfScienceAndTechnology"
+            },
+            {
+               "$ref": "#/$defs/JaneliaResearchCampus"
+            },
+            {
+               "$ref": "#/$defs/NewYorkUniversity"
+            },
+            {
+               "$ref": "#/$defs/Other"
+            }
+         ],
+         "title": "Institution"
+      },
+      "funding_source": {
+         "description": "Funding source. If internal funding, select 'Allen Institute'",
+         "items": {
+            "$ref": "#/$defs/Funding"
+         },
+         "minItems": 1,
+         "title": "Funding source",
+         "type": "array"
+      },
+      "data_level": {
+         "allOf": [
+            {
+               "$ref": "#/$defs/DataLevel"
+            }
+         ],
+         "description": "level of processing that data has undergone",
+         "title": "Data Level"
+      },
+      "group": {
+         "anyOf": [
+            {
+               "$ref": "#/$defs/Group"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "description": "A short name for the group of individuals that collected this data",
+         "title": "Group"
+      },
+      "investigators": {
+         "description": "Full name(s) of key investigators (e.g. PI, lead scientist, contact person)",
+         "items": {
+            "$ref": "#/$defs/PIDName"
+         },
+         "minItems": 1,
+         "title": "Investigators",
+         "type": "array"
+      },
+      "project_name": {
+         "anyOf": [
+            {
+               "pattern": "^[^<>:;\"/|?\\\\_]+$",
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "description": "A name for a set of coordinated activities intended to achieve one or more objectives.",
+         "title": "Project Name"
+      },
+      "restrictions": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "description": "Detail any restrictions on publishing or sharing these data",
+         "title": "Restrictions"
+      },
+      "modality": {
+         "description": "A short name for the specific manner, characteristic, pattern of application, or the employmentof any technology or formal procedure to generate data for a study",
+         "items": {
+            "discriminator": {
+               "mapping": {
+                  "Behavior": "#/$defs/aind_data_schema_models__modalities__Behavior",
+                  "Behavior videos": "#/$defs/BehaviorVideos",
+                  "Confocal microscopy": "#/$defs/aind_data_schema_models__modalities__Confocal",
+                  "Electromyography": "#/$defs/Electromyography",
+                  "Extracellular electrophysiology": "#/$defs/aind_data_schema_models__modalities__Ecephys",
+                  "Fiber photometry": "#/$defs/Fib",
+                  "Fluorescence micro-optical sectioning tomography": "#/$defs/Fmost",
+                  "Intracellular electrophysiology": "#/$defs/Icephys",
+                  "Intrinsic signal imaging": "#/$defs/aind_data_schema_models__modalities__Isi",
+                  "Magnetic resonance imaging": "#/$defs/aind_data_schema_models__modalities__Mri",
+                  "Multiplexed error-robust fluorescence in situ hybridization": "#/$defs/aind_data_schema_models__modalities__Merfish",
+                  "Planar optical physiology": "#/$defs/POphys",
+                  "Scanned line projection imaging": "#/$defs/Slap",
+                  "Selective plane illumination microscopy": "#/$defs/Spim"
+               },
+               "propertyName": "name"
+            },
+            "oneOf": [
+               {
+                  "$ref": "#/$defs/aind_data_schema_models__modalities__Behavior"
+               },
+               {
+                  "$ref": "#/$defs/BehaviorVideos"
+               },
+               {
+                  "$ref": "#/$defs/aind_data_schema_models__modalities__Confocal"
+               },
+               {
+                  "$ref": "#/$defs/aind_data_schema_models__modalities__Ecephys"
+               },
+               {
+                  "$ref": "#/$defs/Electromyography"
+               },
+               {
+                  "$ref": "#/$defs/Fmost"
+               },
+               {
+                  "$ref": "#/$defs/Icephys"
+               },
+               {
+                  "$ref": "#/$defs/aind_data_schema_models__modalities__Isi"
+               },
+               {
+                  "$ref": "#/$defs/Fib"
+               },
+               {
+                  "$ref": "#/$defs/aind_data_schema_models__modalities__Merfish"
+               },
+               {
+                  "$ref": "#/$defs/aind_data_schema_models__modalities__Mri"
+               },
+               {
+                  "$ref": "#/$defs/POphys"
+               },
+               {
+                  "$ref": "#/$defs/Slap"
+               },
+               {
+                  "$ref": "#/$defs/Spim"
+               }
+            ]
+         },
+         "title": "Modality",
+         "type": "array"
+      },
+      "related_data": {
+         "default": [],
+         "description": "Path and description of data assets associated with this asset (eg. reference images)",
+         "items": {
+            "$ref": "#/$defs/RelatedData"
+         },
+         "title": "Related data",
+         "type": "array"
+      },
+      "data_summary": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "description": "Semantic summary of experimental goal",
+         "title": "Data summary"
+      },
+   "required": [
+      "platform",
+      "subject_id",
+      "creation_time",
+      "institution",
+      "funding_source",
+      "data_level",
+      "investigators",
+      "modality"
+   ],
+   "title": "DataDescription",
+   "type": "object"
+}

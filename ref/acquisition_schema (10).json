@@ -1,0 +1,215 @@
+{
+   "additionalProperties": false,
+   "description": "Description of an imaging acquisition session",
+   "properties": {
+      "describedBy": {
+         "const": "https://raw.githubusercontent.com/AllenNeuralDynamics/aind-data-schema/main/src/aind_data_schema/core/acquisition.py",
+         "default": "https://raw.githubusercontent.com/AllenNeuralDynamics/aind-data-schema/main/src/aind_data_schema/core/acquisition.py",
+         "title": "Describedby",
+         "type": "string"
+      },
+      "schema_version": {
+         "const": "0.6.20",
+         "default": "0.6.20",
+         "title": "Schema Version"
+      },
+      "protocol_id": {
+         "default": [],
+         "description": "DOI for protocols.io",
+         "items": {
+            "type": "string"
+         },
+         "title": "Protocol ID",
+         "type": "array"
+      },
+      "experimenter_full_name": {
+         "description": "First and last name of the experimenter(s).",
+         "items": {
+            "type": "string"
+         },
+         "title": "Experimenter(s) full name",
+         "type": "array"
+      },
+      "specimen_id": {
+         "title": "Specimen ID",
+         "type": "string"
+      },
+      "subject_id": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Subject ID"
+      },
+      "instrument_id": {
+         "title": "Instrument ID",
+         "type": "string"
+      },
+      "calibrations": {
+         "default": [],
+         "description": "List of calibration measurements taken prior to acquisition.",
+         "items": {
+            "$ref": "#/$defs/Calibration"
+         },
+         "title": "Calibrations",
+         "type": "array"
+      },
+      "maintenance": {
+         "default": [],
+         "description": "List of maintenance on rig prior to acquisition.",
+         "items": {
+            "$ref": "#/$defs/Maintenance"
+         },
+         "title": "Maintenance",
+         "type": "array"
+      },
+      "session_start_time": {
+         "format": "date-time",
+         "title": "Session start time",
+         "type": "string"
+      },
+      "session_end_time": {
+         "format": "date-time",
+         "title": "Session end time",
+         "type": "string"
+      },
+      "session_type": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Session type"
+      },
+      "tiles": {
+         "items": {
+            "$ref": "#/$defs/AcquisitionTile"
+         },
+         "title": "Acquisition tiles",
+         "type": "array"
+      },
+      "axes": {
+         "items": {
+            "$ref": "#/$defs/ImageAxis"
+         },
+         "title": "Acquisition axes",
+         "type": "array"
+      },
+      "chamber_immersion": {
+         "allOf": [
+            {
+               "$ref": "#/$defs/Immersion"
+            }
+         ],
+         "title": "Acquisition chamber immersion data"
+      },
+      "sample_immersion": {
+         "anyOf": [
+            {
+               "$ref": "#/$defs/Immersion"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Acquisition sample immersion data"
+      },
+      "active_objectives": {
+         "anyOf": [
+            {
+               "items": {
+                  "type": "string"
+               },
+               "type": "array"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "List of objectives used in this acquisition."
+      },
+      "local_storage_directory": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Local storage directory"
+      },
+      "external_storage_directory": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "External storage directory"
+      },
+      "processing_steps": {
+         "default": [],
+         "description": "List of downstream processing steps planned for each channel",
+         "items": {
+            "$ref": "#/$defs/ProcessingSteps"
+         },
+         "title": "Processing steps",
+         "type": "array"
+      },
+      "software": {
+         "anyOf": [
+            {
+               "items": {
+                  "$ref": "#/$defs/Software"
+               },
+               "type": "array"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": [],
+         "title": "Acquisition software version data"
+      },
+      "notes": {
+         "anyOf": [
+            {
+               "type": "string"
+            },
+            {
+               "type": "null"
+            }
+         ],
+         "default": null,
+         "title": "Notes"
+      }
+   },
+   "required": [
+      "experimenter_full_name",
+      "specimen_id",
+      "instrument_id",
+      "session_start_time",
+      "session_end_time",
+      "tiles",
+      "axes",
+      "chamber_immersion"
+   ],
+   "title": "Acquisition",
+   "type": "object"
+}
