@@ -24,7 +24,8 @@ dependencies = [
     'motor',
     'nest-asyncio',
     'pymongo',
-    'ragas'
+    'ragas',
+    'fastapi'
 ]
 
 [project.optional-dependencies]
