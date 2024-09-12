@@ -135,7 +135,7 @@ def get_completion(prompt: str, bedrock_client, system_prompt=system_prompt, pre
         message = err.response['Error']['Message']
         print(f"A client error occured: {message}")
 
-def get_summary(prompt, bedrock_client, system_prompt=summary_system_prompt):
+def get_summary(prompt, bedrock_client = bedrock, system_prompt=summary_system_prompt):
 
     messages = [{"role": "user", "content": [{"text": f"Summarize the record with id {prompt}"}]}]
     
