@@ -310,4 +310,5 @@ def simple_chat(bedrock_client, system_prompt = system_prompt):
             #print("\nClaude: Is there anything else I can help you with?")
 
 if __name__ == '__main__': 
-    simple_chat(bedrock)
+    #simple_chat(bedrock)
+    get_summary(prompt = "b49c00c1-8200-402b-b166-fa5a2ce5023f")
