@@ -17,14 +17,12 @@ readme = "README.md"
 dynamic = ["version"]
 
 dependencies = [
-    'aind-data-access-api[full]==0.13.0',
+    'aind-data-access-api[full]>=0.15.0',
     'boto3',
-    'gradio',
     'langchain-aws',
     'langchain-community',
     'motor',
     'nest-asyncio',
-    'panel',
     'pymongo',
     'ragas'
 ]

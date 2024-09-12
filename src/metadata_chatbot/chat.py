@@ -1,18 +1,19 @@
 import boto3, json, os
-from tools import doc_retrieval, projection_retrieval
-from system_prompt import system_prompt
+from tools import doc_retrieval, projection_retrieval, aggregation_retrieval
+from system_prompt import system_prompt, summary_system_prompt
 from config import toolConfig
 from botocore.exceptions import ClientError
 
 #Connecting to bedrock
-'''
+
 bedrock = boto3.client(
     service_name="bedrock-runtime",
     region_name = 'us-west-2'
 )
-'''
 
-def get_completion(prompt, bedrock_client, system_prompt=system_prompt, prefill=None):
+model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
+
+def get_completion(prompt: str, bedrock_client, system_prompt=system_prompt, prefill=None) -> str:
     
     """Given a prompt, this function returns a reply to the question.
 
@@ -32,8 +33,6 @@ def get_completion(prompt, bedrock_client, system_prompt=system_prompt, prefill=
     str
         Model's reply to prompt
     """
-
-    model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
 
     messages = [{"role": "user", "content": [{"text": prompt}]}]
     
@@ -58,7 +57,7 @@ def get_completion(prompt, bedrock_client, system_prompt=system_prompt, prefill=
 
     try:
         response = bedrock_client.converse(**converse_api_params)
-        #print(response)
+        print(response)
         
         response_message = response['output']['message']
         
@@ -81,51 +80,132 @@ def get_completion(prompt, bedrock_client, system_prompt=system_prompt, prefill=
                 
                 print(f"Using tool {tool_name}")
                 
-                if tool_inputs['filter']:
+                if tool_name == 'doc_retrieval':
                     filter_query_s = tool_inputs['filter'] # filter query stored as a string instead of dictionary
                     filter_query = json.loads(filter_query_s)
-                
-                if tool_name == 'doc_retrieval':
                     retrieved_info = doc_retrieval(filter_query) #retrieved info type, dictionary
+                    print(type(retrieved_info))
                     if type(retrieved_info) == list:
                         retrieved_info = {item['_id']:item for item in retrieved_info}
                         
                 elif tool_name == 'projection_retrieval':
+                    filter_query_s = tool_inputs['filter'] # filter query stored as a string instead of dictionary
+                    filter_query = json.loads(filter_query_s)
                     field_name_list = (tool_inputs['fieldNameList'])
                     retrieved_info_list = projection_retrieval(filter_query, field_name_list)
                     retrieved_info = json.dumps(retrieved_info_list)[:1000]
-
-                    tool_response = {
-                                        "role": "user",
-                                        "content": [
+                    
+                elif tool_name == 'aggregation_retrieval':
+                    agg_pipeline = json.loads(tool_inputs['pipeline'])
+                    retrieved_info_list = aggregation_retrieval(agg_pipeline)
+                    retrieved_info = " ".join(map(str, retrieved_info_list))
+    
+                tool_response = {
+                                "role": "user",
+                                "content": [
                                             {
-                                                "toolResult": {
-                                                    "toolUseId": tool_id,
-                                                    "content": [
-                                                        {
-                                                            "text": retrieved_info
-                                                            }
-                                                    ],
-                                                    'status':'success'
-                                                }
+                                            "toolResult": {
+                                                "toolUseId": tool_id,
+                                                "content": [
+                                                    {
+                                                    "text": retrieved_info
+                                                    }
+                                                ],
+                                            'status':'success'
                                             }
+                                        }
                                         ]
-                                    }
+                                }
                     
-                    messages.append(tool_response)
+                messages.append(tool_response)
                     
-                    converse_api_params = {
-                                                "modelId": model_id,
-                                                "messages": messages,
-                                                "inferenceConfig": inference_config,
-                                                "toolConfig": toolConfig 
-                                            }
+                converse_api_params = {
+                                        "modelId": model_id,
+                                        "messages": messages,
+                                        "inferenceConfig": inference_config,
+                                        "toolConfig": toolConfig 
+                                        }
 
-                    final_response = bedrock_client.converse(**converse_api_params) 
-                    #print(final_response)
-                    final_response_text = final_response['output']['message']['content'][0]['text']
-                    return(final_response_text)
+                final_response = bedrock_client.converse(**converse_api_params) 
+                #print(final_response)
+                final_response_text = final_response['output']['message']['content'][0]['text']
+                return(final_response_text)
+                    
+    except ClientError as err:
+        message = err.response['Error']['Message']
+        print(f"A client error occured: {message}")
+
+def get_summary(prompt, bedrock_client, system_prompt=summary_system_prompt):
+
+    messages = [{"role": "user", "content": [{"text": f"Summarize the record with id {prompt}"}]}]
+    
+    inference_config = {
+        "temperature": 0,
+        "maxTokens": 2000
+    }
+    converse_api_params = {
+        "modelId": model_id,
+        "messages" : messages,
+        "inferenceConfig": inference_config,
+        "toolConfig": toolConfig
+    }
+    
+    if system_prompt:
+        converse_api_params["system"] = [{"text": system_prompt}]
+
+    try:
+        response = bedrock_client.converse(**converse_api_params)
         
+        response_message = response['output']['message']
+        
+        response_content_blocks = response_message['content']
+        
+        messages.append({"role": "assistant", "content": response_content_blocks})
+        
+        for content_block in response_content_blocks:
+            if 'toolUse' in content_block:
+                
+                tool_use = response_content_blocks[-1]
+                tool_id = tool_use['toolUse']['toolUseId']
+                tool_name = tool_use['toolUse']['name']
+                tool_inputs = tool_use['toolUse']['input']
+                
+                if tool_name == 'doc_retrieval':
+                    filter_query_s = tool_inputs['filter'] # filter query stored as a string instead of dictionary
+                    filter_query = json.loads(filter_query_s)
+                    retrieved_info_list = doc_retrieval(filter_query) #retrieved info type, dictionary
+                    retrieved_info = " ".join(map(str, retrieved_info_list))
+             
+                tool_response = {
+                                "role": "user",
+                                "content": [
+                                            {
+                                            "toolResult": {
+                                                "toolUseId": tool_id,
+                                                "content": [
+                                                    {
+                                                    "text": retrieved_info
+                                                    }
+                                                ],
+                                            'status':'success'
+                                            }
+                                        }
+                                        ]
+                                }
+                    
+                messages.append(tool_response)
+                    
+                converse_api_params = {
+                                        "modelId": model_id,
+                                        "messages": messages,
+                                        "inferenceConfig": inference_config,
+                                        "toolConfig": toolConfig 
+                                        }
+
+                final_response = bedrock_client.converse(**converse_api_params) 
+                final_response_text = final_response['output']['message']['content'][0]['text']
+                return(final_response_text)
+                    
     except ClientError as err:
         message = err.response['Error']['Message']
         print(f"A client error occured: {message}")
@@ -172,9 +252,9 @@ def simple_chat(bedrock_client, system_prompt = system_prompt):
         }
         if system_prompt:
             converse_api_params["system"] = [{"text": system_prompt}]
-            
 
         response = bedrock_client.converse(**converse_api_params)
+        print(response)
 
         messages.append({"role": "assistant", "content": response['output']['message']['content']})
 
@@ -185,25 +265,28 @@ def simple_chat(bedrock_client, system_prompt = system_prompt):
             tool_name = tool_use['toolUse']['name']
             tool_inputs = tool_use['toolUse']['input']
 
-            print(f"Claude wants to use the {tool_name} tool")
+            print(f"Using the {tool_name} tool...")
             print(f"Tool Input:")
             print(json.dumps(tool_inputs, indent=2))
             
-            if tool_inputs['filter']:
+            if tool_name == 'doc_retrieval':
                 filter_query_s = tool_inputs['filter'] # filter query stored as a string instead of dictionary
                 filter_query = json.loads(filter_query_s)
-                
-            if tool_name == 'doc_retrieval':
-                retrieved_info = doc_retrieval(filter_query) #retrieved info type, dictionary
-                if type(retrieved_info) == list:
-                    retrieved_info = ''.join(str(x) for x in retrieved_info) #tool response expects a string
-                #print('I AM INPUTTING DOC RETRIEVAL INTO RESPONSE')
-                        
+                retrieved_info_list = doc_retrieval(filter_query) #retrieved info type, dictionary
+                retrieved_info = " ".join(map(str, retrieved_info_list))
+                    
             elif tool_name == 'projection_retrieval':
+                filter_query_s = tool_inputs['filter'] # filter query stored as a string instead of dictionary
+                filter_query = json.loads(filter_query_s)
                 field_name_list = (tool_inputs['fieldNameList'])
                 retrieved_info_list = projection_retrieval(filter_query, field_name_list)
                 retrieved_info = json.dumps(retrieved_info_list)[:1000]
-                #print('I AM INPUTTING PROJECTION RETRIEVAL INTO RESPONSE')
+                
+            elif tool_name == 'aggregation_retrieval':
+                agg_pipeline = json.loads(tool_inputs['pipeline'])
+                retrieved_info_list = aggregation_retrieval(agg_pipeline)
+                retrieved_info = " ".join(map(str, retrieved_info_list))
+            
 
             messages.append({
                 "role": "user",
@@ -223,4 +306,8 @@ def simple_chat(bedrock_client, system_prompt = system_prompt):
             })
 
         else: 
-            print("\nClaude: " + f"{response['output']['message']['content'][0]['text']}")
+            print("\nClaude:" + f"{response['output']['message']['content'][0]['text']}")
+            #print("\nClaude: Is there anything else I can help you with?")
+
+if __name__ == '__main__': 
+    simple_chat(bedrock)

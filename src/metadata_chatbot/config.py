@@ -39,6 +39,24 @@ toolConfig = {
                     }
                 }
             }
+        },
+        {
+            "toolSpec": {
+                "name": "aggregation_retrieval",
+                "description": "Retrieve relevant values from docDB through an aggregation pipeline (running a series of operations on a collection of items). To be used in cases where multiple steps would be needed to retrieve desired output. Add allowDiskUse: true to the pipeline for large retrievals",
+                "inputSchema": {
+                    "json": {
+                        "type": "object",
+                        "properties": {
+                                    "pipeline": {
+                                        "type": "string",
+                                        "description": "A MongoDB aggregation pipeline to pass to the function"
+                                    }
+                        },
+                        "required": ["pipeline"]
+                    }
+                }
+            }
         }
     ],
     "toolChoice": {

@@ -1,5 +1,5 @@
 from aind_data_access_api.document_db import MetadataDbClient
-from aind_data_access_api.document_db_ssh import DocumentDbSSHClient
+from aind_data_access_api.document_db_ssh import DocumentDbSSHClient, DocumentDbSSHCredentials
 
 API_GATEWAY_HOST = "api.allenneuraldynamics.org"
 DATABASE = "metadata_index"
@@ -10,6 +10,8 @@ docdb_api_client = MetadataDbClient(
    database=DATABASE,
    collection=COLLECTION,
 )
+
+credentials = DocumentDbSSHCredentials()
 
 def doc_retrieval(filter_query: dict) -> list:
     """Given a MongoDB query, this function retrieves and returns the appropriate documents.
@@ -33,7 +35,7 @@ def doc_retrieval(filter_query: dict) -> list:
     )
     return(response)
 
-def projection_retrieval(credentials: object, filter_query: dict, field_name_list: list):
+def projection_retrieval(filter_query: dict, field_name_list: list) -> list:
     """Given a MongoDB query and list of projections, this function retrieves 
     and returns the appropriate projections in the documents.
 
@@ -64,8 +66,23 @@ def projection_retrieval(credentials: object, filter_query: dict, field_name_lis
         response = list(doc_db_client.collection.find(filter=filter, projection=projection))        
     return response
 
-def get_image(image_path):
-    with open(image_path, "rb") as f:
-        image_file = f.read()
+def aggregation_retrieval(agg_pipeline: list):
+    """Given a MongoDB query and list of projections, this function retrieves and returns the 
+    relevant information in the documents. 
+    Use a project stage as the first stage to minimize the size of the queries before proceeding with the remaining steps.
+    The input to $map must be an array not a string, avoid using it in the $project stage.
 
-    return image_file
+    Parameters
+    ----------
+    agg_pipeline
+        MongoDB aggregation pipeline
+
+    Returns
+    -------
+    list
+        List of retrieved documents
+    """
+    result = docdb_api_client.aggregate_docdb_records(
+        pipeline=agg_pipeline
+    )
+    return result
