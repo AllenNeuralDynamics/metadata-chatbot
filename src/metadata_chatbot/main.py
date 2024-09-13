@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from chat import get_summary
+from .chat import get_summary
 
 app = FastAPI()
 

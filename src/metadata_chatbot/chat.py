@@ -1,7 +1,7 @@
 import boto3, json, os
-from tools import doc_retrieval, projection_retrieval, aggregation_retrieval
-from system_prompt import system_prompt, summary_system_prompt
-from config import toolConfig
+from .tools import doc_retrieval, projection_retrieval, aggregation_retrieval
+from .system_prompt import system_prompt, summary_system_prompt
+from .config import toolConfig
 from botocore.exceptions import ClientError
 
 #Connecting to bedrock
