@@ -11,7 +11,7 @@ docdb_api_client = MetadataDbClient(
    collection=COLLECTION,
 )
 
-credentials = DocumentDbSSHCredentials()
+#credentials = DocumentDbSSHCredentials()
 
 def doc_retrieval(filter_query: dict) -> list:
     """Given a MongoDB query, this function retrieves and returns the appropriate documents.
