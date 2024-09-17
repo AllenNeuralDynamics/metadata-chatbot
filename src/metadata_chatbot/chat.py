@@ -1,8 +1,10 @@
-import boto3, json, os
-from .tools import doc_retrieval, projection_retrieval, aggregation_retrieval
-from .system_prompt import system_prompt, summary_system_prompt
-from .config import toolConfig
+import boto3, json, os, logging
+from tools import doc_retrieval, projection_retrieval, aggregation_retrieval, tool_call
+from system_prompt import system_prompt, summary_system_prompt
+from config import toolConfig
 from botocore.exceptions import ClientError
+
+logging.basicConfig(filename='error.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 #Connecting to bedrock
 
@@ -13,7 +15,7 @@ bedrock = boto3.client(
 
 model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
 
-def get_completion(prompt: str, bedrock_client, system_prompt=system_prompt, prefill=None) -> str:
+def get_completion(prompt: str, bedrock_client, system_prompt=system_prompt) -> str:
     
     """Given a prompt, this function returns a reply to the question.
 
@@ -38,102 +40,72 @@ def get_completion(prompt: str, bedrock_client, system_prompt=system_prompt, pre
     
     inference_config = {
         "temperature": 0,
-        "maxTokens": 4000
+        "maxTokens": 4096
     }
     converse_api_params = {
         "modelId": model_id,
         "messages" : messages,
         "inferenceConfig": inference_config,
-        "toolConfig": toolConfig
+        "toolConfig": toolConfig,
+        "system" : [{"text": system_prompt}] 
     }
-    
-    if system_prompt:
-        converse_api_params["system"] = [{"text": system_prompt}]
-        
-    if prefill:
-        messages.append({"role": "assistant", "content": [{"text": prefill}]})
-        print(prefill)
-        
 
     try:
-        response = bedrock_client.converse(**converse_api_params)
+        response = bedrock_client.converse(**converse_api_params)  
         print(response)
-        
-        response_message = response['output']['message']
-        
-        response_content_blocks = response_message['content']
+        response_content_blocks = response['output']['message']['content']
+
+        #Printing Claude's initial response to query
+        print(response_content_blocks[0]['text'])
         
         #Assistant reply including tool use 
         messages.append({"role": "assistant", "content": response_content_blocks})
-        
-        for content_block in response_content_blocks:
-            if 'toolUse' in content_block:
-                #print("Stop Reason:", response['stopReason'])
-                
-                tool_use = response_content_blocks[-1]
-                tool_id = tool_use['toolUse']['toolUseId']
-                tool_name = tool_use['toolUse']['name']
-                tool_inputs = tool_use['toolUse']['input']
 
-                #tool_use_block = content_block['toolUse']
-                #tool_use_name = tool_use_block['name']
-                
-                print(f"Using tool {tool_name}")
-                
-                if tool_name == 'doc_retrieval':
-                    filter_query_s = tool_inputs['filter'] # filter query stored as a string instead of dictionary
-                    filter_query = json.loads(filter_query_s)
-                    retrieved_info = doc_retrieval(filter_query) #retrieved info type, dictionary
-                    print(type(retrieved_info))
-                    if type(retrieved_info) == list:
-                        retrieved_info = {item['_id']:item for item in retrieved_info}
-                        
-                elif tool_name == 'projection_retrieval':
-                    filter_query_s = tool_inputs['filter'] # filter query stored as a string instead of dictionary
-                    filter_query = json.loads(filter_query_s)
-                    field_name_list = (tool_inputs['fieldNameList'])
-                    retrieved_info_list = projection_retrieval(filter_query, field_name_list)
-                    retrieved_info = json.dumps(retrieved_info_list)[:1000]
-                    
-                elif tool_name == 'aggregation_retrieval':
-                    agg_pipeline = json.loads(tool_inputs['pipeline'])
-                    retrieved_info_list = aggregation_retrieval(agg_pipeline)
-                    retrieved_info = " ".join(map(str, retrieved_info_list))
-    
-                tool_response = {
-                                "role": "user",
-                                "content": [
-                                            {
-                                            "toolResult": {
-                                                "toolUseId": tool_id,
-                                                "content": [
-                                                    {
-                                                    "text": retrieved_info
-                                                    }
-                                                ],
-                                            'status':'success'
-                                            }
-                                        }
-                                        ]
-                                }
-                    
-                messages.append(tool_response)
-                    
-                converse_api_params = {
-                                        "modelId": model_id,
-                                        "messages": messages,
-                                        "inferenceConfig": inference_config,
-                                        "toolConfig": toolConfig 
-                                        }
+        if response['stopReason'] == "tool_use":
+            tool_use = response_content_blocks[-1]['toolUse']
+            tool_id = tool_use['toolUseId']
+            tool_name = tool_use['name']
+            tool_inputs = tool_use['input']
+            
+            logging.info(f"Using tool {tool_name}")
+            
+            retrieved_info = tool_call(tool_name, tool_inputs)
 
-                final_response = bedrock_client.converse(**converse_api_params) 
-                #print(final_response)
-                final_response_text = final_response['output']['message']['content'][0]['text']
-                return(final_response_text)
+            tool_response = {
+                            "role": "user",
+                            "content": [
+                                        {
+                                        "toolResult": {
+                                            "toolUseId": tool_id,
+                                            "content": [
+                                                {
+                                                "text": retrieved_info
+                                                }
+                                            ],
+                                        'status':'success'
+                                        }
+                                    }
+                                    ]
+                            }
+                
+            messages.append(tool_response)
+            logging.info("Successful information retrieval")
+                
+            converse_api_params = {
+                                    "modelId": model_id,
+                                    "messages": messages,
+                                    "inferenceConfig": inference_config,
+                                    "toolConfig": toolConfig 
+                                    }
+            
+            logging.info("Generating response...")
+            final_response = bedrock_client.converse(**converse_api_params) 
+            final_response_text = final_response['output']['message']['content'][0]['text']
+            return(final_response_text)
                     
-    except ClientError as err:
-        message = err.response['Error']['Message']
-        print(f"A client error occured: {message}")
+    except ClientError as e:
+        logging.error("A client exception occurred: %s", str(e), exc_info=True)
+
 
 def get_summary(prompt, bedrock_client = bedrock, system_prompt=summary_system_prompt):
 
@@ -211,7 +183,7 @@ def get_summary(prompt, bedrock_client = bedrock, system_prompt=summary_system_p
         print(f"A client error occured: {message}")
         
         
-def simple_chat(bedrock_client, system_prompt = system_prompt):
+def simple_chat(bedrock_client = bedrock, system_prompt = system_prompt):
     
     """This function is able to demonstrate back and forth conversation given user input.
 
@@ -269,23 +241,7 @@ def simple_chat(bedrock_client, system_prompt = system_prompt):
             print(f"Tool Input:")
             print(json.dumps(tool_inputs, indent=2))
             
-            if tool_name == 'doc_retrieval':
-                filter_query_s = tool_inputs['filter'] # filter query stored as a string instead of dictionary
-                filter_query = json.loads(filter_query_s)
-                retrieved_info_list = doc_retrieval(filter_query) #retrieved info type, dictionary
-                retrieved_info = " ".join(map(str, retrieved_info_list))
-                    
-            elif tool_name == 'projection_retrieval':
-                filter_query_s = tool_inputs['filter'] # filter query stored as a string instead of dictionary
-                filter_query = json.loads(filter_query_s)
-                field_name_list = (tool_inputs['fieldNameList'])
-                retrieved_info_list = projection_retrieval(filter_query, field_name_list)
-                retrieved_info = json.dumps(retrieved_info_list)[:1000]
-                
-            elif tool_name == 'aggregation_retrieval':
-                agg_pipeline = json.loads(tool_inputs['pipeline'])
-                retrieved_info_list = aggregation_retrieval(agg_pipeline)
-                retrieved_info = " ".join(map(str, retrieved_info_list))
+            retrieved_info = tool_call(tool_name, tool_inputs)
             
 
             messages.append({
@@ -311,4 +267,6 @@ def simple_chat(bedrock_client, system_prompt = system_prompt):
 
 if __name__ == '__main__': 
     #simple_chat(bedrock)
-    get_summary(prompt = "b49c00c1-8200-402b-b166-fa5a2ce5023f")
+    prompt = "How many experiments of each unique modality exists in the database?"
+    response = get_completion(prompt, bedrock)
+    print(response)

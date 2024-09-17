@@ -5,14 +5,22 @@
 [![semantic-release: angular](https://img.shields.io/badge/semantic--release-angular-e10079?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
 ![Interrogate](https://img.shields.io/badge/interrogate-61.1%25-red)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen?logo=codecov)
-![Python](https://img.shields.io/badge/python->=3.7-blue?logo=python)
+
 
 ## Usage
 
 ## Installation
 
-To use the software, in the root directory, run
+Install a virtual environment with python 3.9 (install a python 3.9 that's compatible with your operating system). Check if download was successful by runninng
 
+```bash
+py -3.9 -m venv .venv
+```
+On Windows, activate the environment with 
+```bash
+.venv\Scripts\Activate.ps1
+```
+Install the chatbot package.
 ```bash
 pip install -e .
 ```
@@ -82,10 +90,10 @@ where scope (optional) describes the packages affected by the code changes and t
 
 The table below, from [semantic release](https://github.com/semantic-release/semantic-release), shows which commit message gets you which release type when `semantic-release` runs (using the default configuration):
 
-| Commit message                                                                                                                                                                                         | Release type                                                                                                       |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| `fix(pencil): stop graphite breaking when too much pressure applied`                                                                                                                                 | ~~Patch~~ Fix Release, Default release                                                                            |
-| `feat(pencil): add 'graphiteWidth' option`                                                                                                                                                           | ~~Minor~~ Feature Release                                                                                         |
+| Commit message                                                                                                                                                                                     | Release type                                                                                                       |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `fix(pencil): stop graphite breaking when too much pressure applied`                                                                                                                             | ~~Patch~~ Fix Release, Default release                                                                            |
+| `feat(pencil): add 'graphiteWidth' option`                                                                                                                                                       | ~~Minor~~ Feature Release                                                                                         |
 | `perf(pencil): remove graphiteWidth option<br>``<br>BREAKING CHANGE: The graphiteWidth option has been removed.``<br>The default graphite width of 10mm is always used for performance reasons.` | ~~Major~~ Breaking Release <br /> (Note that the `BREAKING CHANGE: ` token must be in the footer of the commit) |
 
 ### Documentation

@@ -21,11 +21,14 @@ dependencies = [
     'boto3',
     'langchain-aws',
     'langchain-community',
+    'langchain_core',
     'motor',
     'nest-asyncio',
     'pymongo',
     'ragas',
-    'fastapi'
+    'fastapi',
+    'uvicorn',
+    'logging'
 ]
 
 [project.optional-dependencies]

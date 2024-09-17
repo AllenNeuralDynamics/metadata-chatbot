@@ -1,5 +1,6 @@
 from aind_data_access_api.document_db import MetadataDbClient
 from aind_data_access_api.document_db_ssh import DocumentDbSSHClient, DocumentDbSSHCredentials
+import json
 
 API_GATEWAY_HOST = "api.allenneuraldynamics.org"
 DATABASE = "metadata_index"
@@ -55,18 +56,18 @@ def projection_retrieval(filter_query: dict, field_name_list: list) -> list:
     list
         List of retrieved documents
     """
+    projection = {"name" : 1}
+    if field_name_list:
+        for field_name in field_name_list:
+            projection[field_name] = 1
 
-    with DocumentDbSSHClient(credentials=credentials) as doc_db_client:
-        filter = filter_query
-        projection = {"name" : 1}
-        if field_name_list:
-            for field_name in field_name_list:
-                projection[field_name] = 1
-        #count = doc_db_client.collection.count_documents(filter)
-        response = list(doc_db_client.collection.find(filter=filter, projection=projection))        
+    response = docdb_api_client.retrieve_docdb_records(
+        filter_query=filter_query,
+        projection=projection
+    )     
     return response
 
-def aggregation_retrieval(agg_pipeline: list):
+def aggregation_retrieval(agg_pipeline: list) -> list:
     """Given a MongoDB query and list of projections, this function retrieves and returns the 
     relevant information in the documents. 
     Use a project stage as the first stage to minimize the size of the queries before proceeding with the remaining steps.
@@ -86,3 +87,26 @@ def aggregation_retrieval(agg_pipeline: list):
         pipeline=agg_pipeline
     )
     return result
+
+def tool_call(tool_name:str, tool_inputs:dict) -> str:
+
+    if tool_name == 'doc_retrieval':
+        filter_query = json.loads(tool_inputs['filter'])
+        retrieved_info_list = doc_retrieval(filter_query) #retrieved info type, dictionary
+                    
+    elif tool_name == 'projection_retrieval':
+        filter_query = json.loads(tool_inputs['filter'])
+        field_name_list = json.loads(tool_inputs['fieldNameList'])
+        retrieved_info_list = projection_retrieval(filter_query, field_name_list)
+        #retrieved_info = json.dumps(retrieved_info_list)[:1000]
+                
+    elif tool_name == 'aggregation_retrieval':
+        #print("Loading agg pipeline...")
+        agg_pipeline = json.loads(tool_inputs['pipeline'])
+        #print(type(tool_inputs['pipeline']))
+        retrieved_info_list = aggregation_retrieval(agg_pipeline)
+        #print("Retrieved info ready")
+    
+    retrieved_info = " ".join(map(str, retrieved_info_list))
+    #print(retrieved_info)
+    return(retrieved_info)
