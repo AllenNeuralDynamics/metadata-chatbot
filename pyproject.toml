@@ -19,13 +19,9 @@ dynamic = ["version"]
 dependencies = [
     'aind-data-access-api[full]>=0.15.0',
     'boto3',
-    'langchain-aws',
-    'langchain-community',
-    'langchain_core',
     'motor',
     'nest-asyncio',
     'pymongo',
-    'ragas',
     'fastapi',
     'uvicorn',
     'logging'
