@@ -22,13 +22,14 @@ dependencies = [
     'langchain-aws',
     'langchain-community',
     'langchain_core',
+    'langchain',
     'motor',
     'nest-asyncio',
     'pymongo',
-    'ragas',
     'fastapi',
     'uvicorn',
-    'logging'
+    'logging',
+    'sshtunnel'
 ]
 
 [project.optional-dependencies]

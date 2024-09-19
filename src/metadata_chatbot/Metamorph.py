@@ -39,5 +39,5 @@ class Metamorph(LLM):
     
 if __name__ == '__main__': 
     llm = Metamorph()
-    prompt = "Give me the count of genotypes in each modality in the database?"
+    prompt = "Give me the count of genotypes in the ecephys modality in the database."
     llm.invoke(prompt)
