@@ -3,13 +3,13 @@ from pathlib import Path
 import re
 
 cwd = os.path.dirname(os.path.realpath(__file__))
-folder = Path(f"{cwd}\\ref")
+folder = Path(f"{cwd}/ref")
 
 schema_types = []
 
 for name in os.listdir(folder):
     #loading in schema files
-    f = open(f'{folder}\\{name}')
+    f = open(f'{folder}/{name}')
     file = json.load(f)
     if (re.search(r'\d', name)):
         sample_metadata = file
