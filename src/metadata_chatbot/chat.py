@@ -35,6 +35,7 @@ def get_summary(prompt, bedrock_client = bedrock, system_prompt=summary_system_p
         converse_api_params["system"] = [{"text": system_prompt}]
 
     try:
+        logging.info("Connecting to model...")
         response = bedrock_client.converse(**converse_api_params)
         
         response_message = response['output']['message']
@@ -50,13 +51,17 @@ def get_summary(prompt, bedrock_client = bedrock, system_prompt=summary_system_p
                 tool_id = tool_use['toolUse']['toolUseId']
                 tool_name = tool_use['toolUse']['name']
                 tool_inputs = tool_use['toolUse']['input']
-                
+
+                logging.info("Connecting to database...")
+
                 if tool_name == 'doc_retrieval':
                     filter_query_s = tool_inputs['filter'] # filter query stored as a string instead of dictionary
                     filter_query = json.loads(filter_query_s)
                     retrieved_info_list = doc_retrieval(filter_query) #retrieved info type, dictionary
                     retrieved_info = " ".join(map(str, retrieved_info_list))
-             
+
+                logging.info("Information retrieved from database.")
+
                 tool_response = {
                                 "role": "user",
                                 "content": [
@@ -82,12 +87,18 @@ def get_summary(prompt, bedrock_client = bedrock, system_prompt=summary_system_p
                                         "inferenceConfig": inference_config,
                                         "toolConfig": toolConfig 
                                         }
+                
+                logging.info("Generating summary...")
 
                 final_response = bedrock_client.converse(**converse_api_params) 
                 final_response_text = final_response['output']['message']['content'][0]['text']
+                #print(final_response_text)
                 return(final_response_text)
                     
     except ClientError as err:
         message = err.response['Error']['Message']
         print(f"A client error occured: {message}")
-        
+    
+if __name__ == '__main__': 
+    prompt = "cd2acb6f-e71e-4a5d-8045-a200571950bb"
+    print(get_summary(prompt))
