@@ -4,7 +4,7 @@ from langchain_community.vectorstores.documentdb import (
 )
 from langchain.docstore.document import Document 
 from urllib.parse import quote_plus
-import pymongo, os, boto3, re, pickle, json
+import pymongo, os, boto3, re, json
 from pymongo import MongoClient
 from langchain_aws import BedrockEmbeddings
 from sshtunnel import SSHTunnelForwarder
@@ -83,6 +83,13 @@ def json_to_langchain_doc(json_doc: dict) -> list:
             values_to_embed[item] = value
         else:
             to_metadata[item] = value
+    subject = json_doc.get("subject")
+    
+    if subject is not None:
+        to_metadata["subject_id"] = subject.get("subject_id", "null")  # Default if subject_id is missing
+    else:
+        print("Subject key is missing or None.")
+        to_metadata["subject_id"] = "null"
     json_chunks = JSON_SPLITTER.split_text(json_data=values_to_embed)
 
 
@@ -105,15 +112,15 @@ escaped_password = quote_plus(os.getenv('DOC_DB_PASSWORD'))
 
 CONNECTION_STRING = f"mongodb://{escaped_username}:{escaped_password}@localhost:27017/?directConnection=true&authMechanism=SCRAM-SHA-1&retryWrites=false"
 
-INDEX_NAME = 'langchain_vector_embeddings_index'
-NAMESPACE = 'metadata_vector_index.data_assets'
+INDEX_NAME = 'langchain_curated_embeddings_index'
+NAMESPACE = 'metadata_vector_index.curated_assets'
 DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
 
 client = MongoClient(CONNECTION_STRING)
 collection = client[DB_NAME][COLLECTION_NAME]
-langchain_collection = client[DB_NAME]['LANGCHAIN_data_assets']
+langchain_collection = client[DB_NAME]['LANGCHAIN_curated_assets']
 
-LANGCHAIN_NAMESPACE = 'metadata_vector_index.LANGCHAIN_data_assets'
+LANGCHAIN_NAMESPACE = 'metadata_vector_index.LANGCHAIN_curated_assets'
 
 
 try:
@@ -192,8 +199,7 @@ try:
 
         docs = vectorstore.similarity_search(query)
 
-        for doc in docs:
-            print(doc.page_content)
+        print(docs)
 
 except pymongo.errors.ServerSelectionTimeoutError as e:
     print(f"Server selection timeout error: {e}")

@@ -84,7 +84,7 @@ try:
                 'vector': query_embedding, 
                 'path': 'vectorContent', 
                 'similarity': 'cosine', 
-                'k': 50
+                'k': 500
                 }
             }
         }
@@ -136,6 +136,9 @@ try:
         x=reduced_vectors[1:4, 0],
         y=reduced_vectors[1:4, 1],
         z=reduced_vectors[1:4, 2],
+        z1=reduced_vectors[1:4, 3],
+        z2=reduced_vectors[1:4, 4],
+        z3=reduced_vectors[1:4, 5],
         mode='markers',
         marker=dict(size=8, color='blue', opacity=0.8,  line=dict(color='black', width=1)),
         text=["Top 1 Data Asset","Top 2 Data Asset","Top 3 Data Asset"]
