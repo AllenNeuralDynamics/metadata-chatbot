@@ -24,11 +24,13 @@ Install the chatbot package.
 ```bash
 pip install -e .
 ```
-
 To develop the code, run
-
 ```bash
 pip install -e .[dev]
+```
+Or simply,
+```bash
+pip install metadata-chatbot
 ```
 
 ## Contributing

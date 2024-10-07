@@ -1,9 +1,12 @@
 from langchain_community.vectorstores.documentdb import DocumentDBVectorSearch
 from urllib.parse import quote_plus
-import pymongo, os, boto3, sys
+import pymongo, os, boto3, sys, umap
 from pymongo import MongoClient
 from langchain_aws import BedrockEmbeddings
 import logging
+import matplotlib.pyplot as plt
+import umap.umap_ as umap
+
 
 import numpy as np
 import pandas as pd
@@ -13,33 +16,16 @@ from plotly.subplots import make_subplots
 import plotly.io as pio
 
 sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
-from utils import create_ssh_tunnel
+from utils import create_ssh_tunnel, ALL_CURATED_VECTORSTORE, BEDROCK_EMBEDDINGS, CONNECTION_STRING
 
 
 logging.basicConfig(filename='vector_visualization.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
-
-bedrock = boto3.client(
-    service_name="bedrock-runtime",
-    region_name = 'us-west-2'
-)
-
-BEDROCK_EMBEDDINGS = BedrockEmbeddings(model_id="amazon.titan-embed-text-v2:0",client=bedrock)
-
-escaped_username = quote_plus(os.getenv("DOC_DB_USERNAME"))
-escaped_password = quote_plus(os.getenv('DOC_DB_PASSWORD'))
-
-CONNECTION_STRING = f"mongodb://{escaped_username}:{escaped_password}@localhost:27017/?directConnection=true&authMechanism=SCRAM-SHA-1&retryWrites=false"
-
-INDEX_NAME = 'langchain_vector_embeddings_index'
-NAMESPACE = 'metadata_vector_index.data_assets'
-DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
-
 client = MongoClient(CONNECTION_STRING)
-collection = client[DB_NAME][COLLECTION_NAME]
-langchain_collection = client[DB_NAME]['PLOTTING_data_assets']
+langchain_collection = client['metadata_vector_index']['LANGCHAIN_ALL_curated_assets']
 
-LANGCHAIN_NAMESPACE = 'metadata_vector_index.PLOTTING_data_assets'
+
+
 
 try:
 
@@ -51,29 +37,64 @@ try:
 
     logging.info("Initializing connection vector store")
 
-    vectorstore = DocumentDBVectorSearch.from_connection_string(
-                    connection_string=CONNECTION_STRING,
-                    namespace=LANGCHAIN_NAMESPACE,
-                    embedding=BEDROCK_EMBEDDINGS,
-                    index_name=INDEX_NAME
-                )
+    vectorstore = ALL_CURATED_VECTORSTORE
 
-    query = "What is the experimental history for mouse with subject id 719360"
-    logging.info("Starting to vectorize query...")
-    query_embedding = BEDROCK_EMBEDDINGS.embed_query(query)
+    # query = "subject"
+    # logging.info("Starting to vectorize query...")
+    # query_embedding = BEDROCK_EMBEDDINGS.embed_query(query)
 
-    result = langchain_collection.aggregate([
-        {
-        '$search': {
-            'vectorSearch': {
-                'vector': query_embedding, 
-                'path': 'vectorContent', 
-                'similarity': 'cosine', 
-                'k': 25000
-                }
-            }
-        }
-    ])
+    # total_documents = langchain_collection.count_documents({})
+    # print(f"Total documents in collection: {total_documents}")
+
+    # # Check indexes on the collection
+    # indexes = langchain_collection.index_information()
+    # print(f"Indexes on collection: {indexes}")
+
+    # result = langchain_collection.aggregate([
+    #     {
+    #     '$search': {
+    #         'vectorSearch': {
+    #             'vector': query_embedding, 
+    #             'path': 'vectorContent', 
+    #             'similarity': 'cosine', 
+    #             'k': 22100
+    #             }
+    #         }
+    #     },
+    #     {
+    #         '$limit': 22100  # Ensure the pipeline limits the results to 22100
+    #     }
+    # ])
+
+    logging.info("Finding vectors...")
+
+    documents = langchain_collection.find({}, {"vectorContent": 1, "_id": 0})
+
+    logging.info("Extracting vectors...") \
+    
+    embeddings_list = []
+    for doc in documents:
+        embeddings_list.append(doc["vectorContent"])
+
+    logging.info(f"Number of vectors retrieved: {len(embeddings_list)}")
+
+    embeddings_array = np.array(embeddings_list)
+
+    logging.info("Plotting...")
+
+    reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, n_components=2, random_state=42)
+    embedding = reducer.fit_transform(embeddings_array)
+
+    # Plot the results
+    plt.figure(figsize=(12, 10))
+    plt.scatter(embedding[:, 0], embedding[:, 1], s=3, alpha=0.5)
+    plt.title(f'UMAP projection of {len(embeddings_list)} embeddings')
+    plt.xlabel('UMAP1')
+    plt.ylabel('UMAP2')
+    plt.colorbar()
+    plt.show()
+
+
 
     embeddings_list = []
     modalities_list = []
@@ -82,9 +103,10 @@ try:
         embeddings_list.append(document['vectorContent'])
         modalities_list.append(document['modality'])
 
-    embeddings_list.insert(0,query_embedding)
+    #embeddings_list.insert(0,query_embedding)
 
     print(len(embeddings_list))
+    print(len(modalities_list))
 
     n_components = 3 #3D #TODO: PCA
     embeddings_list = np.array(embeddings_list) #converting to numpy array
@@ -153,28 +175,6 @@ try:
 
     pio.write_html(fig, 'interactive_plot.html')
     fig.show()
-
-    # try:
-    #    vectorstore = DocumentDBVectorSearch.from_connection_string(
-    #        connection_string=CONNECTION_STRING,
-    #        namespace=NAMESPACE,
-    #        embedding=embeddings_model,
-    #        index_name=INDEX_NAME,
-    #    )
-    #    logging.info("Successfully connected to vector index")
-
-    #    query = "test"
-    #    logging.info("Starting to vectorize query...")
-    #    query_embedding = embeddings_model.embed_query(query)
-    # #    logging.debug(f"Query: {query}")
-    # #    logging.debug(f"Query embedding (first 5 elements): {query_embedding[:5]}")
-    #    docs = vectorstore.similarity_search(query)
-    #    print(docs[0].page_content)
-       
-    # except Exception as e:
-    #    logging.error(f"Error initializing DocumentDBVectorSearch: {e}")
-    
-
 
 except pymongo.errors.ServerSelectionTimeoutError as e:
     print(f"Server selection timeout error: {e}")

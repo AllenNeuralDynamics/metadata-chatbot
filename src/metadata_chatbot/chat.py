@@ -267,6 +267,6 @@ def simple_chat(bedrock_client = bedrock, system_prompt = system_prompt):
 
 if __name__ == '__main__': 
     #simple_chat(bedrock)
-    prompt = "How many experiments of each unique modality exists in the database?"
+    prompt = "What is the experimental history for subject 664956"
     response = get_completion(prompt, bedrock)
     print(response)

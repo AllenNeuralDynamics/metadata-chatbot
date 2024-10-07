@@ -1,0 +1,10 @@
+- finding assets where injections were performed in the same region/virus constructs
+- what channels are being imaged
+- what was imaged in a channels
+- reagent querying - what those are?
+- injection site (nsp target/actual localization)
+- target coordinates/ what that region is supposed to be
+- evaluation of injection target
+- whats the sequence of procedures, recreating a timeline/age of a mouse
+- are my injections more on target at certain ages
+- name of the rig

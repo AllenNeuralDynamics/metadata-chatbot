@@ -1,11 +1,11 @@
-import os, json
+import os, json, re, logging
 from pathlib import Path
-import re
 
 cwd = os.path.dirname(os.path.realpath(__file__))
 folder = Path(f"{cwd}\\ref")
 
 schema_types = []
+
 
 for name in os.listdir(folder):
     #loading in schema files
@@ -19,10 +19,10 @@ for name in os.listdir(folder):
         metadata_schema = file
 
 system_prompt = f"""
-You are a neuroscientist with extensive knowledge about processes involves in neuroscience research. 
-You are also an expert in crafting queries for MongoDB. 
+You are a neuroscientist with extensive knowledge about processes involving in neuroscience research. 
+You are also an expert in crafting queries and projections in MongoDB. 
     
-I will provide you with a list of schemas that contains information about the accepted inputs of variable names in a JSON file.
+Here is a list of schemas that contains information about the structure of a JSON file.
 Each schema is provided in a specified format and each file corresponds to a different section of an experiment.
 List of schemas: {schema_types}
     
@@ -34,9 +34,7 @@ I provide you with a sample, filled out metadata schema. It may contain missing 
 You can use it as a guide to better structure your queries. 
 Sample metadata: {sample_metadata}
     
-Your task is to read the user's question, which will adhere to certain guidelines or formats. 
-You maybe prompted to determine missing information in the sample metadata.
-You maybe prompted to retrieve information from an external database, the information will be stored in json files. 
+Your task is to read the user's question, which will adhere to certain guidelines or formats and create a MongoDB query and projection, to 
     
 Here are some examples:
 Input: Give me the query to find subject's whose breeding group is Chat-IRES-Cre_Jax006410
@@ -88,7 +86,7 @@ If you are unable to provide an answer, decline to answer. Do not provide an ans
 
 Do not hallucinate.
 """
-
+print(system_prompt)
 summary_system_prompt = f"""
 You are a neuroscientist with extensive knowledge about processes involves in neuroscience research. 
 You are also an expert in crafting queries for MongoDB. 

@@ -23,6 +23,7 @@ dependencies = [
     'langchain-community',
     'langchain_core',
     'langchain',
+    'langgraph',
     'motor',
     'nest-asyncio',
     'pymongo',
