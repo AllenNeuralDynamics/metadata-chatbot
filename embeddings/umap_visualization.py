@@ -26,18 +26,13 @@ langchain_collection = client['metadata_vector_index']['LANGCHAIN_ALL_curated_as
 
 
 
+ssh_server = create_ssh_tunnel()
+ssh_server.start()
+logging.info("SSH tunnel opened")
 
-try:
-
-    ssh_server = create_ssh_tunnel()
-    ssh_server.start()
-    logging.info("SSH tunnel opened")
-    
-    logging.info("Successfully connected to MongoDB")
-
-    logging.info("Initializing connection vector store")
-
-    vectorstore = ALL_CURATED_VECTORSTORE
+logging.info("Successfully connected to MongoDB")
+logging.info("Initializing connection vector store")
+vectorstore = ALL_CURATED_VECTORSTORE
 
     # query = "subject"
     # logging.info("Starting to vectorize query...")
@@ -66,36 +61,29 @@ try:
     #     }
     # ])
 
-    logging.info("Finding vectors...")
+logging.info("Finding vectors...")
+documents = langchain_collection.find({}, {"vectorContent": 1, "_id": 0})
+logging.info("Extracting vectors...") \
 
-    documents = langchain_collection.find({}, {"vectorContent": 1, "_id": 0})
-
-    logging.info("Extracting vectors...") \
-    
-    embeddings_list = []
-    for doc in documents:
-        embeddings_list.append(doc["vectorContent"])
-
-    logging.info(f"Number of vectors retrieved: {len(embeddings_list)}")
-
-    embeddings_array = np.array(embeddings_list)
-
-    logging.info("Plotting...")
-
-    reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, n_components=2, random_state=42)
-    embedding = reducer.fit_transform(embeddings_array)
-
-    # Plot the results
-    plt.figure(figsize=(12, 10))
-    plt.scatter(embedding[:, 0], embedding[:, 1], s=3, alpha=0.5)
-    plt.title(f'UMAP projection of {len(embeddings_list)} embeddings')
-    plt.xlabel('UMAP1')
-    plt.ylabel('UMAP2')
-    plt.colorbar()
-    plt.show()
+embeddings_list = []
+for doc in documents:
+    embeddings_list.append(doc["vectorContent"])
+logging.info(f"Number of vectors retrieved: {len(embeddings_list)}")
+embeddings_array = np.array(embeddings_list)
+logging.info("Plotting...")
+reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, n_components=2, random_state=42)
+embedding = reducer.fit_transform(embeddings_array)
+# Plot the results
+plt.figure(figsize=(12, 10))
+plt.scatter(embedding[:, 0], embedding[:, 1], s=3, alpha=0.5)
+plt.title(f'UMAP projection of {len(embeddings_list)} embeddings')
+plt.xlabel('UMAP1')
+plt.ylabel('UMAP2')
+plt.colorbar()
+plt.show()
 
 
-
+'''
     embeddings_list = []
     modalities_list = []
 
@@ -108,7 +96,7 @@ try:
     print(len(embeddings_list))
     print(len(modalities_list))
 
-    n_components = 3 #3D #TODO: PCA
+    n_components = 3 #3D 
     embeddings_list = np.array(embeddings_list) #converting to numpy array
 
     print(np.shape(embeddings_list))
@@ -175,12 +163,7 @@ try:
 
     pio.write_html(fig, 'interactive_plot.html')
     fig.show()
+'''
 
-except pymongo.errors.ServerSelectionTimeoutError as e:
-    print(f"Server selection timeout error: {e}")
-    print(f"Current topology description: {client.topology_description}")
-except Exception as e:
-    logging.exception(e)
-finally:
-    client.close()
-    ssh_server.stop()
+client.close()
+ssh_server.stop()

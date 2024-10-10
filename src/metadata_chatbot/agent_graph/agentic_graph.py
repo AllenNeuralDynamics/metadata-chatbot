@@ -1,15 +1,16 @@
 from pydantic import BaseModel, Field
 from langchain_aws import ChatBedrock
 from langchain import hub
-from langchain_core.documents import Document
-import logging, json, sys, os
-from typing import List, Optional, Literal
+import logging, json, sys, os, asyncio
+from typing import List, Optional, Literal, Iterator
 from langchain_core.output_parsers import StrOutputParser
 from typing_extensions import TypedDict
 from docdb_retriever import DocDBRetriever
 from langchain_core.tools import tool
 from aind_data_access_api.document_db_ssh import DocumentDbSSHClient, DocumentDbSSHCredentials
 from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_core.outputs import GenerationChunk
+from langchain_core.documents import Document
 
 from langgraph.graph import END, StateGraph, START
 
@@ -63,8 +64,6 @@ def aggregation_retrieval(agg_pipeline: list) -> list:
     """
     with DocumentDbSSHClient(credentials=credentials) as doc_db_client:
 
-        logging.info("Type of pipeline is", type(agg_pipeline))
-
         result = list(doc_db_client.collection.aggregate(
             pipeline=agg_pipeline
         ))
@@ -74,7 +73,7 @@ tools = [aggregation_retrieval]
 prompt = hub.pull("eden19/entire_db_retrieval")
 
 db_surveyor_agent = create_tool_calling_agent(LLM, tools, prompt)
-db_surveyor = AgentExecutor(agent=db_surveyor_agent, tools=tools, verbose=True)
+db_surveyor = AgentExecutor(agent=db_surveyor_agent, tools=tools, verbose=False)
 
 chat_history = []
 
@@ -147,7 +146,8 @@ class GraphState(TypedDict):
     query: str
     generation: str
     documents: List[str]
-    filter: Optional[dict] = None
+    filter: Optional[dict]
+    #k: Optional[int] = 10
 
 def route_question(state):
     """
@@ -167,6 +167,25 @@ def route_question(state):
     elif source.datasource == "vectorstore":
         logging.info("Querying against vector embeddings...")
         return "vectorstore"
+    
+# async def route_question(state):
+#     """
+#     Route question to database or vectorstore
+#     Args:
+#         state (dict): The current graph state
+
+#     Returns:
+#         str: Next node to call
+#     """
+#     query = state["query"]
+
+#     source = await datasource_router.ainvoke({"query": query})
+#     if source.datasource == "direct_database":
+#         logging.info("Entire database needs to be queried.")
+#         return "direct_database"
+#     elif source.datasource == "vectorstore":
+#         logging.info("Querying against vector embeddings...")
+#         return "vectorstore"
 
 def generate_for_whole_db(state):
     """
@@ -186,6 +205,25 @@ def generate_for_whole_db(state):
 
     generation = db_surveyor.invoke({'query': query, 'chat_history': chat_history})
     return {"query": query, "generation": generation}
+
+# async def generate_for_whole_db(state):
+#     """
+#     Filter database
+    
+#     Args:
+#         state (dict): The current graph state
+
+#     Returns:
+#         state (dict): New key may be added to state, generation, which contains the answer for query asked
+#     """
+
+#     query = state["query"]
+#     chat_history = []
+
+#     logging.info("Generating answer...")
+
+#     generation = await db_surveyor.ainvoke({'query': query, 'chat_history': chat_history})
+#     return {"query": query, "generation": generation}
 
 
 def filter_generator(state):
@@ -211,6 +249,32 @@ def filter_generator(state):
         return {"filter": filter, "query": query}
     else:
         return {"filter": None, "query": query}
+    
+# async def filter_generator(state):
+#     """
+#     Filter database
+
+#     Args:
+#         state (dict): The current graph state
+
+#     Returns:
+#         state (dict): New key may be added to state, filter, which contains the MongoDB query that will be applied before retrieval
+#     """
+#     logging.info("Determining whether filter is required...")
+
+#     query = state["query"]
+
+#     result = await query_grader.ainvoke({"query": query})
+#     query_grade = result.binary_score
+#     logging.info(f"Database needs to be further filtered: {query_grade}")
+
+#     if query_grade == "yes":
+#         result = await filter_generation_chain.ainvoke({"query": query})
+#         filter = result.filter_query
+#         logging.info(f"Database will be filtered using: {filter}")
+#         return {"filter": filter, "query": query}
+#     else:
+#         return {"filter": None, "query": query}
 
 
 def retrieve(state):
@@ -233,6 +297,28 @@ def retrieve(state):
         retriever = DocDBRetriever(collection = collection, k = 10)
         documents = retriever.get_relevant_documents(query = query, query_filter = filter)
     return {"documents": documents, "query": query}
+
+# async def retrieve(state):
+#     """
+#     Retrieve documents
+
+#     Args:
+#         state (dict): The current graph state
+
+#     Returns:
+#         state (dict): New key added to state, documents, that contains retrieved documents
+#     """
+#     logging.info("Retrieving documents...")
+#     query = state["query"]
+#     filter = state["filter"]
+
+#     # Retrieval
+#     with ResourceManager() as RM:
+#         collection = RM.client['metadata_vector_index']['LANGCHAIN_ALL_curated_assets']
+#         retriever = DocDBRetriever(collection = collection, k = 10)
+#         documents = await retriever.aget_relevant_documents(query = query, query_filter = filter)
+#     return {"documents": documents, "query": query}
+
 
 def grade_documents(state):
     """
@@ -263,6 +349,37 @@ def grade_documents(state):
             continue
     return {"documents": filtered_docs, "query": query}
 
+# async def grade_doc(doc: Document):
+#     score = await doc_grader.ainvoke({"query": query, "document": doc.page_content})
+#     grade = score.binary_score
+#     logging.info(f"Retrieved document matched query: {grade}")
+#     if grade == "yes":
+#         logging.info("Document is relevant to the query")
+#         return doc
+#     else:
+#         logging.info("Document is not relevant and will be removed")
+#         return None
+        
+
+# async def grade_documents(state):
+#     """
+#     Determines whether the retrieved documents are relevant to the question.
+
+#     Args:
+#         state (dict): The current graph state
+
+#     Returns:
+#         state (dict): Updates documents key with only filtered relevant documents
+#     """
+
+#     logging.info("Checking relevance of documents to question asked...")
+#     query = state["query"]
+#     documents = state["documents"]
+
+#     filtered_docs = await asyncio.gather(*[grade_doc(doc) for doc in documents])
+#     filtered_docs = [doc for doc in filtered_docs if doc is not None]
+#     return {"documents": filtered_docs, "query": query}
+
 
 def generate(state):
     """
@@ -284,6 +401,26 @@ def generate(state):
     generation = rag_chain.invoke({"documents": doc_text, "query": query})
     return {"documents": documents, "query": query, "generation": generation, "filter": state.get("filter", None)}
 
+# async def generate(state):
+#     """
+#     Generate answer
+
+#     Args:
+#         state (dict): The current graph state
+
+#     Returns:
+#         state (dict): New key added to state, generation, that contains LLM generation
+#     """
+#     logging.info("Generating answer...")
+#     query = state["query"]
+#     documents = state["documents"]
+
+#     doc_text = "\n\n".join(doc.page_content for doc in documents)
+
+#     # RAG generation
+#     generation = await rag_chain.ainvoke({"documents": doc_text, "query": query})
+#     return {"documents": documents, "query": query, "generation": generation, "filter": state.get("filter", None)}
+
 workflow = StateGraph(GraphState) 
 workflow.add_node("database_query", generate_for_whole_db)  
 workflow.add_node("filter_generation", filter_generator)  
@@ -304,14 +441,56 @@ workflow.add_edge("retrieve", "document_grading")
 workflow.add_edge("document_grading","generate")
 workflow.add_edge("generate", END)
 
-app = workflow.compile()
+# query = "What were the injections performed on subject 608551"
+# app = workflow.compile()
+# inputs = {"query" : query}
+# async def main():
+#     await app.ainvoke(inputs)
 
-inputs = {"query": "Give me a timeline of events for subject 621025"}
-for output in app.stream(inputs):
-    for key, value in output.items():
-        logging.info(f"Currently on node '{key}':")
-print(value["generation"])
+# if __name__ == "__main__":
+#     asyncio.run(main())
+    
+#     result = await model.acall(query)
+#     print(result)
 
+class GAMER:
+    def __init__(self):
+        # Initialize your LangGraph workflow components here
+        self.app = workflow.compile()
 
+    def __call__(self, query:str) -> str:
+        # Process the input through your workflow
+        inputs = {"query" : query}
+        result = self.app.stream(inputs)
+        for output in result:
+            for key, value in output.items():
+                logging.info(f"Currently on node '{key}':")
+        return value
+    
+#     @property
+#     def _llm_type(self) -> str:
+#         """Get the type of language model used by this chat model. Used for logging purposes only."""
+#         return "Claude 3 Sonnet"
+    
+    # async def acall(self, query:str) -> str:
+    #     inputs = {"query" : query}
+    #     result = self.app.astream(inputs)
+    #     async for output in result:
+    #         for key, value in output.items():
+    #             logging.info(f"Currently on node '{key}':")
+    #     return value['generation'] if value else None
+    
+query = "How old was the subject in SmartSPIM_675388_2023-05-24_04-10-19_stitched_2023-05-28_18-07-46"
 
+model = GAMER()
+result = model(query)
+print(result['generation'])
+
+# import asyncio
+
+# async def main():
+#     result = await model.acall(query)
+#     print(result)
+
+# asyncio.run(main())
 

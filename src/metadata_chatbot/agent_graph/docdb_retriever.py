@@ -35,7 +35,8 @@ class DocDBRetriever(BaseRetriever):
                     "vector": embedded_query, 
                     "path": 'vectorContent', 
                     "similarity": 'euclidean', 
-                    "k": self.k
+                    "k": self.k,
+                    "efSearch": 40
                 }
             }
         }
@@ -45,6 +46,58 @@ class DocDBRetriever(BaseRetriever):
             pipeline.insert(0, query_filter)
     
         cursor = self.collection.aggregate(pipeline)
+
+        page_content_field = 'textContent'
+
+        results = []
+        
+        #Transform retrieved docs to langchain Documents
+        for document in cursor:
+            values_to_metadata = dict()
+
+            json_doc = json.loads(json_util.dumps(document))
+
+            for key, value in json_doc.items():
+                if key == page_content_field:
+                    page_content = value
+                else:
+                    values_to_metadata[key] = value
+
+            new_doc = Document(page_content=page_content, metadata=values_to_metadata)
+            results.append(new_doc)
+
+        return results
+    
+    async def _aget_relevant_documents(
+        self, 
+        query: str, 
+        query_filter: Optional[dict] = None,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        
+        #Embed query
+        embedded_query = BEDROCK_EMBEDDINGS.embed_query(query)
+
+        #Construct aggregation pipeline
+        vector_search = {
+            "$search": { 
+                "vectorSearch": { 
+                    "vector": embedded_query, 
+                    "path": 'vectorContent', 
+                    "similarity": 'euclidean', 
+                    "k": self.k,
+                    "efSearch": 40
+                }
+            }
+        }
+
+        pipeline = [vector_search]
+        if query_filter:
+            pipeline.insert(0, query_filter)
+    
+        cursor = self.collection.aggregate(pipeline, allowDiskUse=True)
+        #results = await cursor.to_list(length=1000)
 
         page_content_field = 'textContent'
 
