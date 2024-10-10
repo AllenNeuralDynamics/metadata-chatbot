@@ -33,7 +33,19 @@ Or simply,
 pip install metadata-chatbot
 ```
 
-## Contributing
+## High Level Overview
+
+The project's main goal is to developing a chat bot that is able to ingest, analyze and query metadata. Metadata is accumulated in lieu with experiments and consists of information about the data description, subject, equipment and session. To maintain reproducibility standards, it is important for metadata to be documented well. 
+
+## Model Overview
+
+The current chat bot model uses Anthropic's Claude Sonnet 3 hosted on AWS' Bedrock service. Since the primary goal is to use natural language to query the database, the user will provide prompts about the metadata specifically. Claude's system prompt has been configured to understand the metadata schema format and craft MongoDB queries based on the prompt. Given a natural language query about the metadata, the model will produce a MongoDB query, thought reasoning and answer. This method of answering follows chain of thought reasoning, where a complex task is broken up into manageable chunks, allowing logical thinking through of a problem. 
+
+## Data Retrieval
+
+### Vector Embeddings
+
+### AIND-data-schema-access REST API
 
 ### Linters and testing
 
