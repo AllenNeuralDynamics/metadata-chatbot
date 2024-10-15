@@ -9,8 +9,8 @@ from langgraph.checkpoint.memory import MemorySaver
 sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
 from metadata_chatbot.utils import ResourceManager
 
-from docdb_retriever import DocDBRetriever
-from agentic_graph import datasource_router, db_surveyor, query_grader, filter_generation_chain, doc_grader, rag_chain
+from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
+from metadata_chatbot.agents.agentic_graph import datasource_router, db_surveyor, query_grader, filter_generation_chain, doc_grader, rag_chain
 
 logging.basicConfig(filename='async_workflow.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
@@ -190,18 +190,18 @@ async_workflow.add_edge("generate", END)
 
 async_app = async_workflow.compile()
 
-async def main():
-    query = "What was the age of the subject when receiving injections in asset SmartSPIM_675388_2023-05-24_04-10-19_stitched_2023-05-28_18-07-46?"
-    inputs = {"query": query}
-    result = async_app.astream(inputs)
+# async def main():
+#     query = "What was the age of the subject when receiving injections in asset SmartSPIM_675388_2023-05-24_04-10-19_stitched_2023-05-28_18-07-46?"
+#     inputs = {"query": query}
+#     result = async_app.astream(inputs)
     
-    value = None
-    async for output in result:
-        for key, value in output.items():
-            logging.info(f"Currently on node '{key}':")
+#     value = None
+#     async for output in result:
+#         for key, value in output.items():
+#             logging.info(f"Currently on node '{key}':")
     
-    if value:
-        print(value['generation'])
+#     if value:
+#         print(value['generation'])
 
-# Run the async function
-asyncio.run(main())
+# # Run the async function
+# asyncio.run(main())

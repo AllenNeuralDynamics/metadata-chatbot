@@ -8,8 +8,8 @@ from langgraph.graph import StateGraph
 
 import logging, asyncio
 
-from async_workflow import async_app
-from workflow import app
+from metadata_chatbot.agents.async_workflow import async_app
+from metadata_chatbot.agents.workflow import app
 
 
 class GAMER(LLM):
