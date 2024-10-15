@@ -111,7 +111,6 @@ class GAMER(LLM):
         """Get the type of language model used by this chat model. Used for logging purposes only."""
         return "Claude 3 Sonnet"
     
-llm = GAMER()
 
 
 # async def main():
