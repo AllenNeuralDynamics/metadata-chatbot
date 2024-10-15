@@ -8,19 +8,16 @@ from pymongo import MongoClient
 from langchain_aws import BedrockEmbeddings
 import logging
 from tqdm import tqdm
-
 from bson import json_util
-
 from langchain_text_splitters import RecursiveJsonSplitter
 
 sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
-from metadata_chatbot.utils import create_ssh_tunnel, CONNECTION_STRING, BEDROCK_CLIENT
+from metadata_chatbot.utils import create_ssh_tunnel, CONNECTION_STRING, BEDROCK_CLIENT, ResourceManager
 
 logging.basicConfig(filename='vector_store.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
-
-JSON_SPLITTER = RecursiveJsonSplitter(max_chunk_size=1000)
 TOKEN_LIMIT = 8192
+JSON_SPLITTER = RecursiveJsonSplitter(max_chunk_size=TOKEN_LIMIT)
 
 BEDROCK_EMBEDDINGS = BedrockEmbeddings(model_id = "amazon.titan-embed-text-v2:0",client = BEDROCK_CLIENT)
 
@@ -92,24 +89,17 @@ def json_to_langchain_doc(json_doc: dict) -> tuple[list, list]:
 
     return docs, large_docs
 
-INDEX_NAME = 'ALL_curated_embeddings_index'
+#INDEX_NAME = 'ALL_curated_embeddings_index'
+INDEX_NAME = 'TOKEN_LIMIT_curated_embeddings_index'
 NAMESPACE = 'metadata_vector_index.curated_assets'
 DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
 
-client = MongoClient(CONNECTION_STRING)
-collection = client[DB_NAME][COLLECTION_NAME]
-langchain_collection = client[DB_NAME]['LANGCHAIN_ALL_curated_assets']
 
-LANGCHAIN_NAMESPACE = 'metadata_vector_index.LANGCHAIN_ALL_curated_assets'
+with ResourceManager() as RM:
 
-
-try:
-
-    ssh_server = create_ssh_tunnel()
-    ssh_server.start()
-    logging.info("SSH tunnel opened")
-    
-    logging.info("Successfully connected to MongoDB")
+    collection = RM.client[DB_NAME][COLLECTION_NAME]
+    langchain_collection = RM.client[DB_NAME]['bigger_LANGCHAIN_curated_chunks']
+    LANGCHAIN_NAMESPACE = 'metadata_vector_index.bigger_LANGCHAIN_curated_chunks'
 
     logging.info(f"Finding assets that are already embedded...")
 
@@ -172,11 +162,3 @@ try:
     else:
         logging.info("Vectorstore is up to date!")
         
-except pymongo.errors.ServerSelectionTimeoutError as e:
-    print(f"Server selection timeout error: {e}")
-    print(f"Current topology description: {client.topology_description}")
-except Exception as e:
-    logging.exception(e)
-finally:
-    client.close()
-    ssh_server.stop()

@@ -1,8 +1,9 @@
-import logging, sys, os, asyncio
+import logging, sys, os
 from typing import List, Optional
 from typing_extensions import TypedDict
-from langchain_core.documents import Document
 from langgraph.graph import END, StateGraph, START
+from langgraph.checkpoint.memory import MemorySaver
+
 
 sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
 from metadata_chatbot.utils import ResourceManager
@@ -28,7 +29,7 @@ class GraphState(TypedDict):
     filter: Optional[dict]
     top_k: Optional[int] 
 
-async def route_question_async(state):
+def route_question(state):
     """
     Route question to database or vectorstore
     Args:
@@ -39,15 +40,15 @@ async def route_question_async(state):
     """
     query = state["query"]
 
-    source = await datasource_router.ainvoke({"query": query})
+    source = datasource_router.invoke({"query": query})
     if source.datasource == "direct_database":
         logging.info("Entire database needs to be queried.")
         return "direct_database"
     elif source.datasource == "vectorstore":
         logging.info("Querying against vector embeddings...")
         return "vectorstore"
-    
-async def generate_for_whole_db_async(state):
+
+def generate_for_whole_db(state):
     """
     Filter database
     
@@ -63,10 +64,10 @@ async def generate_for_whole_db_async(state):
 
     logging.info("Generating answer...")
 
-    generation = await db_surveyor.ainvoke({'query': query, 'chat_history': chat_history})
+    generation = db_surveyor.invoke({'query': query, 'chat_history': chat_history})
     return {"query": query, "generation": generation}
 
-async def filter_generator_async(state):
+def filter_generator(state):
     """
     Filter database
 
@@ -74,25 +75,24 @@ async def filter_generator_async(state):
         state (dict): The current graph state
 
     Returns:
-        state (dict): New key may be added to state, filter, which contains the MongoDB query that will be applied before retrieval
+        state (dict): New key may be added to states, filter and top_k, which contains the MongoDB query that will be applied before retrieval
     """
     logging.info("Determining whether filter is required...")
 
     query = state["query"]
 
-    result = await query_grader.ainvoke({"query": query})
-    query_grade = result.binary_score
+    query_grade = query_grader.invoke({"query": query}).binary_score
     logging.info(f"Database needs to be further filtered: {query_grade}")
 
     if query_grade == "yes":
-        result = await filter_generation_chain.ainvoke({"query": query})
-        filter = result.filter_query
+        filter = filter_generation_chain.invoke({"query": query}).filter_query
+        top_k = filter_generation_chain.invoke({"query": query}).top_k
         logging.info(f"Database will be filtered using: {filter}")
-        return {"filter": filter, "query": query}
+        return {"filter": filter, "top_k": top_k, "query": query}
     else:
-        return {"filter": None, "query": query}
-    
-async def retrieve_async(state):
+        return {"filter": None, "top_k": None, "query": query}
+
+def retrieve(state):
     """
     Retrieve documents
 
@@ -105,27 +105,16 @@ async def retrieve_async(state):
     logging.info("Retrieving documents...")
     query = state["query"]
     filter = state["filter"]
+    top_k = state["top_k"]
 
     # Retrieval
     with ResourceManager() as RM:
         collection = RM.client['metadata_vector_index']['LANGCHAIN_ALL_curated_assets']
-        retriever = DocDBRetriever(collection = collection, k = 10)
-        documents = await retriever.aget_relevant_documents(query = query, query_filter = filter)
+        retriever = DocDBRetriever(collection = collection, k = top_k)
+        documents = retriever.get_relevant_documents(query = query, query_filter = filter)
     return {"documents": documents, "query": query}
 
-async def grade_doc_async(query, doc: Document):
-    score = await doc_grader.ainvoke({"query": query, "document": doc.page_content})
-    grade = score.binary_score
-    logging.info(f"Retrieved document matched query: {grade}")
-    if grade == "yes":
-        logging.info("Document is relevant to the query")
-        return doc
-    else:
-        logging.info("Document is not relevant and will be removed")
-        return None
-        
-
-async def grade_documents_async(state):
+def grade_documents(state):
     """
     Determines whether the retrieved documents are relevant to the question.
 
@@ -140,11 +129,21 @@ async def grade_documents_async(state):
     query = state["query"]
     documents = state["documents"]
 
-    filtered_docs = await asyncio.gather(*[grade_doc_async(query, doc) for doc in documents])
-    filtered_docs = [doc for doc in filtered_docs if doc is not None]
+    # Score each doc
+    filtered_docs = []
+    for doc in documents:
+        score = doc_grader.invoke({"query": query, "document": doc.page_content})
+        grade = score.binary_score
+        logging.info(f"Retrieved document matched query: {grade}")
+        if grade == "yes":
+            logging.info("Document is relevant to the query")
+            filtered_docs.append(doc)
+        else:
+            logging.info("Document is not relevant and will be removed")
+            continue
     return {"documents": filtered_docs, "query": query}
 
-async def generate_async(state):
+def generate(state):
     """
     Generate answer
 
@@ -161,43 +160,34 @@ async def generate_async(state):
     doc_text = "\n\n".join(doc.page_content for doc in documents)
 
     # RAG generation
-    generation = await rag_chain.ainvoke({"documents": doc_text, "query": query})
+    generation = rag_chain.invoke({"documents": doc_text, "query": query})
     return {"documents": documents, "query": query, "generation": generation, "filter": state.get("filter", None)}
 
-async_workflow = StateGraph(GraphState) 
-async_workflow.add_node("database_query", generate_for_whole_db_async)  
-async_workflow.add_node("filter_generation", filter_generator_async)  
-async_workflow.add_node("retrieve", retrieve_async)  
-async_workflow.add_node("document_grading", grade_documents_async)  
-async_workflow.add_node("generate", generate_async)  
+workflow = StateGraph(GraphState) 
+workflow.add_node("database_query", generate_for_whole_db)  
+workflow.add_node("filter_generation", filter_generator)  
+workflow.add_node("retrieve", retrieve)  
+workflow.add_node("document_grading", grade_documents)  
+workflow.add_node("generate", generate)  
 
-async_workflow.add_conditional_edges(
+workflow.add_conditional_edges(
     START,
-    route_question_async,
+    route_question,
     {
         "direct_database": "database_query",
         "vectorstore": "filter_generation",
     },
 )
-async_workflow.add_edge("filter_generation", "retrieve")
-async_workflow.add_edge("retrieve", "document_grading")
-async_workflow.add_edge("document_grading","generate")
-async_workflow.add_edge("generate", END)
+workflow.add_edge("filter_generation", "retrieve")
+workflow.add_edge("retrieve", "document_grading")
+workflow.add_edge("document_grading","generate")
+workflow.add_edge("generate", END)
 
-async_app = async_workflow.compile()
+memory = MemorySaver()
+app = workflow.compile(checkpointer=memory)
 
-# async def main():
-#     query = "Can you give me a timeline of events for subject 675387?"
-#     inputs = {"query": query}
-#     result = app.astream(inputs)
-    
-#     value = None
-#     async for output in result:
-#         for key, value in output.items():
-#             logging.info(f"Currently on node '{key}':")
-    
-#     if value:
-#         print(value['generation'])
+# query = "How old was the subject in SmartSPIM_675388_2023-05-24_04-10-19_stitched_2023-05-28_18-07-46"
 
-# # Run the async function
-# asyncio.run(main())
+# inputs = {"query" : query}
+# answer = app.invoke(inputs)
+# print(answer['generation'])

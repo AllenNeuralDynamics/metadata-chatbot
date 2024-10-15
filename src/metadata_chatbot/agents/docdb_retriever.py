@@ -1,6 +1,7 @@
 import sys, os, json
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Union, Annotated
 from pymongo.collection import Collection
+from motor.motor_asyncio import AsyncIOMotorCollection
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
@@ -12,9 +13,10 @@ sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-
 from metadata_chatbot.utils import BEDROCK_EMBEDDINGS
 
 
+
 class DocDBRetriever(BaseRetriever):
     """A retriever that contains the top k documents, retrieved from the DocDB index, aligned with the user's query."""
-    collection: Collection = Field(description="DocDB collection to retrieve from")
+    collection: Any = Field(description="DocDB collection to retrieve from")
     k: int = Field(default=10, description="Number of documents to retrieve")
 
     def _get_relevant_documents(
@@ -103,7 +105,7 @@ class DocDBRetriever(BaseRetriever):
         results = []
         
         #Transform retrieved docs to langchain Documents
-        for document in cursor:
+        async for document in cursor:
             values_to_metadata = dict()
 
             json_doc = json.loads(json_util.dumps(document))

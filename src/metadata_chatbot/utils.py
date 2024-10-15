@@ -4,6 +4,8 @@ from urllib.parse import quote_plus
 from langchain_community.vectorstores.documentdb import DocumentDBVectorSearch
 from langchain_aws import BedrockEmbeddings
 from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
+
 
 BEDROCK_CLIENT = boto3.client(
     service_name="bedrock-runtime",
@@ -63,6 +65,7 @@ class ResourceManager:
     def __init__(self):
         self.ssh_server = None
         self.client = None
+        self.async_client = None
 
     def __enter__(self):
         try:
@@ -71,6 +74,7 @@ class ResourceManager:
             logging.info("SSH tunnel opened")
 
             self.client = MongoClient(CONNECTION_STRING)
+            self.async_client = AsyncIOMotorClient(CONNECTION_STRING)
             logging.info("Successfully connected to MongoDB")
 
             return self
@@ -82,6 +86,8 @@ class ResourceManager:
     def __exit__(self, exc_type, exc_value, traceback):
         if self.client:
             self.client.close()
+        if self.async_client:
+            self.async_client.close()
         if self.ssh_server:
             self.ssh_server.stop()
         logging.info("Resources cleaned up")
