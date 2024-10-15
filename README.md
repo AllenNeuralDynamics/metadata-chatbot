@@ -24,14 +24,32 @@ Install the chatbot package.
 ```bash
 pip install -e .
 ```
-
 To develop the code, run
-
 ```bash
 pip install -e .[dev]
 ```
+Or simply,
+```bash
+pip install metadata-chatbot
+```
 
-## Contributing
+## High Level Overview
+
+The project's main goal is to developing a chat bot that is able to ingest, analyze and query metadata. Metadata is accumulated in lieu with experiments and consists of information about the data description, subject, equipment and session. To maintain reproducibility standards, it is important for metadata to be documented well. 
+
+## Model Overview
+
+The current chat bot model uses Anthropic's Claude Sonnet 3 hosted on AWS' Bedrock service. Since the primary goal is to use natural language to query the database, the user will provide prompts about the metadata specifically. The framework is hosted on Langchain. Claude's system prompt has been configured to understand the metadata schema format and craft MongoDB queries based on the prompt. Given a natural language query about the metadata, the model will produce a MongoDB query, thought reasoning and answer. This method of answering follows chain of thought reasoning, where a complex task is broken up into manageable chunks, allowing logical thinking through of a problem. 
+
+## Data Retrieval
+
+### Vector Embeddings
+
+To improve retrieval accuracy and decrease hallucinations, we use vector embeddings to access relevant chunks of information found across the database. This process starts with accessing assets, and chunking each json file to chunks of 1000 tokens -- each chunk preserves the hierarchy found in json files. These chunks are converted to vector arrays of size 1024, through an embedding model (Amazon's Titan 2.0 Embedding). The user's query is converted to a vector and projected onto the latent space. The chunks that contain the most relevant information will be accessed through a cosine similarity search.
+
+### AIND-data-schema-access REST API
+
+For queries that require accessing the entire database, like count based questions, information is accessed through an aggregation pipeline, provided by one of the constructed LLM agents, and the API connection. 
 
 ### Linters and testing
 
