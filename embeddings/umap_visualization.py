@@ -16,7 +16,7 @@ from plotly.subplots import make_subplots
 import plotly.io as pio
 
 sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
-from utils import create_ssh_tunnel, ALL_CURATED_VECTORSTORE, BEDROCK_EMBEDDINGS, CONNECTION_STRING
+from metadata_chatbot.utils import create_ssh_tunnel, ALL_CURATED_VECTORSTORE, BEDROCK_EMBEDDINGS, CONNECTION_STRING
 
 
 logging.basicConfig(filename='vector_visualization.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")

@@ -9,7 +9,7 @@ from langsmith import trace as langsmith_trace
 from pydantic import Field
 
 sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
-from utils import BEDROCK_EMBEDDINGS
+from metadata_chatbot.utils import BEDROCK_EMBEDDINGS
 
 
 class DocDBRetriever(BaseRetriever):
@@ -35,8 +35,7 @@ class DocDBRetriever(BaseRetriever):
                     "vector": embedded_query, 
                     "path": 'vectorContent', 
                     "similarity": 'euclidean', 
-                    "k": self.k,
-                    "efSearch": 40
+                    "k": self.k
                 }
             }
         }

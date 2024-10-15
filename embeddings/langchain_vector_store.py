@@ -14,7 +14,7 @@ from bson import json_util
 from langchain_text_splitters import RecursiveJsonSplitter
 
 sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
-from utils import create_ssh_tunnel, CONNECTION_STRING, BEDROCK_CLIENT
+from metadata_chatbot.utils import create_ssh_tunnel, CONNECTION_STRING, BEDROCK_CLIENT
 
 logging.basicConfig(filename='vector_store.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
