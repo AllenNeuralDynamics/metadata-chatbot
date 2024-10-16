@@ -186,7 +186,7 @@ workflow.add_edge("generate", END)
 
 app = workflow.compile()
 
-# query = "How old was the subject in SmartSPIM_675388_2023-05-24_04-10-19_stitched_2023-05-28_18-07-46"
+# query = "Give me the names of 5 assets have injections and are smartspim?"
 
 # inputs = {"query" : query}
 # answer = app.invoke(inputs)

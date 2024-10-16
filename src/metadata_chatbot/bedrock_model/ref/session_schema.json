@@ -1,5 +1,4 @@
-{
-         
+{       
    "additionalProperties": false,
    "description": "Description of a physiology and/or behavior session",
    "properties": {

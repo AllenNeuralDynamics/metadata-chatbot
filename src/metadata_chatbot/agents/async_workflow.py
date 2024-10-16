@@ -191,7 +191,7 @@ async_workflow.add_edge("generate", END)
 async_app = async_workflow.compile()
 
 # async def main():
-#     query = "What was the age of the subject when receiving injections in asset SmartSPIM_675388_2023-05-24_04-10-19_stitched_2023-05-28_18-07-46?"
+#     query = "Can you give me a timeline of events for subject 675387?"
 #     inputs = {"query": query}
 #     result = async_app.astream(inputs)
     
@@ -203,5 +203,5 @@ async_app = async_workflow.compile()
 #     if value:
 #         print(value['generation'])
 
-# # Run the async function
+# #Run the async function
 # asyncio.run(main())
