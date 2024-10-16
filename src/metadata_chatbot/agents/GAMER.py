@@ -4,8 +4,6 @@ from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 
-from langgraph.graph import StateGraph
-
 import logging, asyncio
 
 from metadata_chatbot.agents.async_workflow import async_app
@@ -54,8 +52,6 @@ class GAMER(LLM):
                 first occurrence of any of the stop substrings.
                 If stop tokens are not supported consider raising NotImplementedError.
             run_manager: Callback manager for the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
 
         Returns:
             The model output as a string.
