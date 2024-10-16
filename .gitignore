@@ -3,6 +3,7 @@ chatbot.ipynb
 *.pkl
 *.png
 queries.txt
+virtualenv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -115,6 +116,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+virtualenv
 
 # Spyder project settings
 .spyderproject
