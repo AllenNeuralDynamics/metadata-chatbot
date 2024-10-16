@@ -5,41 +5,49 @@
 [![semantic-release: angular](https://img.shields.io/badge/semantic--release-angular-e10079?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
 ![Interrogate](https://img.shields.io/badge/interrogate-61.1%25-red)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen?logo=codecov)
-
+![Python](https://img.shields.io/badge/python->=3.8-blue?logo=python)
 
 ## Usage
 
 ## Installation
 
-Install a virtual environment with python 3.9 (install a python 3.9 that's compatible with your operating system). Check if download was successful by runninng
+Install a virtual environment with python 3.11 (install a python 3.11 that's compatible with your operating system). Check if download was successful by runninng
 
 ```bash
-py -3.9 -m venv .venv
+py -3.11 -m venv .venv
 ```
-On Windows, activate the environment with 
+
+On Windows, activate the environment with
+
 ```bash
 .venv\Scripts\Activate.ps1
 ```
+
 Install the chatbot package.
+
 ```bash
 pip install -e .
 ```
+
 To develop the code, run
+
 ```bash
 pip install -e .[dev]
 ```
+
 Or simply,
+
 ```bash
 pip install metadata-chatbot
 ```
 
 ## High Level Overview
 
-The project's main goal is to developing a chat bot that is able to ingest, analyze and query metadata. Metadata is accumulated in lieu with experiments and consists of information about the data description, subject, equipment and session. To maintain reproducibility standards, it is important for metadata to be documented well. 
+The project's main goal is to developing a chat bot that is able to ingest, analyze and query metadata. Metadata is accumulated in lieu with experiments and consists of information about the data description, subject, equipment and session. To maintain reproducibility standards, it is important for metadata to be documented well.
 
 ## Model Overview
 
-The current chat bot model uses Anthropic's Claude Sonnet 3 hosted on AWS' Bedrock service. Since the primary goal is to use natural language to query the database, the user will provide prompts about the metadata specifically. The framework is hosted on Langchain. Claude's system prompt has been configured to understand the metadata schema format and craft MongoDB queries based on the prompt. Given a natural language query about the metadata, the model will produce a MongoDB query, thought reasoning and answer. This method of answering follows chain of thought reasoning, where a complex task is broken up into manageable chunks, allowing logical thinking through of a problem. 
+The current chat bot model uses Anthropic's Claude Sonnet 3 hosted on AWS' Bedrock service. Since the primary goal is to use natural language to query the database, the user will provide prompts about the metadata specifically. The framework is hosted on Langchain. Claude's system prompt has been configured to understand the metadata schema format and craft MongoDB queries based on the prompt. Given a natural language query about the metadata, the model will produce a MongoDB query, thought reasoning and answer. This method of answering follows chain of thought reasoning, where a complex task is broken up into manageable chunks, allowing logical thinking through of a problem.
 
 ## Data Retrieval
 
@@ -49,7 +57,7 @@ To improve retrieval accuracy and decrease hallucinations, we use vector embeddi
 
 ### AIND-data-schema-access REST API
 
-For queries that require accessing the entire database, like count based questions, information is accessed through an aggregation pipeline, provided by one of the constructed LLM agents, and the API connection. 
+For queries that require accessing the entire database, like count based questions, information is accessed through an aggregation pipeline, provided by one of the constructed LLM agents, and the API connection.
 
 ### Linters and testing
 
