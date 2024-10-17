@@ -8,11 +8,22 @@ from langgraph.checkpoint.memory import MemorySaver
 
 sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
 from metadata_chatbot.utils import ResourceManager
+from aind_data_access_api.document_db import MetadataDbClient
 
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
 from metadata_chatbot.agents.agentic_graph import datasource_router, db_surveyor, query_grader, filter_generation_chain, doc_grader, rag_chain
 
 logging.basicConfig(filename='async_workflow.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
+
+API_GATEWAY_HOST = "api.allenneuraldynamics-test.org"
+DATABASE = "metadata_vector_index"
+COLLECTION = "bigger_LANGCHAIN_curated_chunks"
+
+docdb_api_client = MetadataDbClient(
+   host=API_GATEWAY_HOST,
+   database=DATABASE,
+   collection=COLLECTION,
+)
 
 class GraphState(TypedDict):
     """
@@ -109,11 +120,15 @@ async def retrieve_async(state):
     filter = state["filter"]
 
     # Retrieval
-    with ResourceManager() as RM:
-        db = RM.async_client.get_database('metadata_vector_index')
-        collection = db.get_collection('bigger_LANGCHAIN_curated_chunks')
-        retriever = DocDBRetriever(collection = collection, k = 10)
-        documents = await retriever.aget_relevant_documents(query = query, query_filter = filter)
+
+    retriever = DocDBRetriever(k = 10)
+    documents = await retriever.aget_relevant_documents(query = query, query_filter = filter)
+
+    # with ResourceManager() as RM:
+    #     db = RM.async_client.get_database('metadata_vector_index')
+    #     collection = db.get_collection('bigger_LANGCHAIN_curated_chunks')
+    #     retriever = DocDBRetriever(collection = collection, k = 10)
+    #     documents = await retriever.aget_relevant_documents(query = query, query_filter = filter)
     return {"documents": documents, "query": query}
 
 async def grade_doc_async(query, doc: Document):
@@ -190,18 +205,18 @@ async_workflow.add_edge("generate", END)
 
 async_app = async_workflow.compile()
 
-# async def main():
-#     query = "Can you give me a timeline of events for subject 675387?"
-#     inputs = {"query": query}
-#     result = async_app.astream(inputs)
+async def main():
+    query = "Can you give me a timeline of events for subject 675387?"
+    inputs = {"query": query}
+    result = async_app.astream(inputs)
     
-#     value = None
-#     async for output in result:
-#         for key, value in output.items():
-#             logging.info(f"Currently on node '{key}':")
+    value = None
+    async for output in result:
+        for key, value in output.items():
+            logging.info(f"Currently on node '{key}':")
     
-#     if value:
-#         print(value['generation'])
+    if value:
+        print(value['generation'])
 
-# #Run the async function
-# asyncio.run(main())
+#Run the async function
+asyncio.run(main())

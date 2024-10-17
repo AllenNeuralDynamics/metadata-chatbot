@@ -107,11 +107,14 @@ def retrieve(state):
     filter = state["filter"]
     top_k = state["top_k"]
 
-    # Retrieval
-    with ResourceManager() as RM:
-        collection = RM.client['metadata_vector_index']['LANGCHAIN_ALL_curated_assets']
-        retriever = DocDBRetriever(collection = collection, k = top_k)
-        documents = retriever.get_relevant_documents(query = query, query_filter = filter)
+    retriever = DocDBRetriever(k = top_k)
+    documents = retriever.get_relevant_documents(query = query, query_filter = filter)
+
+    # # Retrieval
+    # with ResourceManager() as RM:
+    #     collection = RM.client['metadata_vector_index']['LANGCHAIN_ALL_curated_assets']
+    #     retriever = DocDBRetriever(collection = collection, k = top_k)
+    #     documents = retriever.get_relevant_documents(query = query, query_filter = filter)
     return {"documents": documents, "query": query}
 
 def grade_documents(state):
@@ -186,8 +189,8 @@ workflow.add_edge("generate", END)
 
 app = workflow.compile()
 
-# query = "Give me the names of 5 assets have injections and are smartspim?"
+query = "Can you give me a timeline of events for subject 675387?"
 
-# inputs = {"query" : query}
-# answer = app.invoke(inputs)
-# print(answer['generation'])
+inputs = {"query" : query}
+answer = app.invoke(inputs)
+print(answer['generation'])
