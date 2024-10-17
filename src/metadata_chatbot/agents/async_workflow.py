@@ -6,8 +6,8 @@ from langgraph.graph import END, StateGraph, START
 from langgraph.checkpoint.memory import MemorySaver
 
 
-sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
-from metadata_chatbot.utils import ResourceManager
+# sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
+# from metadata_chatbot.utils import ResourceManager
 from aind_data_access_api.document_db import MetadataDbClient
 
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
@@ -205,18 +205,18 @@ async_workflow.add_edge("generate", END)
 
 async_app = async_workflow.compile()
 
-async def main():
-    query = "Can you give me a timeline of events for subject 675387?"
-    inputs = {"query": query}
-    result = async_app.astream(inputs)
+# async def main():
+#     query = "Can you give me a timeline of events for subject 675387?"
+#     inputs = {"query": query}
+#     result = async_app.astream(inputs)
     
-    value = None
-    async for output in result:
-        for key, value in output.items():
-            logging.info(f"Currently on node '{key}':")
+#     value = None
+#     async for output in result:
+#         for key, value in output.items():
+#             logging.info(f"Currently on node '{key}':")
     
-    if value:
-        print(value['generation'])
+#     if value:
+#         print(value['generation'])
 
-#Run the async function
-asyncio.run(main())
+# #Run the async function
+# asyncio.run(main())

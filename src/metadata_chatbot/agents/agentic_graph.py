@@ -7,6 +7,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.tools import tool
 from aind_data_access_api.document_db_ssh import DocumentDbSSHClient, DocumentDbSSHCredentials
 from langchain.agents import AgentExecutor, create_tool_calling_agent
+from aind_data_access_api.document_db import MetadataDbClient
 
 logging.basicConfig(filename='agentic_graph.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
@@ -32,9 +33,19 @@ datasource_router = router_prompt | structured_llm_router
 
 
 # Queries that require surveying the entire database (like count based questions)
-credentials = DocumentDbSSHCredentials()
-credentials.database = "metadata_vector_index"
-credentials.collection = "curated_assets"
+# credentials = DocumentDbSSHCredentials()
+# credentials.database = "metadata_vector_index"
+# credentials.collection = "curated_assets"
+API_GATEWAY_HOST = "api.allenneuraldynamics-test.org"
+DATABASE = "metadata_vector_index"
+COLLECTION = "bigger_LANGCHAIN_curated_chunks"
+
+docdb_api_client = MetadataDbClient(
+   host=API_GATEWAY_HOST,
+   database=DATABASE,
+   collection=COLLECTION,
+)
+
 @tool
 def aggregation_retrieval(agg_pipeline: list) -> list:
     """Given a MongoDB query and list of projections, this function retrieves and returns the 
@@ -52,12 +63,11 @@ def aggregation_retrieval(agg_pipeline: list) -> list:
     list
         List of retrieved documents
     """
-    with DocumentDbSSHClient(credentials=credentials) as doc_db_client:
 
-        result = list(doc_db_client.collection.aggregate(
-            pipeline=agg_pipeline
-        ))
-        return result
+    result = docdb_api_client.aggregate_docdb_records(
+        pipeline=agg_pipeline
+    )
+    return result
         
 tools = [aggregation_retrieval]
 prompt = hub.pull("eden19/entire_db_retrieval")

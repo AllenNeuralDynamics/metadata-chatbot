@@ -5,8 +5,8 @@ from langgraph.graph import END, StateGraph, START
 from langgraph.checkpoint.memory import MemorySaver
 
 
-sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
-from metadata_chatbot.utils import ResourceManager
+# sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
+# from metadata_chatbot.utils import ResourceManager
 
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
 from metadata_chatbot.agents.agentic_graph import datasource_router, db_surveyor, query_grader, filter_generation_chain, doc_grader, rag_chain
