@@ -29,8 +29,7 @@ dependencies = [
     'pymongo',
     'fastapi',
     'uvicorn',
-    'sshtunnel',
-    'typing'
+    'sshtunnel'
 ]
 
 [project.optional-dependencies]
