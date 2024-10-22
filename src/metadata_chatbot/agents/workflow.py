@@ -189,8 +189,8 @@ workflow.add_edge("generate", END)
 
 app = workflow.compile()
 
-query = "Can you give me a timeline of events for subject 675387?"
+# query = "Can you give me a timeline of events for subject 675387?"
 
-inputs = {"query" : query}
-answer = app.invoke(inputs)
-print(answer['generation'])
+# inputs = {"query" : query}
+# answer = app.invoke(inputs)
+# print(answer['generation'])
