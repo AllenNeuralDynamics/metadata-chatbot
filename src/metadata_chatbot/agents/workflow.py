@@ -64,9 +64,8 @@ def generate_for_whole_db(state):
 
     logging.info("Generating answer...")
 
-    documents_list = db_surveyor.invoke({'query': query, 'chat_history': chat_history, 'agent_scratchpad': []})
-    documents_list = [str(item) for item in documents_list]
-    documents = "\n\n".join(documents_list)
+    documents_dict = db_surveyor.invoke({'query': query, 'chat_history': chat_history, 'agent_scratchpad': []})
+    documents = documents_dict['output'][0]['text']
     return {"query": query, "documents": documents}
 
 def filter_generator(state):
@@ -191,7 +190,7 @@ workflow.add_edge("generate", END)
 
 app = workflow.compile()
 
-# query = "Can you give me a timeline of events for subject 675387?"
+# query = "What are all the assets using mouse 675387"
 
 # inputs = {"query" : query}
 # answer = app.invoke(inputs)
