@@ -33,8 +33,18 @@ class GAMER(LLM):
             The model output as a string.
         """
         inputs = {"query" : query}
-        answer = app.invoke(inputs)
-        return answer['generation']
+        for output in app.stream(inputs, stream_mode="updates"):
+            for key, value in output.items():
+                logging.info(f"Currently on node '{key}':")
+        return value['generation'] if value else None
+        # inputs = {"query" : query}                          
+        # answer = app.invoke(inputs)                                           
+        # if isinstance(answer, dict):
+        #     result_text = answer.get('text', '')  # Adjust as necessary based on the actual structure
+        # else:
+        #     result_text = answer
+        # print(result_text)
+        # return answer
     
     async def _acall(
         self,

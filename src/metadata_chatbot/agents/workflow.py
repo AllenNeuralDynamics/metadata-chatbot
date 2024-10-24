@@ -27,7 +27,7 @@ class GraphState(TypedDict):
     generation: str
     documents: List[str]
     filter: Optional[dict]
-    top_k: Optional[int] 
+    #top_k: Optional[int] 
 
 def route_question(state):
     """
@@ -59,13 +59,15 @@ def generate_for_whole_db(state):
         state (dict): New key may be added to state, generation, which contains the answer for query asked
     """
 
-    query = state["query"]
+    query = state['query']
     chat_history = []
 
     logging.info("Generating answer...")
 
-    generation = db_surveyor.invoke({'query': query, 'chat_history': chat_history})
-    return {"query": query, "generation": generation}
+    documents_list = db_surveyor.invoke({'query': query, 'chat_history': chat_history, 'agent_scratchpad': []}).mongo_db_results
+    documents_list = [str(item) for item in documents_list]
+    documents = "\n\n".join(documents_list)
+    return {"query": query, "documents": documents}
 
 def filter_generator(state):
     """
@@ -86,9 +88,9 @@ def filter_generator(state):
 
     if query_grade == "yes":
         filter = filter_generation_chain.invoke({"query": query}).filter_query
-        top_k = filter_generation_chain.invoke({"query": query}).top_k
+        #top_k = filter_generation_chain.invoke({"query": query}).top_k
         logging.info(f"Database will be filtered using: {filter}")
-        return {"filter": filter, "top_k": top_k, "query": query}
+        return {"filter": filter, "query": query}
     else:
         return {"filter": None, "top_k": None, "query": query}
 
@@ -105,9 +107,9 @@ def retrieve(state):
     logging.info("Retrieving documents...")
     query = state["query"]
     filter = state["filter"]
-    top_k = state["top_k"]
+    #top_k = state["top_k"]
 
-    retriever = DocDBRetriever(k = top_k)
+    retriever = DocDBRetriever(k = 10)
     documents = retriever.get_relevant_documents(query = query, query_filter = filter)
 
     # # Retrieval
@@ -144,6 +146,7 @@ def grade_documents(state):
         else:
             logging.info("Document is not relevant and will be removed")
             continue
+    doc_text = "\n\n".join(doc.page_content for doc in filtered_docs)
     return {"documents": filtered_docs, "query": query}
 
 def generate(state):
@@ -160,10 +163,8 @@ def generate(state):
     query = state["query"]
     documents = state["documents"]
 
-    doc_text = "\n\n".join(doc.page_content for doc in documents)
-
     # RAG generation
-    generation = rag_chain.invoke({"documents": doc_text, "query": query})
+    generation = rag_chain.invoke({"documents": documents, "query": query})
     return {"documents": documents, "query": query, "generation": generation, "filter": state.get("filter", None)}
 
 workflow = StateGraph(GraphState) 
@@ -181,6 +182,7 @@ workflow.add_conditional_edges(
         "vectorstore": "filter_generation",
     },
 )
+workflow.add_edge("database_query", "generate") 
 workflow.add_edge("filter_generation", "retrieve")
 workflow.add_edge("retrieve", "document_grading")
 workflow.add_edge("document_grading","generate")

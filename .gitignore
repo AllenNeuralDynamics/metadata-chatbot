@@ -4,6 +4,7 @@ chatbot.ipynb
 *.png
 queries.txt
 virtualenv/
+test.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
