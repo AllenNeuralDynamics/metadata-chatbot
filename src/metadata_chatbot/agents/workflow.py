@@ -64,7 +64,7 @@ def generate_for_whole_db(state):
 
     logging.info("Generating answer...")
 
-    documents_list = db_surveyor.invoke({'query': query, 'chat_history': chat_history, 'agent_scratchpad': []}).mongo_db_results
+    documents_list = db_surveyor.invoke({'query': query, 'chat_history': chat_history, 'agent_scratchpad': []})
     documents_list = [str(item) for item in documents_list]
     documents = "\n\n".join(documents_list)
     return {"query": query, "documents": documents}
