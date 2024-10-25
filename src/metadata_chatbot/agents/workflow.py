@@ -68,8 +68,6 @@ def generate_for_whole_db(state):
     document_dict['mongodb_query'] = retrieved_dict['intermediate_steps'][0][0].tool_input['agg_pipeline']
     document_dict['retrieved_output'] = retrieved_dict['intermediate_steps'][0][1]
 
-    print(document_dict)
-
     documents = json.dumps(document_dict)
     return {"query": query, "documents": documents}
 
@@ -195,8 +193,8 @@ workflow.add_edge("generate", END)
 
 app = workflow.compile()
 
-query = "What is the mongodb query to find all the assets using mouse 675387"
+# query = "What is the mongodb query to find all the assets using mouse 675387"
 
-inputs = {"query" : query}
-answer = app.invoke(inputs)
-print(answer['generation'])
+# inputs = {"query" : query}
+# answer = app.invoke(inputs)
+# print(answer['generation'])
