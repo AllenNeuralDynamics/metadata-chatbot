@@ -11,7 +11,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from aind_data_access_api.document_db import MetadataDbClient
 
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
-from metadata_chatbot.agents.agentic_graph import datasource_router, db_surveyor, query_grader, filter_generation_chain, doc_grader, rag_chain
+from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain
 
 logging.basicConfig(filename='async_workflow.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
@@ -76,7 +76,7 @@ async def generate_for_whole_db_async(state):
 
     logging.info("Generating answer...")
 
-    generation = await db_surveyor.ainvoke({'query': query, 'chat_history': chat_history})
+    generation = await query_retriever.ainvoke({'query': query, 'chat_history': chat_history})
     return {"query": query, "generation": generation}
 
 async def filter_generator_async(state):
