@@ -1,4 +1,4 @@
-import logging, sys, os
+import logging, sys, os, json
 from typing import List, Optional
 from typing_extensions import TypedDict
 from langgraph.graph import END, StateGraph, START
@@ -9,7 +9,7 @@ from langgraph.checkpoint.memory import MemorySaver
 # from metadata_chatbot.utils import ResourceManager
 
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
-from metadata_chatbot.agents.agentic_graph import datasource_router, db_surveyor, query_grader, filter_generation_chain, doc_grader, rag_chain
+from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain
 
 logging.basicConfig(filename='async_workflow.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
@@ -60,12 +60,17 @@ def generate_for_whole_db(state):
     """
 
     query = state['query']
-    chat_history = []
 
     logging.info("Generating answer...")
 
-    documents_dict = db_surveyor.invoke({'query': query, 'chat_history': chat_history, 'agent_scratchpad': []})
-    documents = documents_dict['output'][0]['text']
+    document_dict = dict()
+    retrieved_dict = query_retriever.invoke({'query': query, 'chat_history': [], 'agent_scratchpad' : []})
+    document_dict['mongodb_query'] = retrieved_dict['intermediate_steps'][0][0].tool_input['agg_pipeline']
+    document_dict['retrieved_output'] = retrieved_dict['intermediate_steps'][0][1]
+
+    print(document_dict)
+
+    documents = json.dumps(document_dict)
     return {"query": query, "documents": documents}
 
 def filter_generator(state):
@@ -190,8 +195,8 @@ workflow.add_edge("generate", END)
 
 app = workflow.compile()
 
-# query = "What are all the assets using mouse 675387"
+query = "What is the mongodb query to find all the assets using mouse 675387"
 
-# inputs = {"query" : query}
-# answer = app.invoke(inputs)
-# print(answer['generation'])
+inputs = {"query" : query}
+answer = app.invoke(inputs)
+print(answer['generation'])
