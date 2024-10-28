@@ -116,8 +116,8 @@ class GAMER(LLM):
         """Get the type of language model used by this chat model. Used for logging purposes only."""
         return "Claude 3 Sonnet"
     
-llm = GAMER()
-print(llm.invoke("What are the injections for SmartSPIM_675387_2023-05-23_23-05-56?"))
+# llm = GAMER()
+# print(llm.invoke("What are the injections for SmartSPIM_675387_2023-05-23_23-05-56?"))
 
 # async def main():
 #     result = await llm.ainvoke("Can you give me a timeline of events for subject 675387?")
