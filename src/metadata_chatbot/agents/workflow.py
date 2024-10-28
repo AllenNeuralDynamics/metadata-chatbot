@@ -3,13 +3,11 @@ from typing import List, Optional
 from typing_extensions import TypedDict
 from langgraph.graph import END, StateGraph, START
 from langgraph.checkpoint.memory import MemorySaver
-
-
-# sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
+from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 # from metadata_chatbot.utils import ResourceManager
 
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
-from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain
+from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 
 logging.basicConfig(filename='async_workflow.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
@@ -111,7 +109,7 @@ def retrieve(state):
     filter = state["filter"]
     #top_k = state["top_k"]
 
-    retriever = DocDBRetriever(k = 10)
+    retriever = DocDBRetriever(k = 5)
     documents = retriever.get_relevant_documents(query = query, query_filter = filter)
 
     # # Retrieval
@@ -144,14 +142,33 @@ def grade_documents(state):
         logging.info(f"Retrieved document matched query: {grade}")
         if grade == "yes":
             logging.info("Document is relevant to the query")
-            filtered_docs.append(doc)
+            relevant_context = score.relevant_context
+            filtered_docs.append(relevant_context)
         else:
             logging.info("Document is not relevant and will be removed")
             continue
-    doc_text = "\n\n".join(doc.page_content for doc in filtered_docs)
+    #doc_text = "\n\n".join(doc.page_content for doc in filtered_docs)
     return {"documents": filtered_docs, "query": query}
 
-def generate(state):
+def generate_db(state):
+    """
+    Generate answer
+
+    Args:
+        state (dict): The current graph state
+
+    Returns:
+        state (dict): New key added to state, generation, that contains LLM generation
+    """
+    logging.info("Generating answer...")
+    query = state["query"]
+    documents = state["documents"]
+
+    # RAG generation
+    generation = db_rag_chain.invoke({"documents": documents, "query": query})
+    return {"documents": documents, "query": query, "generation": generation, "filter": state.get("filter", None)}
+
+def generate_vi(state):
     """
     Generate answer
 
@@ -174,7 +191,8 @@ workflow.add_node("database_query", generate_for_whole_db)
 workflow.add_node("filter_generation", filter_generator)  
 workflow.add_node("retrieve", retrieve)  
 workflow.add_node("document_grading", grade_documents)  
-workflow.add_node("generate", generate)  
+workflow.add_node("generate_db", generate_db)  
+workflow.add_node("generate_vi", generate_vi)  
 
 workflow.add_conditional_edges(
     START,
@@ -184,16 +202,17 @@ workflow.add_conditional_edges(
         "vectorstore": "filter_generation",
     },
 )
-workflow.add_edge("database_query", "generate") 
+workflow.add_edge("database_query", "generate_db") 
+workflow.add_edge("generate_db", END)
 workflow.add_edge("filter_generation", "retrieve")
 workflow.add_edge("retrieve", "document_grading")
-workflow.add_edge("document_grading","generate")
-workflow.add_edge("generate", END)
+workflow.add_edge("document_grading","generate_vi")
+workflow.add_edge("generate_vi", END)
 
 
 app = workflow.compile()
 
-# query = "What is the mongodb query to find all the assets using mouse 675387"
+# query = "Write a MongoDB query to find the genotype of SmartSPIM_675387_2023-05-23_23-05-56"
 
 # inputs = {"query" : query}
 # answer = app.invoke(inputs)

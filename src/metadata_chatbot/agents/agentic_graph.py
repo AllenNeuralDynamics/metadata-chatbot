@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from langchain_aws import ChatBedrock
+from langchain_aws.chat_models.bedrock import ChatBedrock
 from langchain import hub
 import logging
 from typing import Literal
@@ -11,7 +11,7 @@ from pprint import pprint
 
 logging.basicConfig(filename='agentic_graph.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
-GLOBAL_VRAIABLE = 90
+GLOBAL_VARIABLE = 90
 
 MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
 LLM = ChatBedrock(
@@ -24,6 +24,10 @@ LLM = ChatBedrock(
 #determining if entire database needs to be surveyed
 class RouteQuery(BaseModel):
     """Route a user query to the most relevant datasource."""
+
+    reasoning: str = Field(
+        description="Give a justification for the chosen method",
+    )
 
     datasource: Literal["vectorstore", "direct_database"] = Field(
         description="Given a user question choose to route it to the direct database or its vectorstore.",
@@ -125,8 +129,17 @@ filter_generation_chain = filter_prompt | filter_generator_llm
 # Check if retrieved documents answer question
 class RetrievalGrader(BaseModel):
     """Binary score to check whether retrieved documents are relevant to the question"""
+
+    reasoning: str = Field(
+        description="Give a reasoning as to what makes the document relevant for the chosen method",
+    )
+
     binary_score: str = Field(
         description="Retrieved documents are relevant to the query, 'yes' or 'no'"
+    )
+
+    relevant_context: str = Field(
+        description="Relevant pieces of context in document"
     )
 
 retrieval_grader = LLM.with_structured_output(RetrievalGrader)
@@ -138,5 +151,8 @@ doc_grader = retrieval_grade_prompt | retrieval_grader
 # Generating response to documents
 answer_generation_prompt = hub.pull("eden19/answergeneration")
 rag_chain = answer_generation_prompt | LLM | StrOutputParser()
+
+db_answer_generation_prompt = hub.pull("eden19/db_answergeneration")
+db_rag_chain = answer_generation_prompt | LLM | StrOutputParser()
 # generation = rag_chain.invoke({"documents": doc, "query": question})
 # logging.info(f"Final answer: {generation}")

@@ -27,7 +27,7 @@ docdb_api_client = MetadataDbClient(
 class DocDBRetriever(BaseRetriever):
     """A retriever that contains the top k documents, retrieved from the DocDB index, aligned with the user's query."""
     #collection: Any = Field(description="DocDB collection to retrieve from")
-    k: int = Field(default=10, description="Number of documents to retrieve")
+    k: int = Field(default=5, description="Number of documents to retrieve")
 
     def _get_relevant_documents(
         self, 
