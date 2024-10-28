@@ -210,7 +210,7 @@ workflow.add_edge("document_grading","generate_vi")
 workflow.add_edge("generate_vi", END)
 
 
-# app = workflow.compile()
+app = workflow.compile()
 
 # query = "What are the injections for SmartSPIM_675387_2023-05-23_23-05-56?"
 
