@@ -212,8 +212,8 @@ workflow.add_edge("generate_vi", END)
 
 app = workflow.compile()
 
-# query = "Write a MongoDB query to find the genotype of SmartSPIM_675387_2023-05-23_23-05-56"
+query = "What are the injections for SmartSPIM_675387_2023-05-23_23-05-56?"
 
-# inputs = {"query" : query}
-# answer = app.invoke(inputs)
-# print(answer['generation'])
+inputs = {"query" : query}
+answer = app.invoke(inputs)
+print(answer['generation'])
