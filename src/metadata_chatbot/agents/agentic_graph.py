@@ -11,7 +11,8 @@ from pprint import pprint
 
 logging.basicConfig(filename='agentic_graph.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
-GLOBAL_VARIABLE = 90
+GLOBAL_VARIABLE = 4556
+TEST = 56
 
 MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
 LLM = ChatBedrock(
@@ -36,6 +37,8 @@ class RouteQuery(BaseModel):
 structured_llm_router = LLM.with_structured_output(RouteQuery)
 router_prompt = hub.pull("eden19/query_rerouter")
 datasource_router = router_prompt | structured_llm_router
+#print(datasource_router.invoke({"query": "What is the mongodb query to find the injections for SmartSPIM_675387_2023-05-23_23-05-56?"}).datasource)
+
 
 
 # Queries that require surveying the entire database (like count based questions)
@@ -153,6 +156,18 @@ answer_generation_prompt = hub.pull("eden19/answergeneration")
 rag_chain = answer_generation_prompt | LLM | StrOutputParser()
 
 db_answer_generation_prompt = hub.pull("eden19/db_answergeneration")
-db_rag_chain = answer_generation_prompt | LLM | StrOutputParser()
+# class DatabaseGeneration(BaseModel):
+#     """  """
+
+#     agg_pipeline: str = Field(
+#         description="mongodb aggregation pipeline found in the documents"
+#     )
+
+#     summarized_context: str = Field(
+#         description="Summary of retrieved output dictionary found in the documents. This is NOT the mongodb pipeline but the information that follows the pipeline"
+#     )
+
+# database_answer_generation = LLM.with_structured_output(DatabaseGeneration)
+db_rag_chain = db_answer_generation_prompt | LLM | StrOutputParser()
 # generation = rag_chain.invoke({"documents": doc, "query": question})
 # logging.info(f"Final answer: {generation}")

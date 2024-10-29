@@ -3,9 +3,8 @@ from typing import List, Optional
 from typing_extensions import TypedDict
 from langgraph.graph import END, StateGraph, START
 from langgraph.checkpoint.memory import MemorySaver
-from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
-# from metadata_chatbot.utils import ResourceManager
-
+# import sys
+# sys.path.insert(0, r"C:\Users\sreya.kumar\Documents\GitHub\metadata-chatbot\src\metadata_chatbot\agents")
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
 from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 
@@ -212,8 +211,8 @@ workflow.add_edge("generate_vi", END)
 
 app = workflow.compile()
 
-# query = "What are the injections for SmartSPIM_675387_2023-05-23_23-05-56?"
+query = "Write a MongoDB query to find the genotype of SmartSPIM_675387_2023-05-23_23-05-56"
 
-# inputs = {"query" : query}
-# answer = app.invoke(inputs)
-# print(answer['generation'])
+inputs = {"query" : query}
+answer = app.invoke(inputs)
+print(answer['generation'])
