@@ -27,6 +27,7 @@ dependencies = [
     'motor',
     'nest-asyncio',
     'pymongo',
+    'pytest',
     'fastapi',
     'uvicorn',
     'sshtunnel'
