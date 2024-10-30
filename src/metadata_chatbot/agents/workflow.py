@@ -210,8 +210,8 @@ workflow.add_edge("generate_vi", END)
 
 app = workflow.compile()
 
-query = "What are all the assets using mouse 675387"
+# query = "What are all the assets using mouse 675387"
 
-inputs = {"query" : query}
-answer = app.invoke(inputs)
-print(answer['generation'])
+# inputs = {"query" : query}
+# answer = app.invoke(inputs)
+# print(answer['generation'])
