@@ -1,10 +1,7 @@
-import logging, sys, os, json
+import logging, json
 from typing import List, Optional
 from typing_extensions import TypedDict
 from langgraph.graph import END, StateGraph, START
-from langgraph.checkpoint.memory import MemorySaver
-# import sys
-# sys.path.insert(0, r"C:\Users\sreya.kumar\Documents\GitHub\metadata-chatbot\src\metadata_chatbot\agents")
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
 from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 
@@ -91,7 +88,7 @@ def filter_generator(state):
         logging.info(f"Database will be filtered using: {filter}")
         return {"filter": filter, "query": query}
     else:
-        return {"filter": None, "top_k": None, "query": query}
+        return {"filter": None, "query": query}
 
 def retrieve(state):
     """

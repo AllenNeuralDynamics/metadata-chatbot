@@ -35,15 +35,6 @@ class GAMER(LLM):
         inputs = {"query" : query}
         answer = app.invoke(inputs)
         return answer['generation']
-
-        # inputs = {"query" : query}                          
-        # answer = app.invoke(inputs)                                           
-        # if isinstance(answer, dict):
-        #     result_text = answer.get('text', '')  # Adjust as necessary based on the actual structure
-        # else:
-        #     result_text = answer
-        # print(result_text)
-        # return answer
     
     async def _acall(
         self,

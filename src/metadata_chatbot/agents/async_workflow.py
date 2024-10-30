@@ -1,29 +1,12 @@
-import logging, sys, os, asyncio
+import logging, asyncio, json
 from typing import List, Optional
 from typing_extensions import TypedDict
 from langchain_core.documents import Document
 from langgraph.graph import END, StateGraph, START
-from langgraph.checkpoint.memory import MemorySaver
-
-
-# sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
-# from metadata_chatbot.utils import ResourceManager
-from aind_data_access_api.document_db import MetadataDbClient
-
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
-from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain
+from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 
 logging.basicConfig(filename='async_workflow.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
-
-API_GATEWAY_HOST = "api.allenneuraldynamics-test.org"
-DATABASE = "metadata_vector_index"
-COLLECTION = "bigger_LANGCHAIN_curated_chunks"
-
-docdb_api_client = MetadataDbClient(
-   host=API_GATEWAY_HOST,
-   database=DATABASE,
-   collection=COLLECTION,
-)
 
 class GraphState(TypedDict):
     """
@@ -39,7 +22,7 @@ class GraphState(TypedDict):
     generation: str
     documents: List[str]
     filter: Optional[dict]
-    top_k: Optional[int] 
+    #top_k: Optional[int] 
 
 async def route_question_async(state):
     """
@@ -72,12 +55,16 @@ async def generate_for_whole_db_async(state):
     """
 
     query = state["query"]
-    chat_history = []
 
     logging.info("Generating answer...")
 
-    generation = await query_retriever.ainvoke({'query': query, 'chat_history': chat_history})
-    return {"query": query, "generation": generation}
+    document_dict = dict()
+    retrieved_dict = await query_retriever.ainvoke({'query': query, 'chat_history': [], 'agent_scratchpad' : []})
+    document_dict['mongodb_query'] = retrieved_dict['intermediate_steps'][0][0].tool_input['agg_pipeline']
+    document_dict['retrieved_output'] = retrieved_dict['intermediate_steps'][0][1]
+    documents = await asyncio.to_thread(json.dumps, document_dict)
+
+    return {"query": query, "documents": documents}
 
 async def filter_generator_async(state):
     """
@@ -137,7 +124,8 @@ async def grade_doc_async(query, doc: Document):
     logging.info(f"Retrieved document matched query: {grade}")
     if grade == "yes":
         logging.info("Document is relevant to the query")
-        return doc
+        relevant_context = score.relevant_context
+        return relevant_context
     else:
         logging.info("Document is not relevant and will be removed")
         return None
@@ -162,7 +150,27 @@ async def grade_documents_async(state):
     filtered_docs = [doc for doc in filtered_docs if doc is not None]
     return {"documents": filtered_docs, "query": query}
 
-async def generate_async(state):
+async def generate_db_async(state):
+    """
+    Generate answer
+
+    Args:
+        state (dict): The current graph state
+
+    Returns:
+        state (dict): New key added to state, generation, that contains LLM generation
+    """ 
+    logging.info("Generating answer...")
+    query = state["query"]
+    documents = state["documents"]
+
+    #doc_text = "\n\n".join(doc.page_content for doc in documents)
+
+    # RAG generation
+    generation = await db_rag_chain.ainvoke({"documents": documents, "query": query})
+    return {"documents": documents, "query": query, "generation": generation, "filter": state.get("filter", None)}
+
+async def generate_vi_async(state):
     """
     Generate answer
 
@@ -176,10 +184,8 @@ async def generate_async(state):
     query = state["query"]
     documents = state["documents"]
 
-    doc_text = "\n\n".join(doc.page_content for doc in documents)
-
     # RAG generation
-    generation = await rag_chain.ainvoke({"documents": doc_text, "query": query})
+    generation = await rag_chain.ainvoke({"documents": documents, "query": query})
     return {"documents": documents, "query": query, "generation": generation, "filter": state.get("filter", None)}
 
 async_workflow = StateGraph(GraphState) 
@@ -187,7 +193,8 @@ async_workflow.add_node("database_query", generate_for_whole_db_async)
 async_workflow.add_node("filter_generation", filter_generator_async)  
 async_workflow.add_node("retrieve", retrieve_async)  
 async_workflow.add_node("document_grading", grade_documents_async)  
-async_workflow.add_node("generate", generate_async)  
+async_workflow.add_node("generate_db", generate_db_async)  
+async_workflow.add_node("generate_vi", generate_vi_async)  
 
 async_workflow.add_conditional_edges(
     START,
@@ -197,10 +204,12 @@ async_workflow.add_conditional_edges(
         "vectorstore": "filter_generation",
     },
 )
+async_workflow.add_edge("database_query", "generate_db") 
+async_workflow.add_edge("generate_db", END)
 async_workflow.add_edge("filter_generation", "retrieve")
 async_workflow.add_edge("retrieve", "document_grading")
-async_workflow.add_edge("document_grading","generate")
-async_workflow.add_edge("generate", END)
+async_workflow.add_edge("document_grading","generate_vi")
+async_workflow.add_edge("generate_vi", END)
 
 
 async_app = async_workflow.compile()
