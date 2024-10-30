@@ -3,6 +3,8 @@ chatbot.ipynb
 *.pkl
 *.png
 queries.txt
+test_agentic_graph_DB.py
+test_agentic_graph_VI.py
 test.py
 graph_viz.ipynb
 
