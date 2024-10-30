@@ -120,11 +120,11 @@ async def retrieve_async(state):
 
 async def grade_doc_async(query, doc: Document):
     score = await doc_grader.ainvoke({"query": query, "document": doc.page_content})
-    grade = score.binary_score
+    grade = score['binary_score']
     logging.info(f"Retrieved document matched query: {grade}")
     if grade == "yes":
         logging.info("Document is relevant to the query")
-        relevant_context = score.relevant_context
+        relevant_context = score['relevant_context']
         return relevant_context
     else:
         logging.info("Document is not relevant and will be removed")
