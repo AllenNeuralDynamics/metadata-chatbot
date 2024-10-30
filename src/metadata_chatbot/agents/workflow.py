@@ -4,8 +4,8 @@ from typing_extensions import TypedDict
 from langgraph.graph import END, StateGraph, START
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
 
-#from agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
-from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
+from agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
+#from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 
 logging.basicConfig(filename='async_workflow.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
@@ -210,8 +210,8 @@ workflow.add_edge("generate_vi", END)
 
 app = workflow.compile()
 
-# query = "What are the injections used in asset SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06"
+query = "What are all the assets using mouse 675387"
 
-# inputs = {"query" : query}
-# answer = app.invoke(inputs)
-# print(answer['generation'])
+inputs = {"query" : query}
+answer = app.invoke(inputs)
+print(answer['generation'])

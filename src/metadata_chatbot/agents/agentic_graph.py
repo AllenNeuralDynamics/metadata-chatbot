@@ -25,9 +25,9 @@ LLM = ChatBedrock(
 class RouteQuery(BaseModel):
     """Route a user query to the most relevant datasource."""
 
-    # reasoning: str = Field(
-    #     description="Give a justification for the chosen method",
-    # )
+    reasoning: str = Field(
+        description="Give a one sentence justification for the chosen method",
+    )
 
     datasource: Literal["vectorstore", "direct_database"] = Field(
         description="Given a user question choose to route it to the direct database or its vectorstore.",
