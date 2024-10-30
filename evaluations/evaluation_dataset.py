@@ -14,6 +14,8 @@ client.create_examples(
         {"question": "What are the injections for SmartSPIM_675387_2023-05-23_23-05-56?"},
         {"question": "What are all the assets using mouse 675387"},
         {"question": "Write a MongoDB query to find the genotype of SmartSPIM_675387_2023-05-23_23-05-56"},
+        {"question": "How many records are stored in the database?"},
+        {"question": "What are the unique modalities found in the database?"},
     ],
     outputs=[
         {"answer": "The genotype for subject 675387 is wt/wt"},
@@ -36,6 +38,8 @@ client.create_examples(
                     2. The `$project` stage excludes the `_id` field and includes the `genotype` field from the nested `subject` object.
                     The retrieved output shows that the genotype for this experiment is "wt/wt".
                     """},
+        {"answer": "There are 267 records found in the database."},
+        {"answer": "The unique modalities in the database are Behavior, Behavior videos, Planar optical physiology and Selective plane illumination microscopy."},
     ],
     dataset_id=dataset.id,
 )

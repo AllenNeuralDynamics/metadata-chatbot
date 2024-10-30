@@ -2,7 +2,7 @@ from utils import LLM
 from langchain_core.prompts.prompt import PromptTemplate
 from langsmith.evaluation import LangChainStringEvaluator
 from metadata_chatbot.agents.GAMER import GAMER
-from langsmith import evaluate
+from langsmith import aevaluate
 from evaluation_dataset import dataset_name
 
 
@@ -23,17 +23,23 @@ PROMPT = PromptTemplate(
 
 evaluator = LangChainStringEvaluator("qa", config={"llm": LLM, "prompt": PROMPT})
 
-def my_app(question):
+async def my_app(question):
     model = GAMER()
-    return model.invoke(question)
+    return await model.ainvoke(question)
 
-def langsmith_app(inputs):
-    output = my_app(inputs["question"])
+async def langsmith_app(inputs):
+    output = await my_app(inputs["question"])
     return {"output": output}
 
-experiment_results = evaluate(
-    langsmith_app, # Your AI system
-    data=dataset_name, # The data to predict and grade over
-    evaluators=[evaluator], # The evaluators to score the results
-    experiment_prefix="metadata-chatbot-0.0.44", # A prefix for your experiment names to easily identify them
-)
+async def main():
+    experiment_results = await aevaluate(
+        langsmith_app, # Your AI system
+        data=dataset_name, # The data to predict and grade over
+        evaluators=[evaluator], # The evaluators to score the results
+        experiment_prefix="metadata-chatbot-0.0.44", # A prefix for your experiment names to easily identify them
+    )
+    return experiment_results
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())

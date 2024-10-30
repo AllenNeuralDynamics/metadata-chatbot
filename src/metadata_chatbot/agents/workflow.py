@@ -3,6 +3,8 @@ from typing import List, Optional
 from typing_extensions import TypedDict
 from langgraph.graph import END, StateGraph, START
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
+
+#from agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 
 logging.basicConfig(filename='async_workflow.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
@@ -42,7 +44,7 @@ def route_question(state):
         logging.info("Querying against vector embeddings...")
         return "vectorstore"
 
-def generate_for_whole_db(state):
+def retrieve_DB(state):
     """
     Filter database
     
@@ -90,7 +92,7 @@ def filter_generator(state):
     else:
         return {"filter": None, "query": query}
 
-def retrieve(state):
+def retrieve_VI(state):
     """
     Retrieve documents
 
@@ -134,11 +136,11 @@ def grade_documents(state):
     filtered_docs = []
     for doc in documents:
         score = doc_grader.invoke({"query": query, "document": doc.page_content})
-        grade = score.binary_score
+        grade = score['binary_score']
         logging.info(f"Retrieved document matched query: {grade}")
         if grade == "yes":
             logging.info("Document is relevant to the query")
-            relevant_context = score.relevant_context
+            relevant_context = score['relevant_context']
             filtered_docs.append(relevant_context)
         else:
             logging.info("Document is not relevant and will be removed")
@@ -183,9 +185,9 @@ def generate_vi(state):
     return {"documents": documents, "query": query, "generation": generation, "filter": state.get("filter", None)}
 
 workflow = StateGraph(GraphState) 
-workflow.add_node("database_query", generate_for_whole_db)  
+workflow.add_node("database_query", retrieve_DB)  
 workflow.add_node("filter_generation", filter_generator)  
-workflow.add_node("retrieve", retrieve)  
+workflow.add_node("retrieve", retrieve_VI)  
 workflow.add_node("document_grading", grade_documents)  
 workflow.add_node("generate_db", generate_db)  
 workflow.add_node("generate_vi", generate_vi)  
@@ -208,7 +210,7 @@ workflow.add_edge("generate_vi", END)
 
 app = workflow.compile()
 
-# query = "Write a MongoDB query to find the genotype of SmartSPIM_675387_2023-05-23_23-05-56"
+# query = "What are the injections used in asset SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06"
 
 # inputs = {"query" : query}
 # answer = app.invoke(inputs)

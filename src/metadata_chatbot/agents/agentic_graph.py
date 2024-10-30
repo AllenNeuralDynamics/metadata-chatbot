@@ -8,6 +8,8 @@ from langchain_core.tools import tool
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from aind_data_access_api.document_db import MetadataDbClient
 from pprint import pprint
+from typing_extensions import Annotated, TypedDict
+
 
 logging.basicConfig(filename='agentic_graph.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
@@ -23,9 +25,9 @@ LLM = ChatBedrock(
 class RouteQuery(BaseModel):
     """Route a user query to the most relevant datasource."""
 
-    reasoning: str = Field(
-        description="Give a justification for the chosen method",
-    )
+    # reasoning: str = Field(
+    #     description="Give a justification for the chosen method",
+    # )
 
     datasource: Literal["vectorstore", "direct_database"] = Field(
         description="Given a user question choose to route it to the direct database or its vectorstore.",
@@ -107,20 +109,14 @@ filter_generation_chain = filter_prompt | filter_generator_llm
 #print(filter_generation_chain.invoke({"query": "What is the genotype for mouse 675387?"}).filter_query)
 
 # Check if retrieved documents answer question
-class RetrievalGrader(BaseModel):
+class RetrievalGrader(TypedDict):
     """Binary score to check whether retrieved documents are relevant to the question"""
 
-    reasoning: str = Field(
-        description="Give a reasoning as to what makes the document relevant for the chosen method",
-    )
+    #reasoning: Annotated[str, ..., "Give a reasoning as to what makes the document relevant for the chosen method"]
 
-    binary_score: str = Field(
-        description="Retrieved documents are relevant to the query, 'yes' or 'no'"
-    )
+    binary_score: Annotated[Literal["yes", "no"], ..., "Retrieved documents are relevant to the query, 'yes' or 'no'"]
 
-    relevant_context: str = Field(
-        description="Relevant pieces of context in document"
-    )
+    relevant_context: Annotated[str, None, "Relevant pieces of context in document"]
 
 retrieval_grader = LLM.with_structured_output(RetrievalGrader)
 retrieval_grade_prompt = hub.pull("eden19/retrievalgrader")
