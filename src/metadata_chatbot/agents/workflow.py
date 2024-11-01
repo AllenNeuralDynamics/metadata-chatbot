@@ -211,8 +211,8 @@ workflow.add_edge("generate_vi", END)
 
 app = workflow.compile()
 
-query = "How was the tissue prepared for imaging, including fixation, delipidation, and refractive index matching procedures? in experiment: SmartSPIM_675388_2023-05-24_04-10-19_stitched_2023-05-28_18-07-46"
+# query = "How was the tissue prepared for imaging, including fixation, delipidation, and refractive index matching procedures? in experiment: SmartSPIM_675388_2023-05-24_04-10-19_stitched_2023-05-28_18-07-46"
 
-inputs = {"query" : query}
-answer = app.invoke(inputs)
-print(answer['generation'])
+# inputs = {"query" : query}
+# answer = app.invoke(inputs)
+# print(answer['generation'])
