@@ -130,7 +130,7 @@ doc_grader = retrieval_grade_prompt | retrieval_grader
 
 # Generating response to documents
 answer_generation_prompt = hub.pull("eden19/answergeneration")
-rag_chain = answer_generation_prompt | SONNET_3_LLM | StrOutputParser()
+rag_chain = answer_generation_prompt | SONNET_3_5_LLM | StrOutputParser()
 
 db_answer_generation_prompt = hub.pull("eden19/db_answergeneration")
 # class DatabaseGeneration(BaseModel):
