@@ -1,4 +1,4 @@
-# metadata-chatbot
+![1730488016863](image/README/1730488016863.png)# metadata-chatbot
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 ![Code Style](https://img.shields.io/badge/code%20style-black-black)
@@ -58,6 +58,10 @@ To improve retrieval accuracy and decrease hallucinations, we use vector embeddi
 ### AIND-data-schema-access REST API
 
 For queries that require accessing the entire database, like count based questions, information is accessed through an aggregation pipeline, provided by one of the constructed LLM agents, and the API connection.
+
+## Multi-Agent graph framework
+
+![Worfklow](multi-agent-workflow-11-01.jpeg)
 
 ### Linters and testing
 
