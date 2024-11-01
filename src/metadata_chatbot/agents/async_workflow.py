@@ -4,7 +4,7 @@ from typing_extensions import TypedDict
 from langchain_core.documents import Document
 from langgraph.graph import END, StateGraph, START
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
-from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
+from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 
 logging.basicConfig(filename='async_workflow.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
@@ -80,17 +80,17 @@ async def filter_generator_async(state):
 
     query = state["query"]
 
-    result = await query_grader.ainvoke({"query": query})
-    query_grade = result.binary_score
-    logging.info(f"Database needs to be further filtered: {query_grade}")
+    # result = await query_grader.ainvoke({"query": query})
+    # query_grade = result.binary_score
+    # logging.info(f"Database needs to be further filtered: {query_grade}")
 
-    if query_grade == "yes":
-        result = await filter_generation_chain.ainvoke({"query": query})
-        filter = result.filter_query
-        logging.info(f"Database will be filtered using: {filter}")
-        return {"filter": filter, "query": query}
-    else:
-        return {"filter": None, "query": query}
+    result = await filter_generation_chain.ainvoke({"query": query})
+    filter = result.filter_query
+        
+    logging.info(f"Database will be filtered using: {filter}")
+    return {"filter": filter, "query": query}
+    # else:
+    #     return {"filter": None, "query": query}
     
 async def retrieve_async(state):
     """
