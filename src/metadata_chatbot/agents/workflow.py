@@ -4,8 +4,8 @@ from typing_extensions import TypedDict
 from langgraph.graph import END, StateGraph, START
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
 
-#from agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
-from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
+from agentic_graph import datasource_router, query_retriever, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
+#from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, query_grader, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 
 logging.basicConfig(filename='async_workflow.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
@@ -81,16 +81,16 @@ def filter_generator(state):
 
     query = state["query"]
 
-    query_grade = query_grader.invoke({"query": query}).binary_score
-    logging.info(f"Database needs to be further filtered: {query_grade}")
+    # query_grade = query_grader.invoke({"query": query}).binary_score
+    # logging.info(f"Database needs to be further filtered: {query_grade}")
 
-    if query_grade == "yes":
-        filter = filter_generation_chain.invoke({"query": query}).filter_query
-        #top_k = filter_generation_chain.invoke({"query": query}).top_k
-        logging.info(f"Database will be filtered using: {filter}")
-        return {"filter": filter, "query": query}
-    else:
-        return {"filter": None, "query": query}
+    #if query_grade == "yes":
+    filter = filter_generation_chain.invoke({"query": query}).filter_query
+    #top_k = filter_generation_chain.invoke({"query": query}).top_k
+    logging.info(f"Database will be filtered using: {filter}")
+    return {"filter": filter, "query": query}
+    # else:
+    #     return {"filter": None, "query": query}
 
 def retrieve_VI(state):
     """
@@ -146,6 +146,7 @@ def grade_documents(state):
             logging.info("Document is not relevant and will be removed")
             continue
     #doc_text = "\n\n".join(doc.page_content for doc in filtered_docs)
+    #print(filtered_docs)
     return {"documents": filtered_docs, "query": query}
 
 def generate_db(state):
@@ -210,8 +211,8 @@ workflow.add_edge("generate_vi", END)
 
 app = workflow.compile()
 
-# query = "What are all the assets using mouse 675387"
+query = "How was the tissue prepared for imaging, including fixation, delipidation, and refractive index matching procedures? in experiment: SmartSPIM_675388_2023-05-24_04-10-19_stitched_2023-05-28_18-07-46"
 
-# inputs = {"query" : query}
-# answer = app.invoke(inputs)
-# print(answer['generation'])
+inputs = {"query" : query}
+answer = app.invoke(inputs)
+print(answer['generation'])

@@ -1,4 +1,4 @@
-import sys, os, json
+import sys, os, json, boto3
 from typing import List, Optional, Any, Union, Annotated
 from pymongo.collection import Collection
 from motor.motor_asyncio import AsyncIOMotorCollection
@@ -9,9 +9,14 @@ from bson import json_util
 from langsmith import trace as langsmith_trace
 from pydantic import Field
 from aind_data_access_api.document_db import MetadataDbClient
+from langchain_aws import BedrockEmbeddings
 
-sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
-from metadata_chatbot.utils import BEDROCK_EMBEDDINGS
+BEDROCK_CLIENT = boto3.client(
+    service_name="bedrock-runtime",
+    region_name = 'us-west-2'
+)
+
+BEDROCK_EMBEDDINGS = BedrockEmbeddings(model_id="amazon.titan-embed-text-v2:0",client=BEDROCK_CLIENT)
 
 API_GATEWAY_HOST = "api.allenneuraldynamics-test.org"
 DATABASE = "metadata_vector_index"

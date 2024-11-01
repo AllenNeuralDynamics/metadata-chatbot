@@ -11,16 +11,13 @@ from tqdm import tqdm
 from bson import json_util
 from langchain_text_splitters import RecursiveJsonSplitter
 
-sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
-from metadata_chatbot.utils import create_ssh_tunnel, CONNECTION_STRING, BEDROCK_CLIENT, ResourceManager
+#sys.path.append(os.path.abspath("C:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot"))
+from utils import create_ssh_tunnel, CONNECTION_STRING, BEDROCK_EMBEDDINGS, ResourceManager
 
 logging.basicConfig(filename='vector_store.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
 TOKEN_LIMIT = 8192
 JSON_SPLITTER = RecursiveJsonSplitter(max_chunk_size=TOKEN_LIMIT)
-
-BEDROCK_EMBEDDINGS = BedrockEmbeddings(model_id = "amazon.titan-embed-text-v2:0",client = BEDROCK_CLIENT)
-
 
 def regex_modality_PHYSIO(record_name: str) -> bool:
 
