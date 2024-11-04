@@ -4,10 +4,9 @@ from typing_extensions import TypedDict
 from langgraph.graph import END, StateGraph, START
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
 
-#from agentic_graph import datasource_router, query_retriever, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 
-logging.basicConfig(filename='async_workflow.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
+logging.basicConfig(filename='workflow.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
 
 class GraphState(TypedDict):
     """
@@ -37,10 +36,10 @@ def route_question(state):
     query = state["query"]
 
     source = datasource_router.invoke({"query": query})
-    if source.datasource == "direct_database":
+    if source['datasource'] == "direct_database":
         logging.info("Entire database needs to be queried.")
         return "direct_database"
-    elif source.datasource == "vectorstore":
+    elif source['datasource'] == "vectorstore":
         logging.info("Querying against vector embeddings...")
         return "vectorstore"
 
@@ -81,16 +80,11 @@ def filter_generator(state):
 
     query = state["query"]
 
-    # query_grade = query_grader.invoke({"query": query}).binary_score
-    # logging.info(f"Database needs to be further filtered: {query_grade}")
-
-    #if query_grade == "yes":
-    filter = filter_generation_chain.invoke({"query": query}).filter_query
+    filter = filter_generation_chain.invoke({"query": query})['filter_query']
     #top_k = filter_generation_chain.invoke({"query": query}).top_k
     logging.info(f"Database will be filtered using: {filter}")
     return {"filter": filter, "query": query}
-    # else:
-    #     return {"filter": None, "query": query}
+
 
 def retrieve_VI(state):
     """
@@ -109,12 +103,6 @@ def retrieve_VI(state):
 
     retriever = DocDBRetriever(k = 5)
     documents = retriever.get_relevant_documents(query = query, query_filter = filter)
-
-    # # Retrieval
-    # with ResourceManager() as RM:
-    #     collection = RM.client['metadata_vector_index']['LANGCHAIN_ALL_curated_assets']
-    #     retriever = DocDBRetriever(collection = collection, k = top_k)
-    #     documents = retriever.get_relevant_documents(query = query, query_filter = filter)
     return {"documents": documents, "query": query}
 
 def grade_documents(state):
@@ -211,7 +199,7 @@ workflow.add_edge("generate_vi", END)
 
 app = workflow.compile()
 
-# query = "How was the tissue prepared for imaging, including fixation, delipidation, and refractive index matching procedures? in experiment: SmartSPIM_675388_2023-05-24_04-10-19_stitched_2023-05-28_18-07-46"
+# query = "How many records are stored in the database?"
 
 # inputs = {"query": query}
 # answer = app.invoke(inputs)

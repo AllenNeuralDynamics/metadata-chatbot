@@ -4,6 +4,7 @@ from typing_extensions import TypedDict
 from langchain_core.documents import Document
 from langgraph.graph import END, StateGraph, START
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
+
 from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 
 logging.basicConfig(filename='async_workflow.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filemode="w")
@@ -36,10 +37,10 @@ async def route_question_async(state):
     query = state["query"]
 
     source = await datasource_router.ainvoke({"query": query})
-    if source.datasource == "direct_database":
+    if source['datasource'] == "direct_database":
         logging.info("Entire database needs to be queried.")
         return "direct_database"
-    elif source.datasource == "vectorstore":
+    elif source['datasource'] == "vectorstore":
         logging.info("Querying against vector embeddings...")
         return "vectorstore"
     
@@ -81,7 +82,7 @@ async def filter_generator_async(state):
     query = state["query"]
 
     result = await filter_generation_chain.ainvoke({"query": query})
-    filter = result.filter_query
+    filter = result['filter_query']
         
     logging.info(f"Database will be filtered using: {filter}")
     return {"filter": filter, "query": query}
@@ -202,7 +203,7 @@ async_workflow.add_edge("generate_vi", END)
 async_app = async_workflow.compile()
 
 # async def main():
-#     query = "Can you give me a timeline of events for subject 675387?"
+#     query = "How many records are stored in the database?"
 #     inputs = {"query": query}
 #     answer = await async_app.ainvoke(inputs)
 #     return answer['generation']

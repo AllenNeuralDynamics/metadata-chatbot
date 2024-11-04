@@ -9,7 +9,7 @@
 
 ## Installation
 
-Install a virtual environment with python 3.11 (install a python 3.11 that's compatible with your operating system). Check if download was successful by runninng
+Install a virtual environment with python 3.11 (install a version of python 3.11 that's compatible with your operating system).
 
 ```bash
 py -3.11 -m venv .venv
@@ -21,22 +21,31 @@ On Windows, activate the environment with
 .venv\Scripts\Activate.ps1
 ```
 
-Install the chatbot package.
+You will need access to the AWS Bedrock service in order to access the model. Once you've configured the AWS CLI, and granted access to Anthropic's Claude Sonnet 3 and 3.5, proceed to the following steps.
 
-```bash
-pip install -e .
-```
-
-To develop the code, run
-
-```bash
-pip install -e .[dev]
-```
-
-Or simply,
+Install the chatbot package -- ensure virtual environment is running.
 
 ```bash
 pip install metadata-chatbot
+```
+
+To call the model,
+
+```bash
+from metadata_chatbot.agents.GAMER import GAMER
+
+query = "What was the refractive index of the chamber immersion medium used in this experiment SmartSPIM_675387_2023-05-23_23-05-56"
+model = GAMER()
+result = model.invoke(query)
+
+print(result)
+```
+
+To call the model asynchronously, which reduces the model's call time by ~50%, run --
+
+```bash
+result = await model.ainvoke(query)
+print(result)
 ```
 
 ## High Level Overview
@@ -45,9 +54,9 @@ The project's main goal is to developing a chat bot that is able to ingest, anal
 
 ## Model Overview
 
-The current chat bot model uses Anthropic's Claude Sonnet 3 hosted on AWS' Bedrock service. Since the primary goal is to use natural language to query the database, the user will provide prompts about the metadata specifically. The framework is hosted on Langchain. Claude's system prompt has been configured to understand the metadata schema format and craft MongoDB queries based on the prompt. Given a natural language query about the metadata, the model will produce a MongoDB query, thought reasoning and answer. This method of answering follows chain of thought reasoning, where a complex task is broken up into manageable chunks, allowing logical thinking through of a problem. 
+The current chat bot model uses Anthropic's Claude Sonnet 3 and 3.5, hosted on AWS' Bedrock service. Since the primary goal is to use natural language to query the database, the user will provide queries about the metadata specifically. The framework is hosted on Langchain. Claude's system prompt has been configured to understand the metadata schema format and craft MongoDB queries based on the prompt. Given a natural language query about the metadata, the model will produce a MongoDB query, thought reasoning and answer. This method of answering follows chain of thought reasoning, where a complex task is broken up into manageable chunks, allowing logical thinking through of a problem.
 
-The main framework used by the model is Retrieval Augmented Generation, a process in which the model consults an external database to generate information for the user's query. This process doesn't interfere with the model's training process, but rather allows the model to successfully query unseen data with few shot learning (examples of queries and answers) and tools (e.g. API access) to examine these databases.
+The main framework used by the model is Retrieval Augmented Generation (RAG), a process in which the model consults an external database to generate information for the user's query. This process doesn't interfere with the model's training process, but rather allows the model to successfully query unseen data with few shot learning (examples of queries and answers) and tools (e.g. API access) to examine these databases.
 
 ## Data Retrieval
 
@@ -60,7 +69,14 @@ To improve retrieval accuracy and decrease hallucinations, we use vector embeddi
 For queries that require accessing the entire database, like count based questions, information is accessed through an aggregation pipeline, provided by one of the constructed LLM agents, and the API connection.
 
 ## Multi-Agent graph framework
-A multi-agent workflow is created using Langgraph, allowing for parallel execution of tasks, like document retrieval from the vector index, and control over the the RAG process.
+
+A multi-agent workflow is created using Langgraph, allowing for parallel execution of tasks, like document retrieval from the vector index, and increased developer control over the the RAG process. Decision nodes and their roles are further explained in the `GAMER_workbook`.
 
 ![Worfklow](multi-agent-workflow-11-01.jpeg)
 
+## Current specifications
+
+* The model can query the fields for a specified asset.
+* The model can query metadata documents from the document database.
+* The model is able to return a list of unique values for a given field.
+* The model is able to answer count based questions.
