@@ -22,7 +22,7 @@ class GraphState(TypedDict):
     generation: str
     documents: List[str]
     filter: Optional[dict]
-    #top_k: Optional[int] 
+    top_k: Optional[int] 
 
 def route_question(state):
     """
@@ -80,10 +80,11 @@ def filter_generator(state):
 
     query = state["query"]
 
-    filter = filter_generation_chain.invoke({"query": query})['filter_query']
-    #top_k = filter_generation_chain.invoke({"query": query}).top_k
+    result =  filter_generation_chain.invoke({"query": query})
+    filter = result['filter_query']
+    top_k = result['top_k']
     logging.info(f"Database will be filtered using: {filter}")
-    return {"filter": filter, "query": query}
+    return {"filter": filter, "top_k": top_k, "query": query}
 
 
 def retrieve_VI(state):
@@ -99,9 +100,9 @@ def retrieve_VI(state):
     logging.info("Retrieving documents...")
     query = state["query"]
     filter = state["filter"]
-    #top_k = state["top_k"]
+    top_k = state["top_k"]
 
-    retriever = DocDBRetriever(k = 5)
+    retriever = DocDBRetriever(k = top_k)
     documents = retriever.get_relevant_documents(query = query, query_filter = filter)
     return {"documents": documents, "query": query}
 
@@ -137,7 +138,7 @@ def grade_documents(state):
     #print(filtered_docs)
     return {"documents": filtered_docs, "query": query}
 
-def generate_db(state):
+def generate_DB(state):
     """
     Generate answer
 
@@ -155,7 +156,7 @@ def generate_db(state):
     generation = db_rag_chain.invoke({"documents": documents, "query": query})
     return {"documents": documents, "query": query, "generation": generation, "filter": state.get("filter", None)}
 
-def generate_vi(state):
+def generate_VI(state):
     """
     Generate answer
 
@@ -178,8 +179,8 @@ workflow.add_node("database_query", retrieve_DB)
 workflow.add_node("filter_generation", filter_generator)  
 workflow.add_node("retrieve", retrieve_VI)  
 workflow.add_node("document_grading", grade_documents)  
-workflow.add_node("generate_db", generate_db)  
-workflow.add_node("generate_vi", generate_vi)  
+workflow.add_node("generate_db", generate_DB)  
+workflow.add_node("generate_vi", generate_VI)  
 
 workflow.add_conditional_edges(
     START,
@@ -199,7 +200,7 @@ workflow.add_edge("generate_vi", END)
 
 app = workflow.compile()
 
-# query = "How many records are stored in the database?"
+# query = "What was the refractive index of the chamber immersion medium used in this experiment SmartSPIM_675387_2023-05-23_23-05-56?"
 
 # inputs = {"query": query}
 # answer = app.invoke(inputs)

@@ -79,7 +79,7 @@ class FilterGenerator(TypedDict):
     """MongoDB filter to be applied before vector retrieval"""
 
     filter_query: Annotated[dict, ..., "MongoDB filter"]
-    #top_k: int = Field(description="Number of documents to retrieve from the database")
+    top_k: int = Annotated[dict, ..., "MongoDB filter"]
 
 filter_prompt = hub.pull("eden19/filtergeneration")
 filter_generator_llm = SONNET_3_LLM.with_structured_output(FilterGenerator)
