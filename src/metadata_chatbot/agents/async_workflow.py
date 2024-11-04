@@ -199,8 +199,7 @@ async_workflow.add_edge("retrieve", "document_grading")
 async_workflow.add_edge("document_grading","generate_vi")
 async_workflow.add_edge("generate_vi", END)
 
-
-# async_app = async_workflow.compile()
+async_app = async_workflow.compile()
 
 # async def main():
 #     query = "Can you give me a timeline of events for subject 675387?"
