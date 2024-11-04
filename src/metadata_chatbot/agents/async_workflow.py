@@ -185,11 +185,11 @@ async_workflow.add_edge("generate_vi", END)
 
 async_app = async_workflow.compile()
 
-async def main():
-    query = "Can you list all the procedures performed on the specimen, including their start and end dates? in SmartSPIM_662616_2023-03-06_17-47-13"
-    inputs = {"query": query}
-    answer = await async_app.ainvoke(inputs)
-    return answer['generation']
+# async def main():
+#     query = "Can you list all the procedures performed on the specimen, including their start and end dates? in SmartSPIM_662616_2023-03-06_17-47-13"
+#     inputs = {"query": query}
+#     answer = await async_app.ainvoke(inputs)
+#     return answer['generation']
 
-#Run the async function
-print(asyncio.run(main()))
+# #Run the async function
+# print(asyncio.run(main()))
