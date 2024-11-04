@@ -80,18 +80,12 @@ async def filter_generator_async(state):
 
     query = state["query"]
 
-    # result = await query_grader.ainvoke({"query": query})
-    # query_grade = result.binary_score
-    # logging.info(f"Database needs to be further filtered: {query_grade}")
-
     result = await filter_generation_chain.ainvoke({"query": query})
     filter = result.filter_query
         
     logging.info(f"Database will be filtered using: {filter}")
     return {"filter": filter, "query": query}
-    # else:
-    #     return {"filter": None, "query": query}
-    
+ 
 async def retrieve_async(state):
     """
     Retrieve documents
@@ -110,12 +104,6 @@ async def retrieve_async(state):
 
     retriever = DocDBRetriever(k = 10)
     documents = await retriever.aget_relevant_documents(query = query, query_filter = filter)
-
-    # with ResourceManager() as RM:
-    #     db = RM.async_client.get_database('metadata_vector_index')
-    #     collection = db.get_collection('bigger_LANGCHAIN_curated_chunks')
-    #     retriever = DocDBRetriever(collection = collection, k = 10)
-    #     documents = await retriever.aget_relevant_documents(query = query, query_filter = filter)
     return {"documents": documents, "query": query}
 
 async def grade_doc_async(query, doc: Document):
@@ -212,20 +200,13 @@ async_workflow.add_edge("document_grading","generate_vi")
 async_workflow.add_edge("generate_vi", END)
 
 
-async_app = async_workflow.compile()
+# async_app = async_workflow.compile()
 
 # async def main():
 #     query = "Can you give me a timeline of events for subject 675387?"
 #     inputs = {"query": query}
-#     result = async_app.astream(inputs)
-    
-#     value = None
-#     async for output in result:
-#         for key, value in output.items():
-#             logging.info(f"Currently on node '{key}':")
-    
-#     if value:
-#         print(value['generation'])
+#     answer = await async_app.ainvoke(inputs)
+#     return answer['generation']
 
 # #Run the async function
-# asyncio.run(main())
+# print(asyncio.run(main()))

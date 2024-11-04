@@ -1,5 +1,3 @@
-![1730488016863](image/README/1730488016863.png)# metadata-chatbot
-
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 ![Code Style](https://img.shields.io/badge/code%20style-black-black)
 [![semantic-release: angular](https://img.shields.io/badge/semantic--release-angular-e10079?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
@@ -47,7 +45,9 @@ The project's main goal is to developing a chat bot that is able to ingest, anal
 
 ## Model Overview
 
-The current chat bot model uses Anthropic's Claude Sonnet 3 hosted on AWS' Bedrock service. Since the primary goal is to use natural language to query the database, the user will provide prompts about the metadata specifically. The framework is hosted on Langchain. Claude's system prompt has been configured to understand the metadata schema format and craft MongoDB queries based on the prompt. Given a natural language query about the metadata, the model will produce a MongoDB query, thought reasoning and answer. This method of answering follows chain of thought reasoning, where a complex task is broken up into manageable chunks, allowing logical thinking through of a problem.
+The current chat bot model uses Anthropic's Claude Sonnet 3 hosted on AWS' Bedrock service. Since the primary goal is to use natural language to query the database, the user will provide prompts about the metadata specifically. The framework is hosted on Langchain. Claude's system prompt has been configured to understand the metadata schema format and craft MongoDB queries based on the prompt. Given a natural language query about the metadata, the model will produce a MongoDB query, thought reasoning and answer. This method of answering follows chain of thought reasoning, where a complex task is broken up into manageable chunks, allowing logical thinking through of a problem. 
+
+The main framework used by the model is Retrieval Augmented Generation, a process in which the model consults an external database to generate information for the user's query. This process doesn't interfere with the model's training process, but rather allows the model to successfully query unseen data with few shot learning (examples of queries and answers) and tools (e.g. API access) to examine these databases.
 
 ## Data Retrieval
 
@@ -60,84 +60,7 @@ To improve retrieval accuracy and decrease hallucinations, we use vector embeddi
 For queries that require accessing the entire database, like count based questions, information is accessed through an aggregation pipeline, provided by one of the constructed LLM agents, and the API connection.
 
 ## Multi-Agent graph framework
+A multi-agent workflow is created using Langgraph, allowing for parallel execution of tasks, like document retrieval from the vector index, and control over the the RAG process.
 
 ![Worfklow](multi-agent-workflow-11-01.jpeg)
 
-### Linters and testing
-
-There are several libraries used to run linters, check documentation, and run tests.
-
-- Please test your changes using the **coverage** library, which will run the tests and log a coverage report:
-
-```bash
-coverage run -m unittest discover && coverage report
-```
-
-- Use **interrogate** to check that modules, methods, etc. have been documented thoroughly:
-
-```bash
-interrogate .
-```
-
-- Use **flake8** to check that code is up to standards (no unused imports, etc.):
-
-```bash
-flake8 .
-```
-
-- Use **black** to automatically format the code into PEP standards:
-
-```bash
-black .
-```
-
-- Use **isort** to automatically sort import statements:
-
-```bash
-isort .
-```
-
-### Pull requests
-
-For internal members, please create a branch. For external members, please fork the repository and open a pull request from the fork. We'll primarily use [Angular](https://github.com/angular/angular/blob/main/CONTRIBUTING.md#commit) style for commit messages. Roughly, they should follow the pattern:
-
-```text
-<type>(<scope>): <short summary>
-```
-
-where scope (optional) describes the packages affected by the code changes and type (mandatory) is one of:
-
-- **build**: Changes that affect build tools or external dependencies (example scopes: pyproject.toml, setup.py)
-- **ci**: Changes to our CI configuration files and scripts (examples: .github/workflows/ci.yml)
-- **docs**: Documentation only changes
-- **feat**: A new feature
-- **fix**: A bugfix
-- **perf**: A code change that improves performance
-- **refactor**: A code change that neither fixes a bug nor adds a feature
-- **test**: Adding missing tests or correcting existing tests
-
-### Semantic Release
-
-The table below, from [semantic release](https://github.com/semantic-release/semantic-release), shows which commit message gets you which release type when `semantic-release` runs (using the default configuration):
-
-| Commit message                                                                                                                                                                                     | Release type                                                                                                       |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `fix(pencil): stop graphite breaking when too much pressure applied`                                                                                                                             | ~~Patch~~ Fix Release, Default release                                                                            |
-| `feat(pencil): add 'graphiteWidth' option`                                                                                                                                                       | ~~Minor~~ Feature Release                                                                                         |
-| `perf(pencil): remove graphiteWidth option<br>``<br>BREAKING CHANGE: The graphiteWidth option has been removed.``<br>The default graphite width of 10mm is always used for performance reasons.` | ~~Major~~ Breaking Release <br /> (Note that the `BREAKING CHANGE: ` token must be in the footer of the commit) |
-
-### Documentation
-
-To generate the rst files source files for documentation, run
-
-```bash
-sphinx-apidoc -o doc_template/source/ src 
-```
-
-Then to create the documentation HTML files, run
-
-```bash
-sphinx-build -b html doc_template/source/ doc_template/build/html
-```
-
-More info on sphinx installation can be found [here](https://www.sphinx-doc.org/en/master/usage/installation.html).

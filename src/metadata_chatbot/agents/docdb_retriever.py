@@ -1,12 +1,9 @@
-import sys, os, json, boto3
-from typing import List, Optional, Any, Union, Annotated
-from pymongo.collection import Collection
-from motor.motor_asyncio import AsyncIOMotorCollection
+import json, boto3, asyncio
+from typing import List, Optional, Any
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from bson import json_util
-from langsmith import trace as langsmith_trace
 from pydantic import Field
 from aind_data_access_api.document_db import MetadataDbClient
 from langchain_aws import BedrockEmbeddings
@@ -93,7 +90,7 @@ class DocDBRetriever(BaseRetriever):
     ) -> List[Document]:
         
         #Embed query
-        embedded_query = BEDROCK_EMBEDDINGS.embed_query(query)
+        embedded_query = await BEDROCK_EMBEDDINGS.aembed_query(query)
 
         #Construct aggregation pipeline
         vector_search = {
@@ -111,27 +108,22 @@ class DocDBRetriever(BaseRetriever):
         pipeline = [vector_search]
         if query_filter:
             pipeline.insert(0, query_filter)
-    
+
         result = docdb_api_client.aggregate_docdb_records(pipeline=pipeline)
-        #results = await cursor.to_list(length=1000)
-
-        page_content_field = 'textContent'
-
-        results = []
         
         #Transform retrieved docs to langchain Documents
-        for document in result:
+        async def process_document(document):
             values_to_metadata = dict()
-
             json_doc = json.loads(json_util.dumps(document))
 
             for key, value in json_doc.items():
-                if key == page_content_field:
+                if key == 'textContent':
                     page_content = value
                 else:
                     values_to_metadata[key] = value
+            return Document(page_content=page_content, metadata=values_to_metadata)
+        
+        tasks = [process_document(document) for document in result]
+        result = await asyncio.gather(*tasks)
 
-            new_doc = Document(page_content=page_content, metadata=values_to_metadata)
-            results.append(new_doc)
-
-        return results
+        return result

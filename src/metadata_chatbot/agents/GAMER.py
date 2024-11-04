@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Mapping, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
@@ -57,10 +57,8 @@ class GAMER(LLM):
             The model output as a string.
         """
         inputs = {"query" : query}
-        async for output in async_app.astream(inputs, stream_mode="updates"):
-            for key, value in output.items():
-                logging.info(f"Currently on node '{key}':")
-        return value['generation'] if value else None
+        answer = await async_app.ainvoke(inputs)
+        return answer['generation']
 
     def _stream(
         self,
@@ -108,7 +106,13 @@ class GAMER(LLM):
         return "Claude 3 Sonnet"
     
 # llm = GAMER()
-# print(llm.invoke("What are the injections for SmartSPIM_675387_2023-05-23_23-05-56?"))
+
+# async def main():
+#     query = "Can you list all the procedures performed on the specimen, including their start and end dates? in SmartSPIM_662616_2023-03-06_17-47-13"
+#     result = await llm.ainvoke(query)
+#     print(result)
+
+# asyncio.run(main())
 
 # async def main():
 #     result = await llm.ainvoke("Can you give me a timeline of events for subject 675387?")
