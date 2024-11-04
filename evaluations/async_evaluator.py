@@ -36,7 +36,7 @@ async def main():
         langsmith_app, # Your AI system
         data=dataset_name, # The data to predict and grade over
         evaluators=[evaluator], # The evaluators to score the results
-        experiment_prefix="async-metadata-chatbot-0.0.60", # A prefix for your experiment names to easily identify them
+        experiment_prefix="async-metadata-chatbot-0.0.64", # A prefix for your experiment names to easily identify them
     )
     return experiment_results
 
