@@ -60,6 +60,12 @@ The current chat bot model uses Anthropic's Claude Sonnet 3 and 3.5, hosted on A
 
 The main framework used by the model is Retrieval Augmented Generation (RAG), a process in which the model consults an external database to generate information for the user's query. This process doesn't interfere with the model's training process, but rather allows the model to successfully query unseen data with few shot learning (examples of queries and answers) and tools (e.g. API access) to examine these databases.
 
+### Multi-Agent graph framework
+
+A multi-agent workflow is created using Langgraph, allowing for parallel execution of tasks, like document retrieval from the vector index, and increased developer control over the the RAG process. Decision nodes and their roles are further explained in the `GAMER_workbook`.
+
+![Worfklow](multi-agent-workflow-11-01.jpeg)
+
 ## Data Retrieval
 
 ### Vector Embeddings
@@ -69,12 +75,6 @@ To improve retrieval accuracy and decrease hallucinations, we use vector embeddi
 ### AIND-data-schema-access REST API
 
 For queries that require accessing the entire database, like count based questions, information is accessed through an aggregation pipeline, provided by one of the constructed LLM agents, and the API connection.
-
-### Multi-Agent graph framework
-
-A multi-agent workflow is created using Langgraph, allowing for parallel execution of tasks, like document retrieval from the vector index, and increased developer control over the the RAG process. Decision nodes and their roles are further explained in the `GAMER_workbook`.
-
-![Worfklow](multi-agent-workflow-11-01.jpeg)
 
 ## Current specifications
 
