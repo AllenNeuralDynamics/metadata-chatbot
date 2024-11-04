@@ -1,11 +1,11 @@
+# GAMER: Generative Analysis for Metadata Retrieval 
+
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 ![Code Style](https://img.shields.io/badge/code%20style-black-black)
 [![semantic-release: angular](https://img.shields.io/badge/semantic--release-angular-e10079?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
 ![Interrogate](https://img.shields.io/badge/interrogate-48.8%25-red)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen?logo=codecov)
 ![Python](https://img.shields.io/badge/python->=3.11-blue?logo=python)
-
-## Usage
 
 ## Installation
 
@@ -28,6 +28,8 @@ Install the chatbot package -- ensure virtual environment is running.
 ```bash
 pip install metadata-chatbot
 ```
+
+## Usage
 
 To call the model,
 
