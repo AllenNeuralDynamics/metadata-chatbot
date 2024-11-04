@@ -68,7 +68,7 @@ To improve retrieval accuracy and decrease hallucinations, we use vector embeddi
 
 For queries that require accessing the entire database, like count based questions, information is accessed through an aggregation pipeline, provided by one of the constructed LLM agents, and the API connection.
 
-## Multi-Agent graph framework
+### Multi-Agent graph framework
 
 A multi-agent workflow is created using Langgraph, allowing for parallel execution of tasks, like document retrieval from the vector index, and increased developer control over the the RAG process. Decision nodes and their roles are further explained in the `GAMER_workbook`.
 
