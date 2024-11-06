@@ -1,0 +1,139 @@
+interactions:
+- request:
+    body: '{"tools": [{"name": "RouteQuery", "description": "Route a user query to
+      the most relevant datasource.", "input_schema": {"properties": {"reasoning":
+      {"description": "Give a justification for the chosen method", "type": "string"},
+      "datasource": {"description": "Given a user question choose to route it to the
+      direct database or its vectorstore.", "enum": ["vectorstore", "direct_database"],
+      "type": "string"}}, "required": ["reasoning", "datasource"], "type": "object"}}],
+      "tool_choice": {"type": "tool", "name": "RouteQuery"}, "anthropic_version":
+      "bedrock-2023-05-31", "messages": [{"role": "user", "content": "What are the
+      injections for SmartSPIM_675387_2023-05-23_23-05-56?"}], "system": "You are
+      an expert at routing a user question to a vectorstore or the database directly.
+      You are also an expert at constructing mongodb queries.\n\nThe database is a
+      MongoDB database. Rerouting to this method will connect the query to an API
+      that will search the entire database. This route should be taken when the query
+      requires knowledge of the entire database (eg. finding names of all data assets
+      that satisfy a requirement, a count based question, like how many subjects have
+      undergone ecephys procedures), or if it''s an extremely small retrieval (i.e.
+      what is the modality used in experiment single-plane-ophys_621025_2022-07-05_17-48-34,
+      what is the genotype of subject 678543, tldr: queries that require you to only
+      find information from one field in a data record). Querying the entire database
+      is recommended when asked for all X that match category Y. For example, find
+      the IDs of subjects who have undergone retrorbital injections. Or what are the
+      names of the assets that are smartspim experiments which are missing the acquisition
+      field. Other examples include finding all the unique modalities in a database,
+      a query that asks to find all assets that follow a specific format or any count
+      based questions.\n\nThe vector store is a vector index. The user''s question
+      will be converted to an embedding and projected against the pre-existing document
+      vectors to find documents that are most relevant to the query. It''s more costly
+      and only retrieves the top 10 relevant documents. Reroute to the vectorstore
+      if the question contains information that can be helped with semantic search.
+      Examples of this would be the experimental history of one subject, or specific
+      information about equipment used during procedures. Hence, only a complex question
+      about a specific object would work well against a vector index. Question like
+      what are all the X that satisfy criteria Y should not be queried against the
+      vector database. \n\nAnother point of judgement: If the query can easily be
+      converted to a mongodb query, choose the database directly.\n\nNOTE: A data
+      asset is the name of the record, for example, single-plane-ophys_621025_2022-07-05_17-48-34,
+      behavior_711039_2024-09-09_09-46-00 etc.", "max_tokens": 1024, "temperature":
+      0}'
+    headers: {}
+    method: POST
+    uri: https://bedrock-runtime.us-west-2.amazonaws.com/model/anthropic.claude-3-sonnet-20240229-v1%3A0/invoke
+  response:
+    body:
+      string: '{"id":"msg_bdrk_01P5wduHuRaRiKWgduiQsXuQ","type":"message","role":"assistant","model":"claude-3-sonnet-20240229","content":[{"type":"tool_use","id":"toolu_bdrk_01UbA9nCnCT2NbrRQHuBJEbB","name":"RouteQuery","input":{"datasource":"vectorstore","reasoning":"The
+        query is asking for specific information about a particular data asset (SmartSPIM_675387_2023-05-23_23-05-56),
+        which is best suited for semantic search against the vectorstore to retrieve
+        relevant documents containing details about the injections for that experiment."}}],"stop_reason":"tool_use","stop_sequence":null,"usage":{"input_tokens":898,"output_tokens":110}}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '626'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 29 Oct 2024 20:52:35 GMT
+      X-Amzn-Bedrock-Input-Token-Count:
+      - '898'
+      X-Amzn-Bedrock-Invocation-Latency:
+      - '2850'
+      X-Amzn-Bedrock-Output-Token-Count:
+      - '110'
+      x-amzn-RequestId:
+      - b0274f0a-1534-4d3c-a3ae-853bb6158bc3
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"tools": [{"name": "RouteQuery", "description": "Route a user query to
+      the most relevant datasource.", "input_schema": {"properties": {"reasoning":
+      {"description": "Give a justification for the chosen method", "type": "string"},
+      "datasource": {"description": "Given a user question choose to route it to the
+      direct database or its vectorstore.", "enum": ["vectorstore", "direct_database"],
+      "type": "string"}}, "required": ["reasoning", "datasource"], "type": "object"}}],
+      "tool_choice": {"type": "tool", "name": "RouteQuery"}, "anthropic_version":
+      "bedrock-2023-05-31", "messages": [{"role": "user", "content": "What is the
+      mongodb query to find the injections for SmartSPIM_675387_2023-05-23_23-05-56?"}],
+      "system": "You are an expert at routing a user question to a vectorstore or
+      the database directly. You are also an expert at constructing mongodb queries.\n\nThe
+      database is a MongoDB database. Rerouting to this method will connect the query
+      to an API that will search the entire database. This route should be taken when
+      the query requires knowledge of the entire database (eg. finding names of all
+      data assets that satisfy a requirement, a count based question, like how many
+      subjects have undergone ecephys procedures), or if it''s an extremely small
+      retrieval (i.e. what is the modality used in experiment single-plane-ophys_621025_2022-07-05_17-48-34,
+      what is the genotype of subject 678543, tldr: queries that require you to only
+      find information from one field in a data record). Querying the entire database
+      is recommended when asked for all X that match category Y. For example, find
+      the IDs of subjects who have undergone retrorbital injections. Or what are the
+      names of the assets that are smartspim experiments which are missing the acquisition
+      field. Other examples include finding all the unique modalities in a database,
+      a query that asks to find all assets that follow a specific format or any count
+      based questions.\n\nThe vector store is a vector index. The user''s question
+      will be converted to an embedding and projected against the pre-existing document
+      vectors to find documents that are most relevant to the query. It''s more costly
+      and only retrieves the top 10 relevant documents. Reroute to the vectorstore
+      if the question contains information that can be helped with semantic search.
+      Examples of this would be the experimental history of one subject, or specific
+      information about equipment used during procedures. Hence, only a complex question
+      about a specific object would work well against a vector index. Question like
+      what are all the X that satisfy criteria Y should not be queried against the
+      vector database. \n\nAnother point of judgement: If the query can easily be
+      converted to a mongodb query, choose the database directly.\n\nNOTE: A data
+      asset is the name of the record, for example, single-plane-ophys_621025_2022-07-05_17-48-34,
+      behavior_711039_2024-09-09_09-46-00 etc.", "max_tokens": 1024, "temperature":
+      0}'
+    headers: {}
+    method: POST
+    uri: https://bedrock-runtime.us-west-2.amazonaws.com/model/anthropic.claude-3-sonnet-20240229-v1%3A0/invoke
+  response:
+    body:
+      string: '{"id":"msg_bdrk_01Nr3qo1vCYczZwcEsvRUwHM","type":"message","role":"assistant","model":"claude-3-sonnet-20240229","content":[{"type":"tool_use","id":"toolu_bdrk_01KcPASgvFaQgECwjFZ5ZqVw","name":"RouteQuery","input":{"datasource":"direct_database","reasoning":"The
+        query is asking for specific information about injections for a particular
+        data asset (SmartSPIM_675387_2023-05-23_23-05-56). This can be directly retrieved
+        from the database by querying the relevant fields, so routing to the direct
+        database is more appropriate than using the vectorstore."}}],"stop_reason":"tool_use","stop_sequence":null,"usage":{"input_tokens":903,"output_tokens":119}}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '652'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 29 Oct 2024 20:52:40 GMT
+      X-Amzn-Bedrock-Input-Token-Count:
+      - '903'
+      X-Amzn-Bedrock-Invocation-Latency:
+      - '5178'
+      X-Amzn-Bedrock-Output-Token-Count:
+      - '119'
+      x-amzn-RequestId:
+      - 2e11949c-c819-4b0f-a993-fab6285f2f8d
+    status:
+      code: 200
+      message: OK
+version: 1

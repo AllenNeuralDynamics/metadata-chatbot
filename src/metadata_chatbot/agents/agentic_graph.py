@@ -15,11 +15,25 @@ LLM = ChatBedrock(
     model_id= MODEL_ID,
     model_kwargs= {
         "temperature": 0
-    }
+    },
+    streaming = True
 )
 
+<<<<<<< Updated upstream
 #determining if entire database needs to be surveyed
 class RouteQuery(BaseModel):
+=======
+SONNET_3_5_LLM = ChatBedrock(
+    model_id= MODEL_ID_SONNET_3_5,
+    model_kwargs= {
+        "temperature": 0
+    },
+    streaming = True
+)
+
+# Determining if entire database needs to be surveyed
+class RouteQuery(TypedDict):
+>>>>>>> Stashed changes
     """Route a user query to the most relevant datasource."""
 
     datasource: Literal["vectorstore", "direct_database"] = Field(
@@ -89,9 +103,12 @@ class FilterGenerator(BaseModel):
 filter_prompt = hub.pull("eden19/filtergeneration")
 filter_generator_llm = LLM.with_structured_output(FilterGenerator)
 
+<<<<<<< Updated upstream
 filter_generation_chain = filter_prompt | filter_generator_llm
 # filter = filter_generation_chain.invoke({"query": question}).filter_query
 
+=======
+>>>>>>> Stashed changes
 # Check if retrieved documents answer question
 class RetrievalGrader(BaseModel):
     """Binary score to check whether retrieved documents are relevant to the question"""

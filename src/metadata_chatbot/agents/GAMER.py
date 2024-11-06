@@ -3,10 +3,12 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
+from langchain_core.globals import set_llm_cache
 
 from langgraph.graph import StateGraph
 
 import logging, asyncio
+from langchain_core.caches import InMemoryCache
 
 from metadata_chatbot.agents.async_workflow import async_app
 from metadata_chatbot.agents.workflow import app
@@ -111,6 +113,14 @@ class GAMER(LLM):
         """Get the type of language model used by this chat model. Used for logging purposes only."""
         return "Claude 3 Sonnet"
     
+<<<<<<< Updated upstream
+=======
+# llm = GAMER()
+# query = "Can you list all the procedures performed on the specimen, including their start and end dates? in SmartSPIM_662616_2023-03-06_17-47-13"
+# set_llm_cache(InMemoryCache())
+# result = llm.invoke(query)
+# print(result)
+>>>>>>> Stashed changes
 
 
 # async def main():
