@@ -22,6 +22,7 @@ dependencies = [
     'langchain-aws',
     'langchain-community',
     'langchain_core',
+    'langchain_huggingface',
     'langchain',
     'langgraph',
     'motor',
