@@ -6,6 +6,7 @@ from langchain_core.tools import tool
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from aind_data_access_api.document_db import MetadataDbClient
 from typing_extensions import Annotated, TypedDict
+from langgraph.prebuilt import create_react_agent
 
 MODEL_ID_SONNET_3 = "anthropic.claude-3-sonnet-20240229-v1:0"
 MODEL_ID_SONNET_3_5 = "anthropic.claude-3-sonnet-20240229-v1:0"
@@ -27,7 +28,7 @@ SONNET_3_5_LLM = ChatBedrock(
 class RouteQuery(TypedDict):
     """Route a user query to the most relevant datasource."""
 
-    reasoning: Annotated[str, ..., "Give a one sentence justification for the chosen method"]
+    #reasoning: Annotated[str, ..., "Give a one sentence justification for the chosen method"]
     datasource: Annotated[Literal["vectorstore", "direct_database"], ..., "Given a user question choose to route it to the direct database or its vectorstore."]
 
 structured_llm_router = SONNET_3_LLM.with_structured_output(RouteQuery)
@@ -35,9 +36,9 @@ router_prompt = hub.pull("eden19/query_rerouter")
 datasource_router = router_prompt | structured_llm_router
 
 # Tool to survey entire database 
-API_GATEWAY_HOST = "api.allenneuraldynamics-test.org"
-DATABASE = "metadata_vector_index"
-COLLECTION = "curated_assets"
+API_GATEWAY_HOST = "api.allenneuraldynamics.org"
+DATABASE = "metadata_index"
+COLLECTION = "data_assets"
 
 docdb_api_client = MetadataDbClient(
    host=API_GATEWAY_HOST,
@@ -69,7 +70,11 @@ def aggregation_retrieval(agg_pipeline: list) -> list:
     return result
         
 tools = [aggregation_retrieval]
+tool_model = SONNET_3_5_LLM.bind_tools(tools)
+
 db_prompt = hub.pull("eden19/entire_db_retrieval")
+langgraph_agent_executor = create_react_agent(SONNET_3_LLM, tools=tools, state_modifier= db_prompt)
+
 db_surveyor_agent = create_tool_calling_agent(SONNET_3_LLM, tools, db_prompt)
 query_retriever = AgentExecutor(agent=db_surveyor_agent, tools=tools, return_intermediate_steps = True, verbose=False)
 
