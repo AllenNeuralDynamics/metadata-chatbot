@@ -10,7 +10,7 @@ import json
 from langchain_core.messages import ToolMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, END
-from react_agent_prompt import system_prompt
+from metadata_chatbot.agents.react_agent_prompt import system_prompt
 
 
 MODEL_ID_SONNET_3_5 = "anthropic.claude-3-sonnet-20240229-v1:0"
