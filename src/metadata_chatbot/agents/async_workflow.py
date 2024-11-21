@@ -3,9 +3,11 @@ from typing import List, Optional
 from typing_extensions import TypedDict
 from langchain_core.documents import Document
 from langgraph.graph import END, StateGraph, START
+from docdb_retriever import DocDBRetriever
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
-
-from metadata_chatbot.agents.agentic_graph import datasource_router, query_retriever, filter_generation_chain, doc_grader, rag_chain, db_rag_chain
+from react_agent import react_agent
+from langchain_core.messages.ai import AIMessage
+from metadata_chatbot.agents.agentic_graph import datasource_router,  filter_generation_chain, doc_grader, rag_chain, db_rag_chain
 
 class GraphState(TypedDict):
     """
@@ -19,7 +21,7 @@ class GraphState(TypedDict):
 
     query: str
     generation: str
-    documents: List[str]
+    documents: Optional[List[str]]
     filter: Optional[dict]
     top_k: Optional[int] 
 
@@ -41,9 +43,24 @@ async def route_question_async(state):
     elif source['datasource'] == "vectorstore":
         return "vectorstore"
     
+def print_stream(stream):
+    message_list = []
+    for s in stream:
+        message_list.append(s)
+        message = s["messages"][-1]
+        if isinstance(message, tuple):
+            print(message)
+        else:
+            message.pretty_print()
+
+    for message in message_list[-1]['messages']:
+        if isinstance(message, AIMessage):
+            final_answer = message.content
+    return final_answer
+    
 async def retrieve_DB_async(state):
     """
-    Filter database
+    Retrieves from data asset collection in prod DB after constructing a MongoDB query
     
     Args:
         state (dict): The current graph state
@@ -53,14 +70,27 @@ async def retrieve_DB_async(state):
     """
 
     query = state["query"]
+    inputs = {"messages": [("user", query)]}
 
-    document_dict = dict()
-    retrieved_dict = await query_retriever.ainvoke({'query': query, 'chat_history': [], 'agent_scratchpad' : []})
-    document_dict['mongodb_query'] = retrieved_dict['intermediate_steps'][0][0].tool_input['agg_pipeline']
-    document_dict['retrieved_output'] = retrieved_dict['intermediate_steps'][0][1]
-    documents = await asyncio.to_thread(json.dumps, document_dict)
+    generation = print_stream(react_agent.stream(inputs, stream_mode="values"))
 
-    return {"query": query, "documents": documents}
+    # generation = react_agent.invoke(inputs)
+    # AIMessage_list = []
+    # for message in generation['messages']:
+    #     if isinstance(message, AIMessage):
+    #         AIMessage_list.append(message)
+
+    # final_answer = AIMessage_list[-1].content
+ 
+    # document_dict = dict()
+    # retrieved_dict = await query_retriever.ainvoke({'query': query, 'chat_history': [], 'agent_scratchpad' : []})
+    # document_dict['mongodb_query'] = retrieved_dict['intermediate_steps'][0][0].tool_input['agg_pipeline']
+    # document_dict['retrieved_output'] = retrieved_dict['intermediate_steps'][0][1]
+    # documents = await asyncio.to_thread(json.dumps, document_dict)
+
+
+
+    return {"query": query, "generation": ''}
 
 async def filter_generator_async(state):
     """
@@ -103,10 +133,7 @@ async def grade_doc_async(query, doc: Document):
     grade = score['binary_score']
 
     if grade == "yes":
-        relevant_context = score['relevant_context']
-        return relevant_context
-    else:
-        return None
+        return doc.page_content
         
 
 async def grade_documents_async(state):
@@ -165,7 +192,7 @@ async_workflow.add_node("database_query", retrieve_DB_async)
 async_workflow.add_node("filter_generation", filter_generator_async)  
 async_workflow.add_node("retrieve", retrieve_VI_async)  
 async_workflow.add_node("document_grading", grade_documents_async)  
-async_workflow.add_node("generate_db", generate_DB_async)  
+#async_workflow.add_node("generate_db", generate_DB_async)  
 async_workflow.add_node("generate_vi", generate_VI_async)  
 
 async_workflow.add_conditional_edges(
@@ -176,8 +203,8 @@ async_workflow.add_conditional_edges(
         "vectorstore": "filter_generation",
     },
 )
-async_workflow.add_edge("database_query", "generate_db") 
-async_workflow.add_edge("generate_db", END)
+async_workflow.add_edge("database_query", END) 
+#async_workflow.add_edge("generate_db", END)
 async_workflow.add_edge("filter_generation", "retrieve")
 async_workflow.add_edge("retrieve", "document_grading")
 async_workflow.add_edge("document_grading","generate_vi")
@@ -185,11 +212,11 @@ async_workflow.add_edge("generate_vi", END)
 
 async_app = async_workflow.compile()
 
-# async def main():
-#     query = "Can you list all the procedures performed on the specimen, including their start and end dates? in SmartSPIM_662616_2023-03-06_17-47-13"
-#     inputs = {"query": query}
-#     answer = await async_app.ainvoke(inputs)
-#     return answer['generation']
+async def main():
+    query = "How many records are in the dataset?"
+    inputs = {"query": query}
+    answer = await async_app.ainvoke(inputs)
+    return answer['generation']
 
-# #Run the async function
+#Run the async function
 # print(asyncio.run(main()))

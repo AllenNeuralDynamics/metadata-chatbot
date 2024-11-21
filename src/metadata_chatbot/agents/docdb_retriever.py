@@ -8,6 +8,18 @@ from pydantic import Field
 from aind_data_access_api.document_db import MetadataDbClient
 from langchain_aws import BedrockEmbeddings
 
+from langchain_huggingface import HuggingFaceEmbeddings
+
+
+model_name = "dunzhang/stella_en_1.5B_v5"
+model_kwargs = {'device': 'cpu'}
+encode_kwargs = {'normalize_embeddings': False}
+hf = HuggingFaceEmbeddings(
+    model_name=model_name,
+    model_kwargs=model_kwargs,
+    encode_kwargs=encode_kwargs
+)
+
 BEDROCK_CLIENT = boto3.client(
     service_name="bedrock-runtime",
     region_name = 'us-west-2'
@@ -17,13 +29,15 @@ BEDROCK_EMBEDDINGS = BedrockEmbeddings(model_id="amazon.titan-embed-text-v2:0",c
 
 API_GATEWAY_HOST = "api.allenneuraldynamics-test.org"
 DATABASE = "metadata_vector_index"
-COLLECTION = "bigger_LANGCHAIN_curated_chunks"
+COLLECTION = "STELLA_4096_all"
 
 docdb_api_client = MetadataDbClient(
    host=API_GATEWAY_HOST,
    database=DATABASE,
    collection=COLLECTION,
 )
+
+#print("Using collection:", COLLECTION)
 
 
 class DocDBRetriever(BaseRetriever):
@@ -34,7 +48,7 @@ class DocDBRetriever(BaseRetriever):
     def _get_relevant_documents(
         self, 
         query: str, 
-        query_filter: Optional[dict] = None,
+        query_filter: dict,
         run_manager: Optional[CallbackManagerForRetrieverRun] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -54,13 +68,19 @@ class DocDBRetriever(BaseRetriever):
             }
         }
 
-        pipeline = [vector_search]
-        if query_filter:
-            pipeline.insert(0, query_filter)
-    
-        result = docdb_api_client.aggregate_docdb_records(pipeline=pipeline)
+        projection_stage = {
+            "$project": {
+                "textContent": 1  
+            }
+        }
 
-        page_content_field = 'textContent'
+        pipeline = [query_filter, vector_search, projection_stage]
+
+        try:
+            result = docdb_api_client.aggregate_docdb_records(pipeline=pipeline)
+        except Exception as e:
+            print(f"Error during aggregation: {e}")
+            return []
 
         results = []
         
@@ -71,7 +91,7 @@ class DocDBRetriever(BaseRetriever):
             json_doc = json.loads(json_util.dumps(document))
 
             for key, value in json_doc.items():
-                if key == page_content_field:
+                if key == 'textContent':
                     page_content = value
                 else:
                     values_to_metadata[key] = value
@@ -90,7 +110,7 @@ class DocDBRetriever(BaseRetriever):
     ) -> List[Document]:
         
         #Embed query
-        embedded_query = await BEDROCK_EMBEDDINGS.aembed_query(query)
+        embedded_query = await hf.aembed_query(query)
 
         #Construct aggregation pipeline
         vector_search = {
@@ -100,12 +120,19 @@ class DocDBRetriever(BaseRetriever):
                     "path": 'vectorContent', 
                     "similarity": 'euclidean', 
                     "k": self.k,
-                    "efSearch": 40
+                    "efSearch": 250
                 }
             }
         }
 
-        pipeline = [vector_search]
+        projection_stage = {
+            "$project": {
+                "textContent": 1,  
+                "_id": 0  
+            }
+        }
+
+        pipeline = [vector_search, projection_stage]
         if query_filter:
             pipeline.insert(0, query_filter)
 

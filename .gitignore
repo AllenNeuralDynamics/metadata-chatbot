@@ -8,6 +8,9 @@ test_agentic_graph_VI.py
 test.py
 graph_viz.ipynb
 multi-agent-workflow-11-01.jpeg
+bedrock_model/
+embeddings.py
+umap_visualization.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
