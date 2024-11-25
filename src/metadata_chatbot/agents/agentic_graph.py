@@ -9,19 +9,21 @@ from typing_extensions import Annotated, TypedDict
 from langgraph.prebuilt import create_react_agent
 
 MODEL_ID_SONNET_3 = "anthropic.claude-3-sonnet-20240229-v1:0"
-MODEL_ID_SONNET_3_5 = "anthropic.claude-3-sonnet-20240229-v1:0"
+MODEL_ID_SONNET_3_5 = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 SONNET_3_LLM = ChatBedrock(
     model_id= MODEL_ID_SONNET_3,
     model_kwargs= {
         "temperature": 0
-    }
+    },
+    streaming = True
 )
 
 SONNET_3_5_LLM = ChatBedrock(
     model_id= MODEL_ID_SONNET_3_5,
     model_kwargs= {
         "temperature": 0
-    }
+    },
+    streaming = True
 )
 
 # Determining if entire database needs to be surveyed
@@ -34,50 +36,6 @@ class RouteQuery(TypedDict):
 structured_llm_router = SONNET_3_LLM.with_structured_output(RouteQuery)
 router_prompt = hub.pull("eden19/query_rerouter")
 datasource_router = router_prompt | structured_llm_router
-
-# Tool to survey entire database 
-API_GATEWAY_HOST = "api.allenneuraldynamics.org"
-DATABASE = "metadata_index"
-COLLECTION = "data_assets"
-
-docdb_api_client = MetadataDbClient(
-   host=API_GATEWAY_HOST,
-   database=DATABASE,
-   collection=COLLECTION,
-)
-
-@tool
-def aggregation_retrieval(agg_pipeline: list) -> list:
-    """Given a MongoDB query and list of projections, this function retrieves and returns the 
-    relevant information in the documents. 
-    Use a project stage as the first stage to minimize the size of the queries before proceeding with the remaining steps.
-    The input to $map must be an array not a string, avoid using it in the $project stage.
-
-    Parameters
-    ----------
-    agg_pipeline
-        MongoDB aggregation pipeline
-
-    Returns
-    -------
-    list
-        List of retrieved documents
-    """
-
-    result = docdb_api_client.aggregate_docdb_records(
-        pipeline=agg_pipeline
-    )
-    return result
-        
-tools = [aggregation_retrieval]
-tool_model = SONNET_3_5_LLM.bind_tools(tools)
-
-db_prompt = hub.pull("eden19/entire_db_retrieval")
-langgraph_agent_executor = create_react_agent(SONNET_3_LLM, tools=tools, state_modifier= db_prompt)
-
-db_surveyor_agent = create_tool_calling_agent(SONNET_3_LLM, tools, db_prompt)
-query_retriever = AgentExecutor(agent=db_surveyor_agent, tools=tools, return_intermediate_steps = True, verbose=False)
-
 
 # Generating appropriate filter
 class FilterGenerator(TypedDict):
@@ -95,7 +53,7 @@ filter_generation_chain = filter_prompt | filter_generator_llm
 class RetrievalGrader(TypedDict):
     """Relevant material in the retrieved document + Binary score to check relevance to the question"""
 
-    relevant_context:Annotated[str, ..., "Relevant context extracted from document that helps directly answer the question"]
+    #relevant_context:Annotated[str, ..., "Relevant context extracted from document that helps directly answer the question"]
     binary_score: Annotated[Literal["yes", "no"], ..., "Retrieved documents are relevant to the query, 'yes' or 'no'"]
 
 retrieval_grader = SONNET_3_5_LLM.with_structured_output(RetrievalGrader)
