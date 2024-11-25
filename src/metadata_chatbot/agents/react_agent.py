@@ -10,10 +10,17 @@ import json
 from langchain_core.messages import ToolMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, END
-from metadata_chatbot.agents.react_agent_prompt import system_prompt
+from langchain_core.runnables import RunnableSequence, RunnableLambda
 
 
-MODEL_ID_SONNET_3_5 = "anthropic.claude-3-sonnet-20240229-v1:0"
+# from metadata_chatbot.agents.react_agent_prompt import system_prompt
+# from react_agent_prompt import system_prompt
+from langchain_core.prompts import ChatPromptTemplate
+from langchain import hub
+import asyncio
+
+
+MODEL_ID_SONNET_3_5 = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 
 SONNET_3_5_LLM = ChatBedrock(
     model_id= MODEL_ID_SONNET_3_5,
@@ -61,6 +68,10 @@ def aggregation_retrieval(agg_pipeline: list) -> list:
 tools = [aggregation_retrieval]
 model = SONNET_3_5_LLM.bind_tools(tools)
 
+template = hub.pull("eden19/entire_db_retrieval")
+#system_prompt =  SystemMessage(system_rompt)
+retrieval_agent_chain = template | model
+
 class AgentState(TypedDict):
     """The state of the agent."""
 
@@ -68,10 +79,10 @@ class AgentState(TypedDict):
 
 tools_by_name = {tool.name: tool for tool in tools}
 
-def tool_node(state: AgentState):
+async def tool_node(state: AgentState):
     outputs = []
     for tool_call in state["messages"][-1].tool_calls:
-        tool_result = tools_by_name[tool_call["name"]].invoke(tool_call["args"])
+        tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
         outputs.append(
             ToolMessage(
                 content=json.dumps(tool_result),
@@ -81,19 +92,27 @@ def tool_node(state: AgentState):
         )
     return {"messages": outputs}
 
-def call_model(
-    state: AgentState,
-    config: RunnableConfig,
+async def call_model(
+    state: AgentState
 ):
+    if ToolMessage in state['messages']:
     # this is similar to customizing the create_react_agent with state_modifier, but is a lot more flexible
-    system_prompt_ =  SystemMessage(system_prompt)
-    response = model.invoke([system_prompt_] + state["messages"], config)
+        response = await SONNET_3_5_LLM.ainvoke(state["messages"])
+    else:
+        response = await retrieval_agent_chain.ainvoke(state["messages"])
     # We return a list, because this will get added to the existing list
     return {"messages": [response]}
 
+# async def summarizer(
+#     state: AgentState
+# ):
+#     response = await SONNET_3_5_LLM.ainvoke(f"Summarize {state["messages"][-1]}")
+#     # We return a list, because this will get added to the existing list
+#     return {"messages": [response]}
+
 
 # Define the conditional edge that determines whether to continue or not
-def should_continue(state: AgentState):
+async def should_continue(state: AgentState):
     messages = state["messages"]
     last_message = messages[-1]
     # If there is no function call, then we finish
@@ -122,14 +141,19 @@ workflow.add_edge("tools", "agent")
 
 react_agent = workflow.compile()
 
-# def print_stream(stream):
-#     for s in stream:
-#         message = s["messages"][-1]
-#         if isinstance(message, tuple):
-#             print(message)
-#         else:
-#             message.pretty_print()
+async def print_stream(stream):
+    async for s in stream:
+        message = s["messages"][-1]
+        if isinstance(message, tuple):
+            print(message)
+        else:
+            message.pretty_print()
 
 
-# inputs = {"messages": [("user", "What is the mongo db query to find the unique injection sites and counts of each in smartspim experiments?")]}
-# print_stream(react_agent.stream(inputs, stream_mode="values"))
+# async def main():
+#     inputs = {"messages": [("user", "What is the total number of record in the database?")]}
+#     answer = await print_stream(react_agent.astream(inputs, stream_mode="values"))
+#     return answer
+
+# if __name__ == "__main__":
+#     asyncio.run(main())

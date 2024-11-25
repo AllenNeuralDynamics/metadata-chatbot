@@ -1,4 +1,4 @@
-# GAMER: Generative Analysis for Metadata Retrieval 
+# GAMER: Generative Analysis for Metadata Retrieval
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 ![Code Style](https://img.shields.io/badge/code%20style-black-black)
@@ -28,6 +28,8 @@ Install the chatbot package -- ensure virtual environment is running.
 ```bash
 pip install metadata-chatbot
 ```
+
+Create a  folder called huggingface_cache in the directory in which you are running the model.
 
 ## Usage
 
