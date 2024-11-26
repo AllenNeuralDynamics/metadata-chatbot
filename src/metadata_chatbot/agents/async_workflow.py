@@ -12,6 +12,8 @@ from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
 from metadata_chatbot.agents.react_agent import react_agent
 from metadata_chatbot.agents.agentic_graph import datasource_router,  filter_generation_chain, doc_grader, rag_chain
 
+import streamlit as st
+
 # from docdb_retriever import DocDBRetriever
 # from react_agent import react_agent
 # from agentic_graph import datasource_router,  filter_generation_chain, doc_grader, rag_chain
@@ -67,11 +69,19 @@ async def retrieve_DB_async(state: dict) -> dict:
     inputs = {"messages": [("user", query)]}
 
     try:
+        prev = None
+        next  = None
         async for s in react_agent.astream(inputs, stream_mode="values"):
             message = s["messages"][-1]
             if message.content != query :
+                if prev != None:
+                    st.write(prev)
                 state['messages'] = state.get('messages', []) + [message]
-                print(message.content)  # Yield the statement as it's added 
+                prev = next
+                next = message.content
+
+                # st.write(message.content)
+                # print(message.content)  # Yield the statement as it's added 
         answer = state['messages'][-1].content
 
     except:

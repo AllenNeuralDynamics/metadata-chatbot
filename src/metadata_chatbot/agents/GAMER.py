@@ -10,6 +10,11 @@ from metadata_chatbot.agents.async_workflow import async_app
 from metadata_chatbot.agents.workflow import app
 
 from langchain_core.messages import AIMessage, HumanMessage
+from streamlit.runtime.scriptrunner import add_script_run_ctx
+
+from typing import Optional, List, Any, AsyncIterator
+from langchain.callbacks.manager import AsyncCallbackManager, CallbackManagerForLLMRun
+import streamlit as st
 
 
 
@@ -49,13 +54,7 @@ class GAMER(LLM):
         """
         Asynchronous call.
         """
-        # unique_id =  str(uuid.uuid4())
-        # config = {"configurable":{"thread_id": unique_id}}
-        # inputs = {"query" : query}
-        # answer = await async_app.ainvoke(inputs)
-        # return answer['generation']
         async def main(query):
-        #async def main():
         
             unique_id =  str(uuid.uuid4())
             config = {"configurable":{"thread_id": unique_id}}
@@ -79,6 +78,7 @@ class GAMER(LLM):
     def _stream(
         self,
         query: str,
+        unique_id: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
@@ -92,10 +92,23 @@ class GAMER(LLM):
 
             yield chunk
 
-    
-    async def _astream(query):
-        async def main(query):
-        #async def main():
+    async def streamlit_astream(
+        self,
+        query: str,
+        unique_id: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        """
+        Asynchronous call.
+        """
+        
+        config = {"configurable":{"thread_id": unique_id}}
+        inputs = {
+            "messages": [HumanMessage(query)], 
+        }
+        async def main(query: str):
         
             unique_id =  str(uuid.uuid4())
             config = {"configurable":{"thread_id": unique_id}}
@@ -106,12 +119,18 @@ class GAMER(LLM):
                 for key, value in output.items():
                     if key != "database_query":
                         yield value['messages'][0].content 
+                    else:
+                        yield value['generation']
         
+        curr = None
         generation = None
         async for result in main(query):
-            print(result)
+            if curr != None:
+                st.write(curr)
+            curr = generation
             generation = result
         return generation
+            
 
 
     @property
@@ -126,7 +145,7 @@ class GAMER(LLM):
         """Get the type of language model used by this chat model. Used for logging purposes only."""
         return "Claude 3 Sonnet"
     
-llm = GAMER()
+# llm = GAMER()
 
 # async def main():
 #     query = "Can you list all the procedures performed on the specimen, including their start and end dates? in SmartSPIM_662616_2023-03-06_17-47-13"

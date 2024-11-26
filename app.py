@@ -1,20 +1,23 @@
 # Import the Streamlit library
 import streamlit as st
-import asyncio
-
 import sys
 import os
+
+import asyncio
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
-import metadata_chatbot.agents.docdb_retriever
-import metadata_chatbot.agents.agentic_graph
-from metadata_chatbot.agents.async_workflow import astream
 
+from metadata_chatbot.agents.GAMER import GAMER
+import uuid
 
-#run on terminal with streamlit run <FILE PATH> [ARGUMENTS]
+#run on terminal with streamlit run c:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot/app.py [ARGUMENTS]
+
 
 async def main():
-# Write a simple message to the app's webpage
+
     llm = GAMER()
+    unique_id =  str(uuid.uuid4())
+    
     message = st.chat_message("assistant")
     message.write("Hello!")
 
@@ -33,12 +36,12 @@ async def main():
             st.markdown(prompt)
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
-        response = await llm.ainvoke(prompt)
+        #response = await llm.ainvoke(prompt)
 
         with st.chat_message("assistant"):
+            response =  await llm.streamlit_astream(prompt, unique_id = unique_id)
             st.markdown(response)
             
-        # Add assistant response to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
 
 
