@@ -1,7 +1,14 @@
 # Import the Streamlit library
 import streamlit as st
-from metadata_chatbot.agents.GAMER import GAMER
 import asyncio
+
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
+import metadata_chatbot.agents.docdb_retriever
+import metadata_chatbot.agents.agentic_graph
+from metadata_chatbot.agents.async_workflow import astream
+
 
 #run on terminal with streamlit run <FILE PATH> [ARGUMENTS]
 

@@ -7,15 +7,9 @@ from typing_extensions import Annotated, TypedDict
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 import json
-from langchain_core.messages import ToolMessage, SystemMessage
-from langchain_core.runnables import RunnableConfig
+from langchain_core.messages import ToolMessage
 from langgraph.graph import StateGraph, END
-from langchain_core.runnables import RunnableSequence, RunnableLambda
 
-
-# from metadata_chatbot.agents.react_agent_prompt import system_prompt
-# from react_agent_prompt import system_prompt
-from langchain_core.prompts import ChatPromptTemplate
 from langchain import hub
 import asyncio
 
@@ -103,13 +97,6 @@ async def call_model(
     # We return a list, because this will get added to the existing list
     return {"messages": [response]}
 
-# async def summarizer(
-#     state: AgentState
-# ):
-#     response = await SONNET_3_5_LLM.ainvoke(f"Summarize {state["messages"][-1]}")
-#     # We return a list, because this will get added to the existing list
-#     return {"messages": [response]}
-
 
 # Define the conditional edge that determines whether to continue or not
 async def should_continue(state: AgentState):
@@ -152,8 +139,14 @@ async def print_stream(stream):
 
 # async def main():
 #     inputs = {"messages": [("user", "What is the total number of record in the database?")]}
-#     answer = await print_stream(react_agent.astream(inputs, stream_mode="values"))
-#     return answer
+#     async for s in react_agent.astream(inputs, stream_mode="values"):
+#         message = s["messages"][-1]
+#         if isinstance(message, tuple):
+#             print(message)
+#         else:
+#             message.pretty_print()
+    
+#     #return answer
 
 # if __name__ == "__main__":
 #     asyncio.run(main())

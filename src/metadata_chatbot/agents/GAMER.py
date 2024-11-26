@@ -4,10 +4,13 @@ from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 
-import logging, asyncio
+import logging, asyncio, uuid
 
 from metadata_chatbot.agents.async_workflow import async_app
 from metadata_chatbot.agents.workflow import app
+
+from langchain_core.messages import AIMessage, HumanMessage
+
 
 
 class GAMER(LLM):
@@ -45,20 +48,33 @@ class GAMER(LLM):
     ) -> str:
         """
         Asynchronous call.
-
-        Args:
-            query: Natural language query.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of the stop substrings.
-                If stop tokens are not supported consider raising NotImplementedError.
-            run_manager: Callback manager for the run.
-
-        Returns:
-            The model output as a string.
         """
-        inputs = {"query" : query}
-        answer = await async_app.ainvoke(inputs)
-        return answer['generation']
+        # unique_id =  str(uuid.uuid4())
+        # config = {"configurable":{"thread_id": unique_id}}
+        # inputs = {"query" : query}
+        # answer = await async_app.ainvoke(inputs)
+        # return answer['generation']
+        async def main(query):
+        #async def main():
+        
+            unique_id =  str(uuid.uuid4())
+            config = {"configurable":{"thread_id": unique_id}}
+            inputs = {
+                "messages": [HumanMessage(query)], 
+            }
+            async for output in async_app.astream(inputs, config):
+                for key, value in output.items():
+                    if key != "database_query":
+                        yield value['messages'][0].content 
+        
+        curr = None
+        generation = None
+        async for result in main(query):
+            if curr != None:
+                print(curr)
+            curr = generation
+            generation = result
+        return generation
 
     def _stream(
         self,
@@ -68,23 +84,6 @@ class GAMER(LLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         """Stream the LLM on the given prompt.
-
-        This method should be overridden by subclasses that support streaming.
-
-        If not implemented, the default behavior of calls to stream will be to
-        fallback to the non-streaming version of the model and return
-        the output as a single chunk.
-
-        Args:
-            query: The prompt to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            run_manager: Callback manager for the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
-
-        Returns:
-            An iterator of GenerationChunks.
         """
         for char in query[: self.n]:
             chunk = GenerationChunk(text=char)
@@ -92,6 +91,28 @@ class GAMER(LLM):
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
             yield chunk
+
+    
+    async def _astream(query):
+        async def main(query):
+        #async def main():
+        
+            unique_id =  str(uuid.uuid4())
+            config = {"configurable":{"thread_id": unique_id}}
+            inputs = {
+                "messages": [HumanMessage(query)], 
+            }
+            async for output in async_app.astream(inputs, config):
+                for key, value in output.items():
+                    if key != "database_query":
+                        yield value['messages'][0].content 
+        
+        generation = None
+        async for result in main(query):
+            print(result)
+            generation = result
+        return generation
+
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -105,7 +126,7 @@ class GAMER(LLM):
         """Get the type of language model used by this chat model. Used for logging purposes only."""
         return "Claude 3 Sonnet"
     
-# llm = GAMER()
+llm = GAMER()
 
 # async def main():
 #     query = "Can you list all the procedures performed on the specimen, including their start and end dates? in SmartSPIM_662616_2023-03-06_17-47-13"
