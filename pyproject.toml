@@ -31,7 +31,8 @@ dependencies = [
     'pytest',
     'fastapi',
     'uvicorn',
-    'sshtunnel'
+    'sshtunnel',
+    'streamlit'
 ]
 
 [project.optional-dependencies]

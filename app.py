@@ -6,16 +6,15 @@ import uuid
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath('./src'))
 from metadata_chatbot.agents.GAMER import GAMER
 
 #run on terminal with streamlit run c:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot/app.py [ARGUMENTS]
 
+unique_id =  str(uuid.uuid4())
 
 async def main():
 
     llm = GAMER()
-    unique_id =  str(uuid.uuid4())
 
     message = st.chat_message("assistant")
     message.write("Hello! How can I help you?")
