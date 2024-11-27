@@ -1,14 +1,13 @@
 # Import the Streamlit library
 import streamlit as st
+import asyncio
+#from metadata_chatbot.agents.GAMER import GAMER
+import uuid
+
 import sys
 import os
-
-import asyncio
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
-
+sys.path.insert(0, os.path.abspath('./src'))
 from metadata_chatbot.agents.GAMER import GAMER
-import uuid
 
 #run on terminal with streamlit run c:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot/app.py [ARGUMENTS]
 
@@ -17,9 +16,9 @@ async def main():
 
     llm = GAMER()
     unique_id =  str(uuid.uuid4())
-    
+
     message = st.chat_message("assistant")
-    message.write("Hello!")
+    message.write("Hello! How can I help you?")
 
     prompt = st.chat_input("Ask a question about the AIND Metadata!")
 

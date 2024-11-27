@@ -16,8 +16,6 @@ from typing import Optional, List, Any, AsyncIterator
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManagerForLLMRun
 import streamlit as st
 
-
-
 class GAMER(LLM):
 
     def _call(
@@ -103,14 +101,7 @@ class GAMER(LLM):
         """
         Asynchronous call.
         """
-        
-        config = {"configurable":{"thread_id": unique_id}}
-        inputs = {
-            "messages": [HumanMessage(query)], 
-        }
-        async def main(query: str):
-        
-            unique_id =  str(uuid.uuid4())
+        async def main(query:str):
             config = {"configurable":{"thread_id": unique_id}}
             inputs = {
                 "messages": [HumanMessage(query)], 
@@ -121,6 +112,7 @@ class GAMER(LLM):
                         yield value['messages'][0].content 
                     else:
                         yield value['generation']
+
         
         curr = None
         generation = None
