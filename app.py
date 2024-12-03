@@ -3,9 +3,9 @@ import streamlit as st
 import asyncio
 import uuid
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# import sys
+# import os
+# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from metadata_chatbot.agents.GAMER import GAMER
 from langchain_core.messages import HumanMessage, AIMessage
 

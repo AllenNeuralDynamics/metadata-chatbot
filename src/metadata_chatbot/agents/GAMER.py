@@ -6,17 +6,15 @@ from langchain_core.outputs import GenerationChunk
 
 import logging, asyncio, uuid
 
-#from metadata_chatbot.agents.async_workflow import async_app
+from metadata_chatbot.agents.async_workflow import async_app
 from metadata_chatbot.agents.workflow import app
-from async_workflow import async_app
 
 from langchain_core.messages import AIMessage, HumanMessage
-from streamlit.runtime.scriptrunner import add_script_run_ctx
 
 from typing import Optional, List, Any, AsyncIterator
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManagerForLLMRun
 import streamlit as st
-from react_agent import astream_input
+
 
 
 class GAMER(LLM):
@@ -115,21 +113,18 @@ class GAMER(LLM):
                     if key != "database_query":
                         yield value['messages'][0].content 
                     else:
-                        async for result in astream_input(query):
-                            if result['type'] == 'agg_pipeline':
-                                yield f"The MongoDB pipeline used to on the database is: {result['content']}"
-                            if result['type'] == 'tool_response':
-                                yield f"Retrieved output from MongoDB: {result['content']}"
-                            if result['type'] == 'final_answer':
-                                yield result['content']
-                        # for message in value['messages']:
-                        #     item = await message
-                        #     yield item
-                        # yield value['generation']
-        curr = None
+                        for response in value['messages']:
+                            yield response.content
+                        yield value['generation']
+
+        prev = None
         generation = None
         async for result in main(query, unique_id):
-            print(result)
+            if prev != None:
+                st.write(prev)
+            prev = result
+            generation = prev
+        return generation
 
         # curr = None
         # generation = None
@@ -158,12 +153,13 @@ class GAMER(LLM):
     
 llm = GAMER()
 
-async def main():
-    query = "How many records are in the database?"
-    result = await llm.streamlit_astream(query, unique_id = "1")
-    print(result)
+# async def main():
+#     query = "How many records are in the database?"
+#     result = await llm.streamlit_astream(query, unique_id = "1")
+#     print(result)
 
-asyncio.run(main())
+
+# asyncio.run(main())
 
 # async def main():
 #     result = await llm.ainvoke("How many records are in the database?")

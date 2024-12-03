@@ -9,17 +9,8 @@ from langgraph.graph import END, StateGraph, START
 from langchain_core.messages import AIMessage, HumanMessage
 
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
-#from metadata_chatbot.agents.react_agent import react_agent, astream
-#from metadata_chatbot.agents.agentic_graph import datasource_router,  filter_generation_chain, doc_grader, rag_chain
-
-from react_agent import astream_input
-from agentic_graph import datasource_router,  filter_generation_chain, doc_grader, rag_chain
-
-# import streamlit as st
-
-# from docdb_retriever import DocDBRetriever
-# from react_agent import react_agent
-# from agentic_graph import datasource_router,  filter_generation_chain, doc_grader, rag_chain
+from metadata_chatbot.agents.react_agent import astream_input
+from metadata_chatbot.agents.agentic_graph import datasource_router, filter_generation_chain, doc_grader, rag_chain
 
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.messages import AnyMessage
@@ -198,7 +189,6 @@ async_workflow.add_edge("generate_vi", END)
 memory = MemorySaver()
 async_app = async_workflow.compile(checkpointer=memory)
 
-outputs = []
 query = "What are the unique modalities in the database??"
 #query = "Give me a list of sessions for subject 740955?"
 
