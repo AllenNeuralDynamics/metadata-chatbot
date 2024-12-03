@@ -9,9 +9,13 @@ from langgraph.graph.message import add_messages
 import json
 from langchain_core.messages import ToolMessage
 from langgraph.graph import StateGraph, END
+from langchain_core.messages import AIMessage
 
 from langchain import hub
 import asyncio
+import streamlit as st
+
+print("hi")
 
 
 MODEL_ID_SONNET_3_5 = "anthropic.claude-3-5-sonnet-20240620-v1:0"
@@ -128,25 +132,41 @@ workflow.add_edge("tools", "agent")
 
 react_agent = workflow.compile()
 
-async def print_stream(stream):
-    async for s in stream:
+query = "How many records are in the database"
+
+async def astream_input(query):
+    inputs = {"messages": [("user", query)]}
+    async for s in react_agent.astream(inputs, stream_mode="values"):
         message = s["messages"][-1]
-        if isinstance(message, tuple):
-            print(message)
-        else:
-            message.pretty_print()
+        if isinstance(message, AIMessage):
+            if message.content == '':
+                yield {"type": "agg_pipeline" , "content": message.tool_calls[0]['args']['agg_pipeline']}
+            else:
+                yield {"type": "final_answer" , "content": message.content}
+        if isinstance(message, ToolMessage):
+            yield {"type": "tool_response" , "content": message.content}
+
+async def agent_astream(query):
+
+    async for result in astream_input(query):
+        if result['type'] == 'agg_pipeline':
+            print("The MongoDB pipeline used to on the database is:", result['content'])
+        if result['type'] == 'tool_response':
+            print("Retrieved output from MongoDB:", result['content'])
+        if result['type'] == 'final_answer':
+            generation = result['content']
+    return generation
 
 
-# async def main():
-#     inputs = {"messages": [("user", "What is the total number of record in the database?")]}
-#     async for s in react_agent.astream(inputs, stream_mode="values"):
-#         message = s["messages"][-1]
-#         if isinstance(message, tuple):
-#             print(message)
-#         else:
-#             message.pretty_print()
-    
-#     #return answer
+async def streamlit_astream(query):
 
-# if __name__ == "__main__":
-#     asyncio.run(main())
+    async for result in astream_input(query):
+        if result['type'] == 'agg_pipeline':
+            st.write("The MongoDB pipeline used to on the database is:", result['content'])
+        if result['type'] == 'tool_response':
+            st.write("Retrieved output from MongoDB:", result['content'])
+        if result['type'] == 'final_answer':
+            generation = result['content']
+    return generation
+
+

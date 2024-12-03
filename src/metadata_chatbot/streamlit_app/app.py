@@ -1,18 +1,20 @@
 # Import the Streamlit library
 import streamlit as st
 import asyncio
-#from metadata_chatbot.agents.GAMER import GAMER
 import uuid
 
 import sys
 import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from metadata_chatbot.agents.GAMER import GAMER
+from langchain_core.messages import HumanMessage, AIMessage
 
 #run on terminal with streamlit run c:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot/app.py [ARGUMENTS]
 
 unique_id =  str(uuid.uuid4())
 
 async def main():
+    st.title("GAMER: Generative Analysis of Metadata Retrieval")
 
     llm = GAMER()
 
@@ -25,22 +27,24 @@ async def main():
         st.session_state.messages = []
 
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+        if isinstance(message, HumanMessage):
+            with st.chat_message("user"):
+                st.markdown(message.content)
+        else:
+            with st.chat_message("assistant"):
+                st.markdown(message.content)
 
-    if prompt:
-    # Display user message in chat message container
+    if prompt is not None and prompt != '':
+        st.session_state.messages.append(HumanMessage(prompt))
+
         with st.chat_message("user"):
             st.markdown(prompt)
-        # Add user message to chat history
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        #response = await llm.ainvoke(prompt)
 
         with st.chat_message("assistant"):
             response =  await llm.streamlit_astream(prompt, unique_id = unique_id)
             st.markdown(response)
             
-        st.session_state.messages.append({"role": "assistant", "content": response})
+        st.session_state.messages.append(AIMessage(response))
 
 
 if __name__ == "__main__":

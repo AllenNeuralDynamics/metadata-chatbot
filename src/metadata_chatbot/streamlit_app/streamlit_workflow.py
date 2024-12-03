@@ -12,8 +12,11 @@ from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
 #from metadata_chatbot.agents.react_agent import react_agent, astream
 #from metadata_chatbot.agents.agentic_graph import datasource_router,  filter_generation_chain, doc_grader, rag_chain
 
-from react_agent import astream_input
-from agentic_graph import datasource_router,  filter_generation_chain, doc_grader, rag_chain
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from metadata_chatbot.agents.react_agent import astream_input
+from metadata_chatbot.agents.agentic_graph import datasource_router,  filter_generation_chain, doc_grader, rag_chain
 
 # import streamlit as st
 
@@ -67,27 +70,8 @@ async def retrieve_DB_async(state: dict) -> dict:
     """
     Retrieves from data asset collection in prod DB after constructing a MongoDB query
     """
-
-    query = state['messages'][0].content
-    inputs = {"messages": [("user", query)]}
-    message_iterator = []
-
-    try:
-        async for result in astream_input(query):
-            if result['type'] == 'agg_pipeline':
-                message_iterator.append(AIMessage(f"The MongoDB pipeline used to on the database is: {result['content']}"))
-            if result['type'] == 'tool_response':
-                message_iterator.append(AIMessage(f"Retrieved output from MongoDB: {result['content']}"))
-            if result['type'] == 'final_answer':
-                answer = result['content']
-        #answer = state['messages'][-1].content
-
-    except Exception as e:
-        print(e)
-        answer = "An error has occured with the retrieval from DocDB. Try structuring your query another way."
-
-    return {"messages": message_iterator,
-            "generation": answer
+    return {"messages": state.get("messages", []),
+            "generation": " "
             }
 
 async def filter_generator_async(state: dict) -> dict:
@@ -201,6 +185,40 @@ async_app = async_workflow.compile(checkpointer=memory)
 outputs = []
 query = "What are the unique modalities in the database??"
 #query = "Give me a list of sessions for subject 740955?"
+
+async def streamlit_astream(
+        query: str,
+        unique_id: str,
+    ) -> str:
+        """
+        Asynchronous call.
+        """
+        async def main(query:str):
+            config = {"configurable":{"thread_id": unique_id}}
+            inputs = {
+                "messages": [HumanMessage(query)], 
+            }
+            async for output in async_app.astream(inputs, config):
+                for key, value in output.items():
+                    if key != "database_query":
+                        yield value['messages'][0].content 
+                    else:
+                        async for result in astream_input(query):
+                            if result['type'] == 'agg_pipeline':
+                                yield f"The MongoDB pipeline used to on the database is: {result['content']}"
+                            if result['type'] == 'tool_response':
+                                yield f"Retrieved output from MongoDB: {result['content']}"
+                            if result['type'] == 'final_answer':
+                                yield result['content']
+    
+                        # for message in value['messages']:
+                        #     item = await message
+                        #     yield item
+                        # yield value['generation']
+        curr = None
+        generation = None
+        async for result in main(query):
+            print(result)
 
     
 # async def new_astream(query):

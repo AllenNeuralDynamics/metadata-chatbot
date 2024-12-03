@@ -10,6 +10,8 @@ from langgraph.prebuilt import create_react_agent
 
 MODEL_ID_SONNET_3 = "anthropic.claude-3-sonnet-20240229-v1:0"
 MODEL_ID_SONNET_3_5 = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+MODEL_ID_HAIKU_3_5 = "anthropic.claude-3-5-haiku-20241022-v1:0"
+
 SONNET_3_LLM = ChatBedrock(
     model_id= MODEL_ID_SONNET_3,
     model_kwargs= {
@@ -26,6 +28,14 @@ SONNET_3_5_LLM = ChatBedrock(
     streaming = True
 )
 
+HAIKU_3_5_LLM = ChatBedrock(
+    model_id= MODEL_ID_HAIKU_3_5,
+    model_kwargs= {
+        "temperature": 0
+    },
+    streaming = True
+)
+
 # Determining if entire database needs to be surveyed
 class RouteQuery(TypedDict):
     """Route a user query to the most relevant datasource."""
@@ -33,7 +43,7 @@ class RouteQuery(TypedDict):
     #reasoning: Annotated[str, ..., "Give a one sentence justification for the chosen method"]
     datasource: Annotated[Literal["vectorstore", "direct_database"], ..., "Given a user question choose to route it to the direct database or its vectorstore."]
 
-structured_llm_router = SONNET_3_LLM.with_structured_output(RouteQuery)
+structured_llm_router = HAIKU_3_5_LLM.with_structured_output(RouteQuery)
 router_prompt = hub.pull("eden19/query_rerouter")
 datasource_router = router_prompt | structured_llm_router
 
@@ -45,7 +55,7 @@ class FilterGenerator(TypedDict):
     top_k: int = Annotated[dict, ..., "MongoDB filter"]
 
 filter_prompt = hub.pull("eden19/filtergeneration")
-filter_generator_llm = SONNET_3_LLM.with_structured_output(FilterGenerator)
+filter_generator_llm = HAIKU_3_5_LLM .with_structured_output(FilterGenerator)
 filter_generation_chain = filter_prompt | filter_generator_llm
 
 
@@ -66,5 +76,5 @@ rag_chain = answer_generation_prompt | SONNET_3_5_LLM | StrOutputParser()
 
 # Generating response to documents retrieved from the database
 db_answer_generation_prompt = hub.pull("eden19/db_answergeneration")
-db_rag_chain = db_answer_generation_prompt | SONNET_3_5_LLM | StrOutputParser()
+db_rag_chain = db_answer_generation_prompt | SONNET_3_5_LLM  | StrOutputParser()
 
