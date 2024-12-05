@@ -152,7 +152,11 @@ class DocDBRetriever(BaseRetriever):
             pipeline.insert(0, query_filter)
 
 
-        result = docdb_api_client.aggregate_docdb_records(pipeline=pipeline)
+
+        try:
+            result = docdb_api_client.aggregate_docdb_records(pipeline=pipeline)
+        except Exception as e:
+            print(e)
         
         #Transform retrieved docs to langchain Documents
         async def process_document(document):

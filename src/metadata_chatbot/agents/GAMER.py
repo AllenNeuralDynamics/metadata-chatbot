@@ -6,8 +6,9 @@ from langchain_core.outputs import GenerationChunk
 
 import logging, asyncio, uuid
 
-from metadata_chatbot.agents.async_workflow import async_app
+#from metadata_chatbot.agents.async_workflow import async_app
 from metadata_chatbot.agents.workflow import app
+from metadata_chatbot.agents.async_workflow import async_app
 
 from langchain_core.messages import AIMessage, HumanMessage
 
@@ -114,14 +115,14 @@ class GAMER(LLM):
                         yield value['messages'][0].content 
                     else:
                         for response in value['messages']:
-                            yield response.content
+                            print(response.content)
                         yield value['generation']
 
         prev = None
         generation = None
         async for result in main(query, unique_id):
             if prev != None:
-                st.write(prev)
+                print(prev)
             prev = result
             generation = prev
         return generation
