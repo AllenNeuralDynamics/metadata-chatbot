@@ -6,9 +6,9 @@ import uuid
 # import sys
 # import os
 # sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from metadata_chatbot.agents.GAMER import GAMER
-from metadata_chatbot.agents.async_workflow import async_workflow
-from metadata_chatbot.agents.react_agent import astream_input
+
+from async_workflow import async_workflow
+from react_agent import astream_input
 
 from langchain_core.messages import HumanMessage, AIMessage
 
