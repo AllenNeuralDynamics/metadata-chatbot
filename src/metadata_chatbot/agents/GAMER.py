@@ -6,15 +6,17 @@ from langchain_core.outputs import GenerationChunk
 
 import logging, asyncio, uuid
 
-from metadata_chatbot.agents.async_workflow import async_app
+#from metadata_chatbot.agents.async_workflow import async_app
 from metadata_chatbot.agents.workflow import app
+from async_workflow import async_app
 
 from langchain_core.messages import AIMessage, HumanMessage
-from streamlit.runtime.scriptrunner import add_script_run_ctx
 
 from typing import Optional, List, Any, AsyncIterator
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManagerForLLMRun
 import streamlit as st
+
+
 
 class GAMER(LLM):
 
@@ -52,6 +54,7 @@ class GAMER(LLM):
         """
         Asynchronous call.
         """
+
         async def main(query):
         
             unique_id =  str(uuid.uuid4())
@@ -101,7 +104,7 @@ class GAMER(LLM):
         """
         Asynchronous call.
         """
-        async def main(query:str):
+        async def main(query:str, unique_id : str):
             config = {"configurable":{"thread_id": unique_id}}
             inputs = {
                 "messages": [HumanMessage(query)], 
@@ -111,17 +114,29 @@ class GAMER(LLM):
                     if key != "database_query":
                         yield value['messages'][0].content 
                     else:
+                        for response in value['messages']:
+                            print(response.content)
                         yield value['generation']
 
-        
-        curr = None
+        prev = None
         generation = None
-        async for result in main(query):
-            if curr != None:
-                st.write(curr)
-            curr = generation
-            generation = result
+        async for result in main(query, unique_id):
+            if prev != None:
+                print(prev)
+            prev = result
+            generation = prev
         return generation
+
+        # curr = None
+        # generation = None
+        # async for result in main(query):
+        #     if curr != None:
+        #         st.write(curr)
+        #         if "messages" in st.session_state:
+        #             st.session_state.messages.append({"role": "assistant", "content": curr})
+        #     curr = generation
+        #     generation = result
+        # return generation
             
 
 
@@ -137,17 +152,18 @@ class GAMER(LLM):
         """Get the type of language model used by this chat model. Used for logging purposes only."""
         return "Claude 3 Sonnet"
     
-# llm = GAMER()
+llm = GAMER()
 
 # async def main():
-#     query = "Can you list all the procedures performed on the specimen, including their start and end dates? in SmartSPIM_662616_2023-03-06_17-47-13"
-#     result = await llm.ainvoke(query)
+#     query = "How many records are in the database?"
+#     result = await llm.streamlit_astream(query, unique_id = "1")
 #     print(result)
+
 
 # asyncio.run(main())
 
 # async def main():
-#     result = await llm.ainvoke("Can you give me a timeline of events for subject 675387?")
+#     result = await llm.ainvoke("How many records are in the database?")
 #     print(result)
 
 # asyncio.run(main())

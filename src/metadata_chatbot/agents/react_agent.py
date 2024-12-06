@@ -1,27 +1,18 @@
-from langchain_aws.chat_models.bedrock import ChatBedrock
-from typing import Annotated, Sequence, TypedDict
+from typing import Annotated, Sequence, TypedDict, Optional
 from langchain_core.tools import tool
 from langchain import hub
 from aind_data_access_api.document_db import MetadataDbClient
-from typing_extensions import Annotated, TypedDict
-from langchain_core.messages import BaseMessage
+
 from langgraph.graph.message import add_messages
 import json
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import ToolMessage, AIMessage, BaseMessage
 from langgraph.graph import StateGraph, END
 
-from langchain import hub
+from agentic_graph import SONNET_3_5_LLM, HAIKU_3_5_LLM
+
 import asyncio
 
 
-MODEL_ID_SONNET_3_5 = "anthropic.claude-3-5-sonnet-20240620-v1:0"
-
-SONNET_3_5_LLM = ChatBedrock(
-    model_id= MODEL_ID_SONNET_3_5,
-    model_kwargs= {
-        "temperature": 0
-    }
-)
 
 API_GATEWAY_HOST = "api.allenneuraldynamics.org"
 DATABASE = "metadata_index"
@@ -128,25 +119,34 @@ workflow.add_edge("tools", "agent")
 
 react_agent = workflow.compile()
 
-async def print_stream(stream):
-    async for s in stream:
+query = "How many records are in the database"
+
+async def astream_input(query):
+    inputs = {"messages": [("user", query)]}
+    async for s in react_agent.astream(inputs, stream_mode="values"):
         message = s["messages"][-1]
-        if isinstance(message, tuple):
-            print(message)
-        else:
-            message.pretty_print()
+        if isinstance(message, AIMessage):
+            if message.tool_calls:
+                yield {"type": "intermediate_steps" , "content": message.content[0]['text']}
+                yield {"type": "agg_pipeline" , "content": message.tool_calls[0]['args']['agg_pipeline']}
+            else:
+                yield {"type": "final_answer" , "content": message.content[0]['text']}
+        if isinstance(message, ToolMessage):
+            yield {"type": "tool_response" , "content": message.content}
+
+async def agent_astream(query):
+
+    async for result in astream_input(query):
+        response = result['type']
+        if response == 'intermediate_steps':
+            print(result['content'])
+        if response == 'agg_pipeline':
+            print("The MongoDB pipeline used to on the database is:", result['content'])
+        if response == 'tool_response':
+            print("Retrieved output from MongoDB:", result['content'])
+        if response == 'final_answer':
+            generation = result['content']
+    return generation
+# print(asyncio.run(agent_astream(query)))
 
 
-# async def main():
-#     inputs = {"messages": [("user", "What is the total number of record in the database?")]}
-#     async for s in react_agent.astream(inputs, stream_mode="values"):
-#         message = s["messages"][-1]
-#         if isinstance(message, tuple):
-#             print(message)
-#         else:
-#             message.pretty_print()
-    
-#     #return answer
-
-# if __name__ == "__main__":
-#     asyncio.run(main())
