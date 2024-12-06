@@ -8,7 +8,7 @@ import json
 from langchain_core.messages import ToolMessage, AIMessage, BaseMessage
 from langgraph.graph import StateGraph, END
 
-from metadata_chatbot.agents.agentic_graph import SONNET_3_5_LLM, HAIKU_3_5_LLM
+from agentic_graph import SONNET_3_5_LLM, HAIKU_3_5_LLM
 
 import asyncio
 
