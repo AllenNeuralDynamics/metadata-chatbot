@@ -8,9 +8,9 @@ from langchain_core.documents import Document
 from langgraph.graph import END, StateGraph, START
 from langchain_core.messages import AIMessage, HumanMessage
 
-from docdb_retriever import DocDBRetriever
-from react_agent import astream_input
-from agentic_graph import datasource_router, filter_generation_chain, doc_grader, rag_chain, prev_context_chain, query_rewriter_chain
+from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
+from metadata_chatbot.agents.react_agent import astream_input
+from metadata_chatbot.agents.agentic_graph import datasource_router, filter_generation_chain, doc_grader, rag_chain, prev_context_chain, query_rewriter_chain
 
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.messages import AnyMessage

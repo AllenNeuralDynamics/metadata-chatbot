@@ -8,7 +8,7 @@ import logging, asyncio, uuid
 
 #from metadata_chatbot.agents.async_workflow import async_app
 from metadata_chatbot.agents.workflow import app
-from async_workflow import async_app
+from metadata_chatbot.agents.async_workflow import async_app
 
 from langchain_core.messages import AIMessage, HumanMessage
 
