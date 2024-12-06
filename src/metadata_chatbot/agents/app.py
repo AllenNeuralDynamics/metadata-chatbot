@@ -15,7 +15,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 import warnings
 warnings.filterwarnings('ignore')
 
-#run on terminal with streamlit run c:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot/app.py [ARGUMENTS]
+#run on terminal with streamlit run c:/Users/sreya.kumar/Documents/GitHub/metadata-chatbot/src/metadata_chatbot/agents/app.py [ARGUMENTS]
 
 unique_id =  str(uuid.uuid4())
 

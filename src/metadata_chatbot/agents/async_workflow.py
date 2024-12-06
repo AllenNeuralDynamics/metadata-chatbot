@@ -220,6 +220,7 @@ memory = MemorySaver()
 async_app = async_workflow.compile(checkpointer=memory)
 
 query = "What are the unique modalities in the database??"
+
 #query = "Give me a list of sessions for subject 740955?"
 
     
