@@ -8,7 +8,10 @@ import json
 from langchain_core.messages import ToolMessage, AIMessage, BaseMessage
 from langgraph.graph import StateGraph, END
 
-from agentic_graph import SONNET_3_5_LLM, HAIKU_3_5_LLM
+from langchain.globals import set_llm_cache
+from langchain_community.cache import InMemoryCache
+
+from metadata_chatbot.agents.agentic_graph import SONNET_3_5_LLM, HAIKU_3_5_LLM
 
 import asyncio
 
@@ -80,6 +83,7 @@ async def tool_node(state: AgentState):
 async def call_model(
     state: AgentState
 ):
+    set_llm_cache(InMemoryCache())
     if ToolMessage in state['messages']:
     # this is similar to customizing the create_react_agent with state_modifier, but is a lot more flexible
         response = await SONNET_3_5_LLM.ainvoke(state["messages"])

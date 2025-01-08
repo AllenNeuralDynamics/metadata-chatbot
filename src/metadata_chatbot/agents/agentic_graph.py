@@ -67,7 +67,7 @@ class FilterGenerator(TypedDict):
     """MongoDB filter to be applied before vector retrieval"""
 
     filter_query: Annotated[dict, ..., "MongoDB filter"]
-    top_k: int = Annotated[dict, ..., "MongoDB filter"]
+    top_k: Annotated[int, 5, "Number of nearest neighbours to retrieve"]
 
 filter_prompt = hub.pull("eden19/filtergeneration")
 filter_generator_llm = HAIKU_3_5_LLM .with_structured_output(FilterGenerator)
@@ -94,7 +94,7 @@ db_answer_generation_prompt = hub.pull("eden19/db_answergeneration")
 db_rag_chain = db_answer_generation_prompt | SONNET_3_5_LLM  | StrOutputParser()
 
 # Generating response from previous context
-prompt = ChatPromptTemplate.from_template("Answer {query} based on the following texts: {chat_history}")
-prev_context_chain = prompt | HAIKU_3_5_LLM | StrOutputParser()
+claude_prompt = ChatPromptTemplate.from_template("Answer {query} based on the following texts: {chat_history}")
+prev_context_chain = claude_prompt | HAIKU_3_5_LLM | StrOutputParser()
 
 

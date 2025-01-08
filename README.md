@@ -66,7 +66,7 @@ The main framework used by the model is Retrieval Augmented Generation (RAG), a 
 
 A multi-agent workflow is created using Langgraph, allowing for parallel execution of tasks, like document retrieval from the vector index, and increased developer control over the the RAG process. Decision nodes and their roles are further explained in the `GAMER_workbook`.
 
-![Worfklow](multi-agent-workflow-11-01.jpeg)
+![Worfklow](GAMER_workflow.jpeg)
 
 ## Data Retrieval
 

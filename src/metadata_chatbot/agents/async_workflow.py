@@ -16,6 +16,8 @@ from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 
+from langchain.globals import set_llm_cache
+from langchain_community.cache import InMemoryCache
 
 
 import warnings
@@ -50,6 +52,7 @@ async def route_question_async(state: dict) -> dict:
     query = state['messages'][-1].content
     chat_history = state['messages']
 
+    set_llm_cache(InMemoryCache())
     source = await datasource_router.ainvoke({"query": query, "chat_history": chat_history})
 
     if source['datasource'] == "direct_database":
@@ -58,6 +61,27 @@ async def route_question_async(state: dict) -> dict:
         return "vectorstore"
     elif source['datasource'] == "claude":
         return "claude"
+    
+async def query_rewriter_async(state: dict) -> dict:
+    """
+    Route question to database or vectorstore
+    Args:
+        state (dict): The current graph state
+
+    Returns:
+        str: Next node to call
+    """
+    query = state['messages'][-1].content
+    chat_history = state['messages']
+
+    set_llm_cache(InMemoryCache())
+    result = await query_rewriter_chain.ainvoke({"query": query, "chat_history": chat_history})
+
+    if result['binary_score'] == "yes":
+        return{"query": result['rewritten_query']}
+    else: 
+        return{"query": query}
+
     
     
 async def retrieve_DB_async(state: dict) -> dict:
@@ -98,6 +122,7 @@ async def filter_generator_async(state: dict) -> dict:
     chat_history = state['messages']
 
     try:
+        set_llm_cache(InMemoryCache())
         result = await filter_generation_chain.ainvoke({"query": query, "chat_history": chat_history})
         filter = result['filter_query']
         top_k = result['top_k']
@@ -131,6 +156,7 @@ async def retrieve_VI_async(state: dict) -> dict:
             }
 
 async def grade_doc_async(query: str, doc: Document):
+    set_llm_cache(InMemoryCache())
     score = await doc_grader.ainvoke({"query": query, "document": doc.page_content})
     grade = score['binary_score']
 
@@ -167,6 +193,7 @@ async def generate_VI_async(state: dict) -> dict:
     documents = state["documents"]
 
     try:
+        set_llm_cache(InMemoryCache())
         generation = await rag_chain.ainvoke({"documents": documents, "query": query})
     except:
         generation = "Apologies, would you mind reframing the query in another way?"
@@ -183,7 +210,7 @@ async def generate_claude_async(state: dict) -> dict:
     chat_history = state['messages']
 
     try:
-
+        set_llm_cache(InMemoryCache())
         generation = await prev_context_chain.ainvoke({"query": query, "chat_history": chat_history})
     except:
         generation = "Apologies, the chat history doesn't answer your question."

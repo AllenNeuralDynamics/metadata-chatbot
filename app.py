@@ -9,6 +9,8 @@ import uuid
 
 from metadata_chatbot.agents.async_workflow import async_workflow
 from metadata_chatbot.agents.react_agent import astream_input
+from langgraph.checkpoint.memory import MemorySaver
+
 
 from langchain_core.messages import HumanMessage, AIMessage
 
@@ -30,7 +32,10 @@ async def main():
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    model = async_workflow.compile()
+    if 'memory' not in st.session_state:
+        st.session_state.memory = MemorySaver()
+
+    model = async_workflow.compile(checkpointer=st.session_state.memory)
 
     for message in st.session_state.messages:
         if isinstance(message, HumanMessage):
@@ -84,7 +89,8 @@ async def main():
                     st.markdown(prev)
                 prev = result
                 generation = prev
-            st.markdown(generation)
+            st.write_stream(generation)
+            #st.markdown(generation)
         st.session_state.messages.append(AIMessage(generation))
             # response =  await llm.streamlit_astream(query, unique_id = unique_id)
             # st.markdown(response)
