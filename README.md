@@ -29,8 +29,6 @@ Install the chatbot package -- ensure virtual environment is running.
 pip install metadata-chatbot
 ```
 
-Create a  folder called huggingface_cache in the directory in which you are running the model.
-
 ## Usage
 
 To call the model,
@@ -64,9 +62,23 @@ The main framework used by the model is Retrieval Augmented Generation (RAG), a 
 
 ### Multi-Agent graph framework
 
-A multi-agent workflow is created using Langgraph, allowing for parallel execution of tasks, like document retrieval from the vector index, and increased developer control over the the RAG process. Decision nodes and their roles are further explained in the `GAMER_workbook`.
+A multi-agent workflow is created using Langgraph, allowing for parallel execution of tasks, like document retrieval from the vector index, and increased developer control over the the RAG process.
 
-![Worfklow](multi-agent-workflow-11-01.jpeg)
+![Worfklow](2025_01_GAMER_workflow.PNG)
+
+This model uses a multi agent framework on Langraph to retrieve and summarize metadata information based on a user's natural language query. This workflow consists of 6 agents, or nodes, where a decision is made and there is new context provided to either the model or the user. Here are some decisions incorporated into the framework:
+1. To best answer the query, which data source should the model refer to?
+    - Input: `x (query)`
+    - Decides best data to query against
+    - Output: `entire_database, vector_embeddings, claude`
+2. If querying against the vector embeddings, does the index need to be filtered further with metdata tags, to improve optimization of retrieval?
+    - Input: `x (query)`
+    - Decides whether database can be further filtered by applying a MongoDB query
+    - Output: `MongoDB query, None`
+3. Are the documents retrieved during retrieval relevant to the question?
+    - Input: `x (query)`
+    - Decides whether document should be kept or tossed during summarization
+    - Output: `yes, no`
 
 ## Data Retrieval
 
