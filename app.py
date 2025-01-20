@@ -22,6 +22,46 @@ warnings.filterwarnings('ignore')
 def load_checkpointer():
     return MemorySaver()
 
+async def stream_database_query(result):
+    response = result['type']
+
+    result_mapping = {
+        'intermediate_steps': lambda: result['content'],
+        'agg_pipeline': lambda: f"The MongoDB pipeline used to on the database is:\n`{result['content']}`",
+        'tool_response': lambda: f"Retrieved output from MongoDB:\n```json\n{result['content']}\n```",
+        'final_answer': lambda: result['content']
+    }
+
+    if response in result_mapping:
+        return result_mapping[response]()
+    return None
+
+async def handle_database_query(query: str, chat_history: list):
+    try:
+        query = str(chat_history) + query
+        async for result in astream_input(query = query):
+            yield await stream_database_query(result)
+    except Exception as e:
+        yield f"An error has occured with the retrieval from DocDB: {e}. Try structuring your query another way."
+
+async def yield_model_response(output_stream):
+    async for output in output_stream:
+        for key, value in output.items():
+            if key != "database_query":
+                yield value['messages'][0].content
+            else:
+                yield await handle_database_query(value)
+
+async def answer_generation(query: str, chat_history: list, config: dict, model):
+    """Main function to generate answers."""
+    inputs = {
+        "messages": chat_history,
+    }
+    model_output = model.astream(inputs, config)
+    async for response in yield_model_response(model_output):
+        yield response
+
+
 async def answer_generation(query: str, chat_history: list, config:dict, model):
     inputs = {
         "messages": chat_history, 
@@ -117,12 +157,6 @@ async def main():
             with st.status("Generating answer...", expanded = True) as status:
                 async for result in answer_generation(query, chat_history, config, model):
                     if prev != None:
-                        # if type(prev) == list:
-                        #     st.markdown("[")
-                        #     for i in prev:
-                        #         st.markdown(f'`{i}`,')
-                        #     st.markdown("]")
-                        # else:
                         st.markdown(prev)
                     prev = result
                     generation = prev
