@@ -22,15 +22,15 @@
 # @pytest.mark.parametrize(
 #     "user_query, expected_output",
 #     [
-#         ("Write a MongoDB query to find the genotype of SmartSPIM_675387_2023-05-23_23-05-56", 
+#         ("Write a MongoDB query to find the genotype of SmartSPIM_675387_2023-05-23_23-05-56",
 #          """
-#         {\"mongodb_query\": [{\"$match\": {\"name\": \"SmartSPIM_675387_2023-05-23_23-05-56\"}}, 
+#         {\"mongodb_query\": [{\"$match\": {\"name\": \"SmartSPIM_675387_2023-05-23_23-05-56\"}},
 #         {\"$project\": {\"_id\": 0, \"genotype\": \"$subject.genotype\"}}], \"retrieved_output\": [{\"genotype\": \"wt/wt\"}]}
 #         """
 #         ),
 #         ("What is the genotype for subject 675387?",
 #          """
-#          {\"mongodb_query\": [{\"$match\": {\"subject.subject_id\": \"675387\"}}, {\"$project\": {\"subject.genotype\": 1, \"_id\": 0}}], 
+#          {\"mongodb_query\": [{\"$match\": {\"subject.subject_id\": \"675387\"}}, {\"$project\": {\"subject.genotype\": 1, \"_id\": 0}}],
 #          "retrieved_output\": [{\"subject\": {\"genotype\": \"wt/wt\"}}, {\"subject\": {\"genotype\": \"wt/wt\"}}]}
 #          """
 #         )
@@ -49,9 +49,9 @@
 # @pytest.mark.parametrize(
 #     "user_query, documents, expected_output",
 #     [
-#         ("Write a MongoDB query to find the genotype of SmartSPIM_675387_2023-05-23_23-05-56", 
+#         ("Write a MongoDB query to find the genotype of SmartSPIM_675387_2023-05-23_23-05-56",
 #          """
-#         {\"mongodb_query\": [{\"$match\": {\"name\": \"SmartSPIM_675387_2023-05-23_23-05-56\"}}, 
+#         {\"mongodb_query\": [{\"$match\": {\"name\": \"SmartSPIM_675387_2023-05-23_23-05-56\"}},
 #         {\"$project\": {\"_id\": 0, \"genotype\": \"$subject.genotype\"}}], \"retrieved_output\": [{\"genotype\": \"wt/wt\"}]}
 #          """,
 #          """
@@ -64,14 +64,14 @@
 #         ),
 #         ("What is the genotype for subject 675387?",
 #          """
-#         {\"mongodb_query\": [{\"$match\": {\"subject.subject_id\": \"675387\"}}, {\"$project\": {\"subject.genotype\": 1, \"_id\": 0}}], 
+#         {\"mongodb_query\": [{\"$match\": {\"subject.subject_id\": \"675387\"}}, {\"$project\": {\"subject.genotype\": 1, \"_id\": 0}}],
 #          "retrieved_output\": [{\"subject\": {\"genotype\": \"wt/wt\"}}, {\"subject\": {\"genotype\": \"wt/wt\"}}]}
 #          """,
 #         "The genotype for subject 675387 is wt/wt.")
 #     ]
 # )
 # def test_db_rag_chain(user_query, documents, expected_output):
-#     prediction = db_rag_chain.invoke({"query": user_query, 
+#     prediction = db_rag_chain.invoke({"query": user_query,
 #                                       "documents": documents})
 #     expect.embedding_distance(
 #         prediction, expected_output, config={"encoder": BEDROCK_EMBEDDINGS, "metric": "cosine"}

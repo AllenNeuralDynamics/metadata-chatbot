@@ -1,8 +1,10 @@
-from fastapi import FastAPI
 import uvicorn
+from fastapi import FastAPI
+
 from metadata_chatbot.agents.GAMER import GAMER
 
 app = FastAPI()
+
 
 @app.get("/summary/{name}")
 async def REST_summary(name: str):
@@ -10,6 +12,7 @@ async def REST_summary(name: str):
     model = GAMER()
     result = await model.ainvoke(query)
     return result
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
