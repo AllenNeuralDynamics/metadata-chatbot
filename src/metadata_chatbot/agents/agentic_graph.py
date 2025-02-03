@@ -1,3 +1,5 @@
+"""LLM agents used in GAMER"""
+
 from typing import Literal
 
 from langchain import hub
@@ -31,11 +33,14 @@ HAIKU_3_5_LLM = ChatBedrock(
 class RouteQuery(TypedDict):
     """Route a user query to the most relevant datasource."""
 
-    # reasoning: Annotated[str, ..., "Give a one sentence justification for the chosen method"]
     datasource: Annotated[
         Literal["vectorstore", "direct_database", "claude"],
         ...,
-        "Given a user question choose to route it to the direct database or its vectorstore. If a question can be answered without retrieval, route to claude",
+        (
+            "Given a user question choose to route it to the \
+         direct database or its vectorstore."
+            "If a question can be answered without retrieval, route to claude"
+        ),
     ]
 
 
@@ -48,7 +53,6 @@ datasource_router = router_prompt | structured_llm_router
 class QueryRewriter(TypedDict):
     """Rewrite ambiguous queries"""
 
-    # relevant_context:Annotated[str, ..., "Relevant context extracted from document that helps directly answer the question"]
     binary_score: Annotated[
         Literal["yes", "no"], ..., "Query is ambiguous, 'yes' or 'no'"
     ]
@@ -77,9 +81,9 @@ filter_generation_chain = filter_prompt | filter_generator_llm
 
 # Check if retrieved documents answer question
 class RetrievalGrader(TypedDict):
-    """Relevant material in the retrieved document + Binary score to check relevance to the question"""
+    """Relevant material in the retrieved document +
+    Binary score to check relevance to the question"""
 
-    # relevant_context:Annotated[str, ..., "Relevant context extracted from document that helps directly answer the question"]
     binary_score: Annotated[
         Literal["yes", "no"],
         ...,

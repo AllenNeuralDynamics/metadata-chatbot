@@ -1,6 +1,7 @@
+"""DocDB retriever class that communicates with MongoDB"""
+
 import asyncio
 import json
-import time
 from typing import Any, List, Optional
 
 import boto3
@@ -10,19 +11,8 @@ from langchain_aws import BedrockEmbeddings
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-from langchain_huggingface import HuggingFaceEmbeddings
 from pydantic import Field
 from sentence_transformers import SentenceTransformer
-
-# model_name = "dunzhang/stella_en_1.5B_v5"
-# model_kwargs = {'device': 'cpu'}
-# encode_kwargs = {'normalize_embeddings': False}
-# hf = HuggingFaceEmbeddings(
-#     model_name=model_name,
-#     model_kwargs=model_kwargs,
-#     encode_kwargs=encode_kwargs,
-#     cache_folder="/scratch/huggingface_cache"
-# )
 
 BEDROCK_CLIENT = boto3.client(
     service_name="bedrock-runtime", region_name="us-west-2"
@@ -43,11 +33,12 @@ docdb_api_client = MetadataDbClient(
 )
 
 
-# print("Using collection:", COLLECTION)
-
-
 class DocDBRetriever(BaseRetriever):
-    """A retriever that contains the top k documents, retrieved from the DocDB index, aligned with the user's query."""
+    """
+    A retriever that contains the top k documents,
+    retrieved from the DocDB index,
+    aligned with the user's query.
+    """
 
     # collection: Any = Field(description="DocDB collection to retrieve from")
     k: int = Field(default=5, description="Number of documents to retrieve")
@@ -59,6 +50,9 @@ class DocDBRetriever(BaseRetriever):
         run_manager: Optional[CallbackManagerForRetrieverRun] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """
+        Synchronous call to retrieve relevant docs from MongoDB
+        """
 
         # Embed query
         query_to_embed = [query]
@@ -125,6 +119,9 @@ class DocDBRetriever(BaseRetriever):
         run_manager: Optional[CallbackManagerForRetrieverRun] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """
+        Async call
+        """
 
         # Embed query
 
@@ -158,6 +155,10 @@ class DocDBRetriever(BaseRetriever):
 
         # Transform retrieved docs to langchain Documents
         async def process_document(document):
+            """
+            Converting retrieved docs to Langchain friendly format
+            """
+
             values_to_metadata = dict()
             json_doc = json.loads(json_util.dumps(document))
 

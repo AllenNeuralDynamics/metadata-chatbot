@@ -1,3 +1,5 @@
+"""REST API to generate summaries for given asset name"""
+
 import uvicorn
 from fastapi import FastAPI
 
@@ -8,7 +10,11 @@ app = FastAPI()
 
 @app.get("/summary/{name}")
 async def REST_summary(name: str):
-    query = f"Give me a detailed 3 sentence summary of the asset name: {name}. Do not include a starting phrase like here is a 3 sentence summary of this asset."
+    """Invoking GAMER to generate summary of asset"""
+    query = (
+        f"Provide a detailed 3 sentence summary of the asset name:{name}."
+        "Get straight to the point in your answer"
+    )
     model = GAMER()
     result = await model.ainvoke(query)
     return result

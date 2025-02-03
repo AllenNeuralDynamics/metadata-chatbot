@@ -1,3 +1,5 @@
+"""Langgraph workflow for GAMER"""
+
 import asyncio
 import warnings
 from typing import Annotated, List, Optional
@@ -65,34 +67,19 @@ async def route_question_async(state: dict) -> dict:
 
 async def retrieve_DB_async(state: dict) -> dict:
     """
-    Retrieves from data asset collection in prod DB after constructing a MongoDB query
+    Retrieves from data asset collection in prod DB
+    after constructing a MongoDB query
     """
 
-    query = state["messages"][-1].content
-    chat_history = state["messages"]
     message_iterator = []
-    # try:
-
-    #     async for result in astream_input(query):
-    #         response = result['type']
-    #         if response == 'intermediate_steps':
-    #             message_iterator.append(result['content'])
-    #         if response == 'agg_pipeline':
-    #             message_iterator.append(f"The MongoDB pipeline used to on the database is: {result['content']}")
-    #         if response == 'tool_response':
-    #             message_iterator.append(f"Retrieved output from MongoDB: {result['content']}")
-    #         if response == 'final_answer':
-    #             answer = result['content']
-    # except Exception as e:
-    #     answer = f"An error occured: {e}"
 
     return {"messages": message_iterator, "generation": ""}
 
 
 async def filter_generator_async(state: dict) -> dict:
     """
-    Filter database by constructing basic MongoDB match filter and determining number of documents to retrieve
-
+    Filter database by constructing basic MongoDB match filter
+    and determining number of documents to retrieve
     """
     query = state["messages"][-1].content
     chat_history = state["messages"]
@@ -103,19 +90,22 @@ async def filter_generator_async(state: dict) -> dict:
         )
         filter = result["filter_query"]
         top_k = result["top_k"]
-    except:
+        message = AIMessage(
+            f"Using MongoDB filter: {filter} on the database \
+                    and retrieving {top_k} documents"
+        )
+
+    except Exception as ex:
         filter = None
         top_k = None
+        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(type(ex).__name__, ex.args)
 
     return {
         "query": query,
         "filter": filter,
         "top_k": top_k,
-        "messages": [
-            AIMessage(
-                f"Using MongoDB filter: {filter} on the database and retrieving {top_k} documents"
-            )
-        ],
+        "messages": [message],
     }
 
 
@@ -132,19 +122,24 @@ async def retrieve_VI_async(state: dict) -> dict:
         documents = await retriever.aget_relevant_documents(
             query=query, query_filter=filter
         )
+        message = AIMessage(
+            "Retrieving relevant documents from vector index..."
+        )
 
-    except:
-        documents = "No documents were returned"
+    except Exception as ex:
+        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(type(ex).__name__, ex.args)
 
     return {
         "documents": documents,
-        "messages": [
-            AIMessage("Retrieving relevant documents from vector index...")
-        ],
+        "messages": [message],
     }
 
 
 async def grade_doc_async(query: str, doc: Document):
+    """
+    Grades whether each document is relevant to query
+    """
     score = await doc_grader.ainvoke(
         {"query": query, "document": doc.page_content}
     )
@@ -155,8 +150,10 @@ async def grade_doc_async(query: str, doc: Document):
             return doc.page_content
         else:
             return None
-    except:
-        return "There was an error processing this document."
+    except Exception as ex:
+        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(type(ex).__name__, ex.args)
+        return message
 
 
 async def grade_documents_async(state: dict) -> dict:
@@ -188,17 +185,16 @@ async def generate_VI_async(state: dict) -> dict:
     documents = state["documents"]
 
     try:
-        generation = await rag_chain.ainvoke(
+        message = await rag_chain.ainvoke(
             {"documents": documents, "query": query}
         )
-    except:
-        generation = (
-            "Apologies, would you mind reframing the query in another way?"
-        )
+    except Exception as ex:
+        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(type(ex).__name__, ex.args)
 
     return {
-        "messages": [AIMessage(str(generation))],
-        "generation": generation,
+        "messages": [AIMessage(str(message))],
+        "generation": message,
     }
 
 
@@ -211,17 +207,16 @@ async def generate_claude_async(state: dict) -> dict:
 
     try:
 
-        generation = await prev_context_chain.ainvoke(
+        message = await prev_context_chain.ainvoke(
             {"query": query, "chat_history": chat_history}
         )
-    except:
-        generation = (
-            "Apologies, the chat history doesn't answer your question."
-        )
+    except Exception as ex:
+        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(type(ex).__name__, ex.args)
 
     return {
-        "messages": [AIMessage(str(generation))],
-        "generation": generation,
+        "messages": [AIMessage(str(message))],
+        "generation": message,
     }
 
 

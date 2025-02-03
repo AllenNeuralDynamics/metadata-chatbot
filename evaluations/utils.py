@@ -1,3 +1,5 @@
+"""Variables required for evaluation pipelines"""
+
 import boto3
 from langchain_aws import BedrockEmbeddings
 from langchain_aws.chat_models.bedrock import ChatBedrock

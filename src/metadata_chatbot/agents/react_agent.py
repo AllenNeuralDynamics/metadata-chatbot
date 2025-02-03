@@ -1,4 +1,5 @@
-import asyncio
+"""Langsmith agent class to communicate with DocDB"""
+
 import json
 from typing import Annotated, Sequence, TypedDict
 
@@ -24,10 +25,13 @@ docdb_api_client = MetadataDbClient(
 
 @tool
 def aggregation_retrieval(agg_pipeline: list) -> list:
-    """Given a MongoDB query and list of projections, this function retrieves and returns the
-    relevant information in the documents.
-    Use a project stage as the first stage to minimize the size of the queries before proceeding with the remaining steps.
-    The input to $map must be an array not a string, avoid using it in the $project stage.
+    """
+    Given a MongoDB query and list of projections, this function
+    retrieves and returns the relevant information in the documents.
+    Use a project stage as the first stage to minimize the size of
+    the queries before proceeding with the remaining steps.
+    The input to $map must be an array not a string, avoid using it
+    in the $project stage.
 
     Parameters
     ----------
@@ -44,8 +48,11 @@ def aggregation_retrieval(agg_pipeline: list) -> list:
             pipeline=agg_pipeline
         )
         return result
-    except:
-        return "An error has occured, try structuring the query another way!"
+
+    except Exception as ex:
+        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(type(ex).__name__, ex.args)
+        return message
 
 
 tools = [aggregation_retrieval]
@@ -66,6 +73,9 @@ tools_by_name = {tool.name: tool for tool in tools}
 
 
 async def tool_node(state: AgentState):
+    """
+    Determining if call to MongoDB is required
+    """
     outputs = []
     for tool_call in state["messages"][-1].tool_calls:
         tool_result = await tools_by_name[tool_call["name"]].ainvoke(
@@ -82,8 +92,10 @@ async def tool_node(state: AgentState):
 
 
 async def call_model(state: AgentState):
+    """
+    Invoking LLM to generate response
+    """
     if ToolMessage in state["messages"]:
-        # this is similar to customizing the create_react_agent with state_modifier, but is a lot more flexible
         response = await SONNET_3_5_LLM.ainvoke(state["messages"])
     else:
         response = await retrieval_agent_chain.ainvoke(state["messages"])
@@ -93,6 +105,9 @@ async def call_model(state: AgentState):
 
 # Define the conditional edge that determines whether to continue or not
 async def should_continue(state: AgentState):
+    """
+    Determining if model should continue querying DocDB to answer query
+    """
     messages = state["messages"]
     last_message = messages[-1]
     # If there is no function call, then we finish
@@ -126,6 +141,9 @@ query = "How many records are in the database"
 
 
 async def astream_input(query):
+    """
+    Streaming result from the react agent node
+    """
     inputs = {"messages": [("user", query)]}
     async for s in react_agent.astream(inputs, stream_mode="values"):
         message = s["messages"][-1]
@@ -148,22 +166,22 @@ async def astream_input(query):
             yield {"type": "tool_response", "content": message.content}
 
 
-async def agent_astream(query):
+# async def agent_astream(query):
 
-    async for result in astream_input(query):
-        response = result["type"]
-        if response == "intermediate_steps":
-            print(result["content"])
-        if response == "agg_pipeline":
-            print(
-                "The MongoDB pipeline used to on the database is:",
-                result["content"],
-            )
-        if response == "tool_response":
-            print("Retrieved output from MongoDB:", result["content"])
-        if response == "final_answer":
-            generation = result["content"]
-    return generation
+#     async for result in astream_input(query):
+#         response = result["type"]
+#         if response == "intermediate_steps":
+#             print(result["content"])
+#         if response == "agg_pipeline":
+#             print(
+#                 "The MongoDB pipeline used to on the database is:",
+#                 result["content"],
+#             )
+#         if response == "tool_response":
+#             print("Retrieved output from MongoDB:", result["content"])
+#         if response == "final_answer":
+#             generation = result["content"]
+#     return generation
 
 
 # print(asyncio.run(agent_astream(query)))
