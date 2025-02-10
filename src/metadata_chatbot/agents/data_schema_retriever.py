@@ -3,8 +3,6 @@
 import asyncio
 import json
 import logging
-import os
-from datetime import datetime
 from typing import Any, List, Optional
 
 from aind_data_access_api.document_db import MetadataDbClient
@@ -24,7 +22,6 @@ docdb_api_client = MetadataDbClient(
     database=DATABASE,
     collection=COLLECTION,
 )
-
 
 
 class DataSchemaRetriever(BaseRetriever):
