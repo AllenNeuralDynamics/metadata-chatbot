@@ -1,6 +1,5 @@
 """Langsmith agent class to communicate with DocDB"""
 
-import asyncio
 import json
 import logging
 import os
@@ -75,19 +74,6 @@ template = hub.pull("eden19/data_schema_query")
 retrieval_agent_chain = template | model
 
 
-class QueryConstructor(TypedDict):
-    """Construct a query with context"""
-
-    mongo_db_query: Annotated[dict, ..., "MongoDB filter"]
-
-
-structured_llm_router = (
-    SONNET_3_5_LLM  # .with_structured_output(QueryConstructor)
-)
-query_constructor_prompt = hub.pull("eden19/data_schema_query")
-query_constructor = query_constructor_prompt | structured_llm_router
-
-
 class AgentState(TypedDict):
     """The state of the agent."""
 
@@ -158,11 +144,9 @@ async def call_model(state: AgentState):
         )
 
     logging.info(response)
-    # We return a list, because this will get added to the existing list
     return {"messages": [response]}
 
 
-# Define the conditional edge that determines whether to continue or not
 async def should_continue(state: AgentState):
     """
     Determining if model should continue querying DocDB to answer query
@@ -197,12 +181,10 @@ workflow.add_edge("tools", "agent")
 
 react_agent = workflow.compile()
 
-query = "Can you list a timeline of events for mouse 675387"
-
 
 async def astream_input(query):
     """
-    Streaming result from the react agent node
+    Streaming result from the MongoDB agent node
     """
     inputs = {"messages": [("user", query)]}
     async for s in react_agent.astream(inputs, stream_mode="values"):
@@ -221,17 +203,20 @@ async def astream_input(query):
             if type(answer_generation) is list:
                 yield {
                     "type": "GAMER",
-                    "content": answer_generation[0]['text'],
+                    "content": answer_generation[0]["text"],
                 }
-            
             yield {
-                    "type": "GAMER",
-                    "content": answer_generation,
-                }
+                "type": "GAMER",
+                "content": answer_generation,
+            }
 
         if isinstance(message, ToolMessage):
             yield {"type": "tool_response", "content": message.content}
 
+
+# import asyncio
+
+# query = "Can you list a timeline of events for mouse 675387"
 
 # async def agent_astream(query):
 
