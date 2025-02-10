@@ -1,6 +1,9 @@
 """Langsmith agent class to communicate with DocDB"""
 
-import json, asyncio, os, logging
+import asyncio
+import json
+import logging
+import os
 from datetime import datetime
 from typing import Annotated, List, Optional, Sequence, TypedDict
 
@@ -16,9 +19,7 @@ from metadata_chatbot.agents.data_schema_retriever import DataSchemaRetriever
 
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
-    filename=(
-        f"logs/mongo_db_agent_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-    ),
+    filename=f"logs/log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     filemode="w",
@@ -73,8 +74,9 @@ model = SONNET_3_5_LLM.bind_tools(tools)
 template = hub.pull("eden19/data_schema_query")
 retrieval_agent_chain = template | model
 
+
 class QueryConstructor(TypedDict):
-    """Construct a query"""
+    """Construct a query with context"""
 
     mongo_db_query: Annotated[dict, ..., "MongoDB filter"]
 
@@ -83,7 +85,7 @@ structured_llm_router = (
     SONNET_3_5_LLM  # .with_structured_output(QueryConstructor)
 )
 query_constructor_prompt = hub.pull("eden19/data_schema_query")
-query_constructor = query_constructor_prompt| structured_llm_router
+query_constructor = query_constructor_prompt | structured_llm_router
 
 
 class AgentState(TypedDict):
@@ -147,13 +149,14 @@ async def call_model(state: AgentState):
     Invoking LLM to generate response
     """
 
-    documents = state['documents']
+    documents = state["documents"]
     if ToolMessage in state["messages"]:
         response = await SONNET_3_5_LLM.ainvoke(state["messages"])
     else:
-        response = await retrieval_agent_chain.ainvoke({"query": state["messages"],
-                                                       "documents": documents})
-        
+        response = await retrieval_agent_chain.ainvoke(
+            {"query": state["messages"], "documents": documents}
+        )
+
     logging.info(response)
     # We return a list, because this will get added to the existing list
     return {"messages": [response]}
@@ -194,7 +197,7 @@ workflow.add_edge("tools", "agent")
 
 react_agent = workflow.compile()
 
-query = "Can you list all the procedures performed on subject 740955"
+query = "Can you list a timeline of events for mouse 675387"
 
 
 async def astream_input(query):
@@ -206,41 +209,34 @@ async def astream_input(query):
         message = s["messages"][-1]
         if isinstance(message, AIMessage):
             if message.tool_calls:
-                yield message
-                # yield {
-                #     "type": "intermediate_steps",
-                #     #"content": message.content[0]["text"],
-                # }
-                # yield {
-                #     "type": "agg_pipeline",
-                #     #"content": message.tool_calls[0]["args"]["agg_pipeline"],
-                # }
-            else:
                 yield {
-                    "type": "final_answer",
-                    #"content": message.content[0]["text"],
+                    "type": "intermediate_steps",
+                    "content": message.content[0]["text"],
                 }
+                yield {
+                    "type": "agg_pipeline",
+                    "content": message.tool_calls[0]["args"]["agg_pipeline"],
+                }
+            answer_generation = message.content
+            if type(answer_generation) is list:
+                yield {
+                    "type": "GAMER",
+                    "content": answer_generation[0]['text'],
+                }
+            
+            yield {
+                    "type": "GAMER",
+                    "content": answer_generation,
+                }
+
         if isinstance(message, ToolMessage):
             yield {"type": "tool_response", "content": message.content}
 
 
-async def agent_astream(query):
+# async def agent_astream(query):
 
-    async for result in astream_input(query):
-        print(result)
-    #     response = result["type"]
-    #     if response == "intermediate_steps":
-    #         print(result["content"])
-    #     if response == "agg_pipeline":
-    #         print(
-    #             "The MongoDB pipeline used to on the database is:",
-    #             result["content"],
-    #         )
-    #     if response == "tool_response":
-    #         print("Retrieved output from MongoDB:", result["content"])
-    #     if response == "final_answer":
-    #         generation = result["content"]
-    # return generation
+#     async for result in astream_input(query):
+#         print(result)
 
 
-print(asyncio.run(agent_astream(query)))
+# print(asyncio.run(agent_astream(query)))
