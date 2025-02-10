@@ -1,7 +1,10 @@
 """Langsmith agent class to communicate with DocDB"""
 
 import json
-from typing import Annotated, Sequence, TypedDict
+import logging
+import os
+from datetime import datetime
+from typing import Annotated, List, Optional, Sequence, TypedDict
 
 from aind_data_access_api.document_db import MetadataDbClient
 from langchain import hub
@@ -11,6 +14,15 @@ from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
 from metadata_chatbot.agents.agentic_graph import SONNET_3_5_LLM
+from metadata_chatbot.agents.data_schema_retriever import DataSchemaRetriever
+
+os.makedirs("logs", exist_ok=True)
+logging.basicConfig(
+    filename=f"logs/log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    filemode="w",
+)
 
 API_GATEWAY_HOST = "api.allenneuraldynamics.org"
 DATABASE = "metadata_index"
@@ -58,8 +70,7 @@ def aggregation_retrieval(agg_pipeline: list) -> list:
 tools = [aggregation_retrieval]
 model = SONNET_3_5_LLM.bind_tools(tools)
 
-template = hub.pull("eden19/entire_db_retrieval")
-# system_prompt =  SystemMessage(system_rompt)
+template = hub.pull("eden19/data_schema_query")
 retrieval_agent_chain = template | model
 
 
@@ -67,9 +78,37 @@ class AgentState(TypedDict):
     """The state of the agent."""
 
     messages: Annotated[Sequence[BaseMessage], add_messages]
+    documents: Optional[List[str]]
 
 
 tools_by_name = {tool.name: tool for tool in tools}
+
+
+def retrieve_context(state: AgentState):
+    """
+    Retrieve context from data schema collection
+    """
+    query = str(state["messages"])
+
+    try:
+        logging.info("Initializing retriever")
+        retriever = DataSchemaRetriever(k=3)
+        logging.info("Retrieving documents")
+        documents = retriever._get_relevant_documents(query=query)
+        logging.info("Documents retrieved")
+        logging.info(f"Type of documents retrieved: {type(documents)}")
+        for i in documents:
+            logging.info(f"Document: {i}")
+        message = AIMessage("Retrieving context about data schema...")
+
+    except Exception as ex:
+        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(type(ex).__name__, ex.args)
+
+    return {
+        "documents": documents,
+        "messages": [message],
+    }
 
 
 async def tool_node(state: AgentState):
@@ -95,15 +134,19 @@ async def call_model(state: AgentState):
     """
     Invoking LLM to generate response
     """
+
+    documents = state["documents"]
     if ToolMessage in state["messages"]:
         response = await SONNET_3_5_LLM.ainvoke(state["messages"])
     else:
-        response = await retrieval_agent_chain.ainvoke(state["messages"])
-    # We return a list, because this will get added to the existing list
+        response = await retrieval_agent_chain.ainvoke(
+            {"query": state["messages"], "documents": documents}
+        )
+
+    logging.info(response)
     return {"messages": [response]}
 
 
-# Define the conditional edge that determines whether to continue or not
 async def should_continue(state: AgentState):
     """
     Determining if model should continue querying DocDB to answer query
@@ -120,11 +163,12 @@ async def should_continue(state: AgentState):
 
 workflow = StateGraph(AgentState)
 
+workflow.add_node("retrieve", retrieve_context)
 workflow.add_node("agent", call_model)
 workflow.add_node("tools", tool_node)
 
-workflow.set_entry_point("agent")
-
+workflow.set_entry_point("retrieve")
+workflow.add_edge("retrieve", "agent")
 workflow.add_conditional_edges(
     "agent",
     should_continue,
@@ -137,12 +181,10 @@ workflow.add_edge("tools", "agent")
 
 react_agent = workflow.compile()
 
-query = "How many records are in the database"
-
 
 async def astream_input(query):
     """
-    Streaming result from the react agent node
+    Streaming result from the MongoDB agent node
     """
     inputs = {"messages": [("user", query)]}
     async for s in react_agent.astream(inputs, stream_mode="values"):
@@ -157,31 +199,29 @@ async def astream_input(query):
                     "type": "agg_pipeline",
                     "content": message.tool_calls[0]["args"]["agg_pipeline"],
                 }
-            else:
+            answer_generation = message.content
+            if type(answer_generation) is list:
                 yield {
-                    "type": "final_answer",
-                    "content": message.content[0]["text"],
+                    "type": "GAMER",
+                    "content": answer_generation[0]["text"],
                 }
+            yield {
+                "type": "GAMER",
+                "content": answer_generation,
+            }
+
         if isinstance(message, ToolMessage):
             yield {"type": "tool_response", "content": message.content}
 
 
+# import asyncio
+
+# query = "Can you list a timeline of events for mouse 675387"
+
 # async def agent_astream(query):
 
 #     async for result in astream_input(query):
-#         response = result["type"]
-#         if response == "intermediate_steps":
-#             print(result["content"])
-#         if response == "agg_pipeline":
-#             print(
-#                 "The MongoDB pipeline used to on the database is:",
-#                 result["content"],
-#             )
-#         if response == "tool_response":
-#             print("Retrieved output from MongoDB:", result["content"])
-#         if response == "final_answer":
-#             generation = result["content"]
-#     return generation
+#         print(result)
 
 
 # print(asyncio.run(agent_astream(query)))
