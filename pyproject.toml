@@ -20,19 +20,11 @@ dependencies = [
     'aind-data-access-api[full]>=0.15.0',
     'boto3',
     'langchain-aws',
-    'langchain-community',
     'langchain_core',
-    'langchain_huggingface',
     'langchain',
     'langgraph',
-    'motor',
-    'nest-asyncio',
-    'pymongo',
-    'pytest',
     'fastapi',
     'uvicorn',
-    'sshtunnel',
-    'streamlit'
 ]
 
 [project.optional-dependencies]
