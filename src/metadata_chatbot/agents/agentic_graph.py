@@ -34,12 +34,13 @@ class RouteQuery(TypedDict):
     """Route a user query to the most relevant datasource."""
 
     datasource: Annotated[
-        Literal["vectorstore", "direct_database", "claude"],
+        Literal["vectorstore", "direct_database", "claude", "data_schema"],
         ...,
         (
-            "Given a user question choose to route it to the \
-         direct database or its vectorstore."
-            "If a question can be answered without retrieval, route to claude"
+            "Given a user question choose to route it to the direct database"
+            "or its vectorstore. If a question can be answered without"
+            "retrieval, route to claude. If a question is about the"
+            "schema/structure/definitions, route to data schema"
         ),
     ]
 
