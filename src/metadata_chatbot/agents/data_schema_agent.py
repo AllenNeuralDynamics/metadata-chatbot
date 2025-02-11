@@ -16,7 +16,6 @@ from langgraph.graph.message import add_messages
 from metadata_chatbot.agents.agentic_graph import SONNET_3_5_LLM
 from metadata_chatbot.agents.data_schema_retriever import DataSchemaRetriever
 
-
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
     filename=f"logs/log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
@@ -215,14 +214,15 @@ async def astream_input(query):
             yield {"type": "tool_response", "content": message.content}
 
 
-import asyncio
+# import asyncio
 
-query = "Can you list all the procedures performed on the specimen, including their start and end dates? in SmartSPIM_662616_2023-03-06_17-47-13a"
-
-async def agent_astream(query):
-
-    async for result in astream_input(query):
-        print(result)
+# query = ""
 
 
-print(asyncio.run(agent_astream(query)))
+# async def agent_astream(query):
+
+#     async for result in astream_input(query):
+#         print(result)
+
+
+# print(asyncio.run(agent_astream(query)))

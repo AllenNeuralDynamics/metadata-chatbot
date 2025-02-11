@@ -1,3 +1,5 @@
+"""Langsmith agent class to communicate with data assets"""
+
 import json
 import botocore
 from typing import Annotated, Sequence, TypedDict
@@ -101,7 +103,7 @@ async def call_model(state: AgentState):
             response = await retrieval_agent_chain.ainvoke(state["messages"])
     except botocore.exceptions.EventStreamError as e:
         response = (
-            "An error has occured:" 
+            "An error has occured:"
             f"Requested information exceeds model's context length: {e}"
         )
     return {"messages": [response]}
@@ -141,8 +143,6 @@ workflow.add_edge("tools", "agent")
 
 react_agent = workflow.compile()
 
-query = "Can you list all the procedures performed on the specimen, including their start and end dates? in SmartSPIM_662616_2023-03-06_17-47-13a"
-
 
 async def astream_input(query):
     """
@@ -170,14 +170,15 @@ async def astream_input(query):
             yield {"type": "tool_response", "content": message.content}
 
 
-import asyncio
+# import asyncio
 
-query = "List 10 animals from the thalamus in the middle project that have passing grades on tissue QC?"
-
-async def agent_astream(query):
-
-    async for result in astream_input(query):
-        print(result)
+# query = ""
 
 
-print(asyncio.run(agent_astream(query)))
+# async def agent_astream(query):
+
+#     async for result in astream_input(query):
+#         print(result)
+
+
+# print(asyncio.run(agent_astream(query)))
