@@ -231,12 +231,16 @@ async def generate_summary(state: dict) -> dict:
     """
     Generate answer
     """
-    query = state["query"]
+
+    if "query" in state and state["query"] is not None:
+        query = state["query"]
+    else:
+        query = state["messages"][-1].content
     chat_history = state["messages"]
 
     try:
 
-        if state["documents"]:
+        if "documents" in state:
             context = state["documents"]
         else:
             context = chat_history
@@ -288,8 +292,7 @@ async_app = async_workflow.compile()
 
 # from langchain_core.messages import HumanMessage
 
-# query = "I have a laser on my rig, what device do I need to add"
-# "to my rig metadata and what information will I need to provide"
+# query = "hi"
 
 
 # async def new_astream(query):
