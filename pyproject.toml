@@ -23,8 +23,6 @@ dependencies = [
     'langchain_core',
     'langchain',
     'langgraph',
-    'fastapi',
-    'uvicorn',
 ]
 
 [project.optional-dependencies]
