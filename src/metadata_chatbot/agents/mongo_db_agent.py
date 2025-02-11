@@ -1,9 +1,9 @@
 """Langsmith agent class to communicate with data assets"""
 
 import json
-import botocore
 from typing import Annotated, Sequence, TypedDict
 
+import botocore
 from aind_data_access_api.document_db import MetadataDbClient
 from langchain import hub
 from langchain_core.messages import AIMessage, BaseMessage, ToolMessage
