@@ -99,6 +99,7 @@ def retrieve_schema(state: dict) -> dict:
         message = template.format(type(ex).__name__, ex.args)
 
     return {
+        "query": query,
         "documents": documents,
         "messages": [message],
     }
@@ -230,7 +231,7 @@ async def generate_summary(state: dict) -> dict:
     """
     Generate answer
     """
-    query = state["messages"][-1].content
+    query = state["query"]
     chat_history = state["messages"]
 
     try:
@@ -287,8 +288,8 @@ async_app = async_workflow.compile()
 
 # from langchain_core.messages import HumanMessage
 
-# query =
-# "I have a laser on my rig, what device do I need for my rig metadata"
+# query = "I have a laser on my rig, what device do I need to add"
+# "to my rig metadata and what information will I need to provide"
 
 
 # async def new_astream(query):
