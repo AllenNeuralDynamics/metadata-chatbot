@@ -90,7 +90,7 @@ def retrieve_schema(state: dict) -> dict:
     query = state["messages"][-1].content
 
     try:
-        retriever = DataSchemaRetriever(k = 7)
+        retriever = DataSchemaRetriever(k=7)
         documents = retriever._get_relevant_documents(query=query)
         message = AIMessage("Retrieving context about data schema...")
 
@@ -286,29 +286,30 @@ async_app = async_workflow.compile()
 
 # query = "What are the unique modalities in the database??"
 
-from langchain_core.messages import HumanMessage
+# from langchain_core.messages import HumanMessage
 
-query = "I have a laser on my rig, what device do I need to add to my rig metadata and what information will I need to provide"
-
-
-async def new_astream(query):
-    async def main(query):
-
-        inputs = {
-            "messages": [HumanMessage(query)],
-        }
-        async for output in async_app.astream(inputs):
-            for key, value in output.items():
-                if key != "database_query":
-                    yield value["messages"][0].content
-                else:
-                    for message in value["messages"]:
-                        yield message
-                    yield value["generation"]
-
-    async for result in main(query):
-        print(result)  # Process the yielded results
+# query = "I have a laser on my rig, what device do I need to add"
+# "to my rig metadata and what information will I need to provide"
 
 
-# Run the main coroutine with asyncio
-asyncio.run(new_astream(query))
+# async def new_astream(query):
+#     async def main(query):
+
+#         inputs = {
+#             "messages": [HumanMessage(query)],
+#         }
+#         async for output in async_app.astream(inputs):
+#             for key, value in output.items():
+#                 if key != "database_query":
+#                     yield value["messages"][0].content
+#                 else:
+#                     for message in value["messages"]:
+#                         yield message
+#                     yield value["generation"]
+
+#     async for result in main(query):
+#         print(result)  # Process the yielded results
+
+
+# # Run the main coroutine with asyncio
+# asyncio.run(new_astream(query))
