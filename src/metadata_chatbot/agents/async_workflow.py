@@ -15,9 +15,10 @@ from metadata_chatbot.agents.agentic_graph import (
     datasource_router,
     doc_grader,
     filter_generation_chain,
-    prev_context_chain,
     rag_chain,
+    summary_chain,
 )
+from metadata_chatbot.agents.data_schema_retriever import DataSchemaRetriever
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
 
 warnings.filterwarnings("ignore")
@@ -41,7 +42,7 @@ class GraphState(TypedDict):
     top_k: Optional[int]
 
 
-async def route_question_async(state: dict) -> dict:
+async def route_question(state: dict) -> dict:
     """
     Route question to database or vectorstore
     Args:
@@ -63,9 +64,11 @@ async def route_question_async(state: dict) -> dict:
         return "vectorstore"
     elif source["datasource"] == "claude":
         return "claude"
+    elif source["datasource"] == "data_schema":
+        return "data_schema"
 
 
-async def retrieve_DB_async(state: dict) -> dict:
+def retrieve_DB(state: dict) -> dict:
     """
     Retrieves from data asset collection in prod DB
     after constructing a MongoDB query
@@ -76,7 +79,32 @@ async def retrieve_DB_async(state: dict) -> dict:
     return {"messages": message_iterator, "generation": ""}
 
 
-async def filter_generator_async(state: dict) -> dict:
+def retrieve_schema(state: dict) -> dict:
+    """
+    Retrieves info about data schema in prod DB
+    """
+
+    """
+    Retrieve context from data schema collection
+    """
+    query = state["messages"][-1].content
+
+    try:
+        retriever = DataSchemaRetriever(k=7)
+        documents = retriever._get_relevant_documents(query=query)
+        message = AIMessage("Retrieving context about data schema...")
+
+    except Exception as ex:
+        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(type(ex).__name__, ex.args)
+
+    return {
+        "documents": documents,
+        "messages": [message],
+    }
+
+
+async def filter_generator(state: dict) -> dict:
     """
     Filter database by constructing basic MongoDB match filter
     and determining number of documents to retrieve
@@ -109,7 +137,7 @@ async def filter_generator_async(state: dict) -> dict:
     }
 
 
-async def retrieve_VI_async(state: dict) -> dict:
+async def retrieve_VI(state: dict) -> dict:
     """
     Retrieve documents
     """
@@ -136,7 +164,7 @@ async def retrieve_VI_async(state: dict) -> dict:
     }
 
 
-async def grade_doc_async(query: str, doc: Document):
+async def grade_doc(query: str, doc: Document):
     """
     Grades whether each document is relevant to query
     """
@@ -156,7 +184,7 @@ async def grade_doc_async(query: str, doc: Document):
         return message
 
 
-async def grade_documents_async(state: dict) -> dict:
+async def grade_documents(state: dict) -> dict:
     """
     Determines whether the retrieved documents are relevant to the question.
     """
@@ -164,7 +192,7 @@ async def grade_documents_async(state: dict) -> dict:
     documents = state["documents"]
 
     filtered_docs = await asyncio.gather(
-        *[grade_doc_async(query, doc) for doc in documents],
+        *[grade_doc(query, doc) for doc in documents],
         return_exceptions=True,
     )
     filtered_docs = [doc for doc in filtered_docs if doc is not None]
@@ -177,7 +205,7 @@ async def grade_documents_async(state: dict) -> dict:
     }
 
 
-async def generate_VI_async(state: dict) -> dict:
+async def generate_VI(state: dict) -> dict:
     """
     Generate answer
     """
@@ -198,7 +226,7 @@ async def generate_VI_async(state: dict) -> dict:
     }
 
 
-async def generate_claude_async(state: dict) -> dict:
+async def generate_summary(state: dict) -> dict:
     """
     Generate answer
     """
@@ -207,8 +235,13 @@ async def generate_claude_async(state: dict) -> dict:
 
     try:
 
-        message = await prev_context_chain.ainvoke(
-            {"query": query, "chat_history": chat_history}
+        if state["documents"]:
+            context = state["documents"]
+        else:
+            context = chat_history
+
+        message = await summary_chain.ainvoke(
+            {"query": query, "context": context}
         )
     except Exception as ex:
         template = "An exception of type {0} occurred. Arguments:\n{1!r}"
@@ -221,23 +254,26 @@ async def generate_claude_async(state: dict) -> dict:
 
 
 async_workflow = StateGraph(GraphState)
-async_workflow.add_node("database_query", retrieve_DB_async)
-async_workflow.add_node("filter_generation", filter_generator_async)
-async_workflow.add_node("retrieve", retrieve_VI_async)
-async_workflow.add_node("document_grading", grade_documents_async)
-async_workflow.add_node("generate_vi", generate_VI_async)
-async_workflow.add_node("generate_claude", generate_claude_async)
+async_workflow.add_node("database_query", retrieve_DB)
+async_workflow.add_node("data_schema_query", retrieve_schema)
+async_workflow.add_node("filter_generation", filter_generator)
+async_workflow.add_node("retrieve", retrieve_VI)
+async_workflow.add_node("document_grading", grade_documents)
+async_workflow.add_node("generate_vi", generate_VI)
+async_workflow.add_node("generate_summary", generate_summary)
 
 async_workflow.add_conditional_edges(
     START,
-    route_question_async,
+    route_question,
     {
         "direct_database": "database_query",
         "vectorstore": "filter_generation",
-        "claude": "generate_claude",
+        "claude": "generate_summary",
+        "data_schema": "data_schema_query",
     },
 )
-async_workflow.add_edge("generate_claude", END)
+async_workflow.add_edge("data_schema_query", "generate_summary")
+async_workflow.add_edge("generate_summary", END)
 async_workflow.add_edge("database_query", END)
 async_workflow.add_edge("filter_generation", "retrieve")
 async_workflow.add_edge("retrieve", "document_grading")
@@ -245,32 +281,34 @@ async_workflow.add_edge("document_grading", "generate_vi")
 async_workflow.add_edge("generate_vi", END)
 
 memory = MemorySaver()
-async_app = async_workflow.compile(checkpointer=memory)
+async_app = async_workflow.compile()
 
-query = "What are the unique modalities in the database??"
+# query = "What are the unique modalities in the database??"
 
-# query = "Give me a list of sessions for subject 740955?"
+# from langchain_core.messages import HumanMessage
+
+# query =
+# "I have a laser on my rig, what device do I need for my rig metadata"
 
 
 # async def new_astream(query):
 #     async def main(query):
 
-#         unique_id =  str(uuid.uuid4())
-#         config = {"configurable":{"thread_id": unique_id}}
 #         inputs = {
 #             "messages": [HumanMessage(query)],
 #         }
-#         async for output in async_app.astream(inputs, config):
+#         async for output in async_app.astream(inputs):
 #             for key, value in output.items():
 #                 if key != "database_query":
-#                     yield value['messages'][0].content
+#                     yield value["messages"][0].content
 #                 else:
-#                     for message in value['messages']:
+#                     for message in value["messages"]:
 #                         yield message
-#                     yield value['generation']
+#                     yield value["generation"]
 
 #     async for result in main(query):
-#         print(result) # Process the yielded results
+#         print(result)  # Process the yielded results
 
-# #Run the main coroutine with asyncio
+
+# # Run the main coroutine with asyncio
 # asyncio.run(new_astream(query))

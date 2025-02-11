@@ -12,6 +12,7 @@ bedrock_model/
 embeddings.py
 umap_visualization.py
 logs/
+data_schema_agent.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
