@@ -106,6 +106,6 @@ db_rag_chain = db_answer_generation_prompt | SONNET_3_5_LLM | StrOutputParser()
 
 # Generating response from previous context
 prompt = ChatPromptTemplate.from_template(
-    "Answer {query} based on the following texts: {chat_history}"
+    "Answer {query} based on the following texts: {context}"
 )
-prev_context_chain = prompt | HAIKU_3_5_LLM | StrOutputParser()
+summary_chain = prompt | HAIKU_3_5_LLM | StrOutputParser()
