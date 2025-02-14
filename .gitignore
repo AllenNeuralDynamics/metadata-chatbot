@@ -13,6 +13,7 @@ embeddings.py
 umap_visualization.py
 logs/
 data_schema_agent.py
+streamlit_app.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
