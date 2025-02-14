@@ -109,3 +109,9 @@ prompt = ChatPromptTemplate.from_template(
     "Answer {query} based on the following texts: {context}"
 )
 summary_chain = prompt | HAIKU_3_5_LLM | StrOutputParser()
+
+# Generating response from dataschema
+schema_prompt = ChatPromptTemplate.from_template(
+    "Answer {query} based on the following texts: {context}. When asked to create python code ONLY use AIND metadata related libraries. do not use external libraries."
+)
+schema_chain = schema_prompt | SONNET_3_5_LLM | StrOutputParser()
