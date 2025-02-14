@@ -18,6 +18,7 @@ from metadata_chatbot.agents.agentic_graph import (
     rag_chain,
     schema_chain,
     summary_chain,
+    chat_history_chain
 )
 from metadata_chatbot.agents.data_schema_retriever import DataSchemaRetriever
 from metadata_chatbot.agents.docdb_retriever import DocDBRetriever
@@ -36,8 +37,10 @@ class GraphState(TypedDict):
     """
 
     messages: Annotated[list[AnyMessage], add_messages]
-    query: Optional[str]
+    query: str
+    chat_history: Optional[str]
     generation: str
+    data_source: str
     documents: Optional[List[str]]
     filter: Optional[dict]
     top_k: Optional[int]
@@ -53,19 +56,35 @@ async def route_question(state: dict) -> dict:
         str: Next node to call
     """
     query = state["messages"][-1].content
-    chat_history = state["messages"]
+
+    if len(state["messages"]) > 6:
+        chat_history = await chat_history_chain.ainvoke(
+            {"chat_history": state["messages"][-6]}
+        )
+    else:
+        chat_history = state["messages"]
 
     source = await datasource_router.ainvoke(
         {"query": query, "chat_history": chat_history}
     )
 
-    if source["datasource"] == "direct_database":
+    message = AIMessage("")
+
+    return {"query": query, 
+            "chat_history": chat_history,
+            "data_source": source["datasource"],
+            "messages": [message]}
+
+def determine_route(state:dict) -> dict:
+    data_source = state["data_source"]
+
+    if data_source == "direct_database":
         return "direct_database"
-    elif source["datasource"] == "vectorstore":
+    elif data_source == "vectorstore":
         return "vectorstore"
-    elif source["datasource"] == "claude":
+    elif data_source == "claude":
         return "claude"
-    elif source["datasource"] == "data_schema":
+    elif data_source == "data_schema":
         return "data_schema"
 
 
@@ -111,7 +130,7 @@ async def filter_generator(state: dict) -> dict:
     Filter database by constructing basic MongoDB match filter
     and determining number of documents to retrieve
     """
-    query = state["messages"][-1].content
+    query = state["query"]
     chat_history = state["messages"]
 
     try:
@@ -132,7 +151,6 @@ async def filter_generator(state: dict) -> dict:
         message = template.format(type(ex).__name__, ex.args)
 
     return {
-        "query": query,
         "filter": filter,
         "top_k": top_k,
         "messages": [message],
@@ -282,6 +300,7 @@ async def generate_summary(state: dict) -> dict:
 
 
 async_workflow = StateGraph(GraphState)
+async_workflow.add_node("route_question", route_question)
 async_workflow.add_node("database_query", retrieve_DB)
 async_workflow.add_node("data_schema_query", retrieve_schema)
 async_workflow.add_node("filter_generation", filter_generator)
@@ -291,9 +310,10 @@ async_workflow.add_node("generate_vi", generate_VI)
 async_workflow.add_node("generate_summary", generate_summary)
 async_workflow.add_node("generate_schema", generate_schema)
 
+async_workflow.add_edge(START, "route_question")
 async_workflow.add_conditional_edges(
-    START,
-    route_question,
+    "route_question",
+    determine_route,
     {
         "direct_database": "database_query",
         "vectorstore": "filter_generation",
@@ -314,7 +334,6 @@ memory = MemorySaver()
 async_app = async_workflow.compile()
 
 # from langchain_core.messages import HumanMessage
-
 
 
 # async def new_astream(query):

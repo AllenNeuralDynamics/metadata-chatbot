@@ -110,8 +110,17 @@ prompt = ChatPromptTemplate.from_template(
 )
 summary_chain = prompt | HAIKU_3_5_LLM | StrOutputParser()
 
+# Summarizing chat_history
+summary_prompt = ChatPromptTemplate.from_template(
+    "Succinctly summarize {chat_history}, including the user's queries"
+    " and the relevant answers retaining important details"
+)
+chat_history_chain = summary_prompt | HAIKU_3_5_LLM | StrOutputParser()
+
 # Generating response from dataschema
 schema_prompt = ChatPromptTemplate.from_template(
-    "Answer {query} based on the following texts: {context}. When asked to create python code ONLY use AIND metadata related libraries. do not use external libraries."
+    "Answer {query} based on the following texts: {context}."
+    "When asked to create python code ONLY use AIND metadata related libraries."
+    "Do not use external libraries."
 )
 schema_chain = schema_prompt | SONNET_3_5_LLM | StrOutputParser()
