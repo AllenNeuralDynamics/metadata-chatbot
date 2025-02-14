@@ -254,10 +254,20 @@ async def generate_summary(state: dict) -> dict:
     """
     Generate answer
     """
-    query = state["messages"][-1].content
+
+    if "query" in state and state["query"] is not None:
+        query = state["query"]
+    else:
+        query = state["messages"][-1].content
     chat_history = state["messages"]
 
     try:
+
+        if "documents" in state:
+            context = state["documents"]
+        else:
+            context = chat_history
+
         message = await summary_chain.ainvoke(
             {"query": query, "context": chat_history}
         )
@@ -305,7 +315,6 @@ async_app = async_workflow.compile()
 
 # from langchain_core.messages import HumanMessage
 
-# query = "Give me an example of a very simple ephys rig, I need the python code to generate the rig"
 
 
 # async def new_astream(query):
