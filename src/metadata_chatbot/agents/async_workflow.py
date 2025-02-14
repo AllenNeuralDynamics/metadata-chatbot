@@ -16,6 +16,7 @@ from metadata_chatbot.agents.agentic_graph import (
     doc_grader,
     filter_generation_chain,
     rag_chain,
+    schema_chain,
     summary_chain,
 )
 from metadata_chatbot.agents.data_schema_retriever import DataSchemaRetriever
@@ -227,6 +228,28 @@ async def generate_VI(state: dict) -> dict:
     }
 
 
+async def generate_schema(state: dict) -> dict:
+    """
+    Generate answer
+    """
+    query = state["query"]
+    documents = state["documents"]
+
+    try:
+        query = "Using the AIND metadata " + query
+        message = await schema_chain.ainvoke(
+            {"query": query, "context": documents}
+        )
+    except Exception as ex:
+        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(type(ex).__name__, ex.args)
+
+    return {
+        "messages": [AIMessage(str(message))],
+        "generation": message,
+    }
+
+
 async def generate_summary(state: dict) -> dict:
     """
     Generate answer
@@ -246,7 +269,7 @@ async def generate_summary(state: dict) -> dict:
             context = chat_history
 
         message = await summary_chain.ainvoke(
-            {"query": query, "context": context}
+            {"query": query, "context": chat_history}
         )
     except Exception as ex:
         template = "An exception of type {0} occurred. Arguments:\n{1!r}"
@@ -266,6 +289,7 @@ async_workflow.add_node("retrieve", retrieve_VI)
 async_workflow.add_node("document_grading", grade_documents)
 async_workflow.add_node("generate_vi", generate_VI)
 async_workflow.add_node("generate_summary", generate_summary)
+async_workflow.add_node("generate_schema", generate_schema)
 
 async_workflow.add_conditional_edges(
     START,
@@ -277,7 +301,8 @@ async_workflow.add_conditional_edges(
         "data_schema": "data_schema_query",
     },
 )
-async_workflow.add_edge("data_schema_query", "generate_summary")
+async_workflow.add_edge("data_schema_query", "generate_schema")
+async_workflow.add_edge("generate_schema", END)
 async_workflow.add_edge("generate_summary", END)
 async_workflow.add_edge("database_query", END)
 async_workflow.add_edge("filter_generation", "retrieve")
@@ -288,11 +313,8 @@ async_workflow.add_edge("generate_vi", END)
 memory = MemorySaver()
 async_app = async_workflow.compile()
 
-# query = "What are the unique modalities in the database??"
-
 # from langchain_core.messages import HumanMessage
 
-# query = "hi"
 
 
 # async def new_astream(query):

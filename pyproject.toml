@@ -23,6 +23,7 @@ dependencies = [
     'langchain_core',
     'langchain',
     'langgraph',
+    "sentence_transformers"
 ]
 
 [project.optional-dependencies]
