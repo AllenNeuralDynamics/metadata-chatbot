@@ -1,17 +1,14 @@
-"""Langsmith agent class to communicate with data assets"""
+"""GAMER nodes that connect to MongoDB"""
 
 import json
-from typing import Annotated, Sequence, TypedDict
 
 import botocore
 from aind_data_access_api.document_db import MetadataDbClient
 from langchain import hub
-from langchain_core.messages import AIMessage, BaseMessage, ToolMessage
+from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
-from langgraph.graph import END, StateGraph
-from langgraph.graph.message import add_messages
 
-from metadata_chatbot.agents.agentic_graph import SONNET_3_5_LLM
+from metadata_chatbot.nodes.utils import SONNET_3_5_LLM
 
 API_GATEWAY_HOST = "api.allenneuraldynamics.org"
 DATABASE = "metadata_index"
@@ -60,20 +57,13 @@ tools = [aggregation_retrieval]
 model = SONNET_3_5_LLM.bind_tools(tools)
 
 template = hub.pull("eden19/entire_db_retrieval")
-# system_prompt =  SystemMessage(system_rompt)
 retrieval_agent_chain = template | model
-
-
-class AgentState(TypedDict):
-    """The state of the agent."""
-
-    messages: Annotated[Sequence[BaseMessage], add_messages]
 
 
 tools_by_name = {tool.name: tool for tool in tools}
 
 
-async def tool_node(state: AgentState):
+async def tool_node(state: dict):
     """
     Determining if call to MongoDB is required
     """
@@ -92,7 +82,7 @@ async def tool_node(state: AgentState):
     return {"messages": outputs}
 
 
-async def call_model(state: AgentState):
+async def call_model(state: dict):
     """
     Invoking LLM to generate response
     """
@@ -110,7 +100,7 @@ async def call_model(state: AgentState):
 
 
 # Define the conditional edge that determines whether to continue or not
-async def should_continue(state: AgentState):
+async def should_continue(state: dict):
     """
     Determining if model should continue querying DocDB to answer query
     """
@@ -122,63 +112,3 @@ async def should_continue(state: AgentState):
     # Otherwise if there is, we continue
     else:
         return "continue"
-
-
-workflow = StateGraph(AgentState)
-
-workflow.add_node("agent", call_model)
-workflow.add_node("tools", tool_node)
-
-workflow.set_entry_point("agent")
-
-workflow.add_conditional_edges(
-    "agent",
-    should_continue,
-    {
-        "continue": "tools",
-        "end": END,
-    },
-)
-workflow.add_edge("tools", "agent")
-
-react_agent = workflow.compile()
-
-
-async def astream_input(query):
-    """
-    Streaming result from the react agent node
-    """
-    inputs = {"messages": [("user", query)]}
-    async for s in react_agent.astream(inputs, stream_mode="values"):
-        message = s["messages"][-1]
-        if isinstance(message, AIMessage):
-            if message.tool_calls:
-                yield {
-                    "type": "intermediate_steps",
-                    "content": message.content[0]["text"],
-                }
-                yield {
-                    "type": "agg_pipeline",
-                    "content": message.tool_calls[0]["args"]["agg_pipeline"],
-                }
-            else:
-                yield {
-                    "type": "final_answer",
-                    "content": message.content[0]["text"],
-                }
-        if isinstance(message, ToolMessage):
-            yield {"type": "tool_response", "content": message.content}
-
-
-# import asyncio
-
-# query = ""
-
-
-# async def agent_astream(query):
-
-#     async for result in astream_input(query):
-#         print(result)
-
-
-# print(asyncio.run(agent_astream(query)))
