@@ -2,7 +2,7 @@
 
 from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
+from langsmith import hub
 
 from metadata_chatbot.nodes.utils import SONNET_3_5_LLM
 from metadata_chatbot.retrievers.data_schema_retriever import (
@@ -36,11 +36,7 @@ def retrieve_schema(state: dict) -> dict:
     }
 
 
-schema_prompt = ChatPromptTemplate.from_template(
-    "Answer {query} based on the following texts: {context}."
-    "When creating python code ONLY use AIND metadata related libraries."
-    "Do not use external libraries."
-)
+schema_prompt = hub.pull("eden19/data-schema-summary")
 schema_chain = schema_prompt | SONNET_3_5_LLM | StrOutputParser()
 
 
