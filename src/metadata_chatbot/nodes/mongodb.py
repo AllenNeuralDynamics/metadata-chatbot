@@ -7,8 +7,9 @@ from aind_data_access_api.document_db import MetadataDbClient
 from langchain import hub
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
+from langchain_core.runnables import RunnableLambda
 
-from metadata_chatbot.nodes.utils import SONNET_3_5_LLM
+from metadata_chatbot.nodes.utils import SONNET_3_5_LLM, HAIKU_3_5_LLM
 
 API_GATEWAY_HOST = "api.allenneuraldynamics.org"
 DATABASE = "metadata_index"
@@ -54,11 +55,15 @@ def aggregation_retrieval(agg_pipeline: list) -> list:
 
 
 tools = [aggregation_retrieval]
-model = SONNET_3_5_LLM.bind_tools(tools)
+model = HAIKU_3_5_LLM.bind_tools(tools)
+template = hub.pull("eden19/shortened_entire_db_retrieval")
+retrieval_agent = template | model
 
-template = hub.pull("eden19/entire_db_retrieval")
-retrieval_agent_chain = template | model
+tool_def = RunnableLambda(lambda x: x.tool_calls[0]["args"])
+str_transform = RunnableLambda(lambda x: eval(x) if type(x) == str else x)
 
+
+chain = retrieval_agent | tool_def | str_transform | aggregation_retrieval
 
 tools_by_name = {tool.name: tool for tool in tools}
 
@@ -90,7 +95,7 @@ async def call_model(state: dict):
         if ToolMessage in state["messages"]:
             response = await SONNET_3_5_LLM.ainvoke(state["messages"])
         else:
-            response = await retrieval_agent_chain.ainvoke(state["messages"])
+            response = await chain.ainvoke(state["messages"])
     except botocore.exceptions.EventStreamError as e:
         response = (
             "An error has occured:"
