@@ -1,5 +1,6 @@
 """Langgraph workflow for GAMER"""
 
+import json
 import warnings
 from typing import Annotated, List, Optional
 
@@ -134,7 +135,8 @@ async def stream_response(inputs, config, app):
                     "content": message.content[0]["text"],
                 }
         if isinstance(message, ToolMessage):
-            yield {"type": "tool_response", "content": message.content}
+            yield {"type": "tool_response", "content": "Retrieved output from MongoDB: "}
+            yield {"type": "tool_output", "content": message.content}
 
 
 # from langchain_core.messages import HumanMessage
