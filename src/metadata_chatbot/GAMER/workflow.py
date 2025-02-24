@@ -140,7 +140,7 @@ async def stream_response(inputs, config, app):
 # from langchain_core.messages import HumanMessage
 # import asyncio
 
-# query = "What are the necessary information i need to write a rig file?"
+# query = "what is your name"
 
 # async def new_astream(query):
 
@@ -148,7 +148,9 @@ async def stream_response(inputs, config, app):
 #         "messages": [HumanMessage(query)],
 #     }
 
-#     async for result in stream_response(query):
+#     config = {}
+
+#     async for result in stream_response(inputs, config, app):
 #         print(result)  # Process the yielded results
 
 
