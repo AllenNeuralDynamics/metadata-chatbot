@@ -8,7 +8,7 @@ from langchain import hub
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
 
-from metadata_chatbot.nodes.utils import SONNET_3_5_LLM
+from metadata_chatbot.nodes.utils import HAIKU_3_5_LLM, SONNET_3_5_LLM
 
 API_GATEWAY_HOST = "api.allenneuraldynamics.org"
 DATABASE = "metadata_index"
@@ -54,11 +54,16 @@ def aggregation_retrieval(agg_pipeline: list) -> list:
 
 
 tools = [aggregation_retrieval]
-model = SONNET_3_5_LLM.bind_tools(tools)
 
-template = hub.pull("eden19/entire_db_retrieval")
-retrieval_agent_chain = template | model
+template = hub.pull("eden19/shortened_entire_db_retrieval")
+model = HAIKU_3_5_LLM.bind_tools(tools)
+retrieval_agent = template | model
 
+sonnet_model = SONNET_3_5_LLM.bind_tools(tools)
+sonnet_agent = template | sonnet_model
+
+
+chain = retrieval_agent  # | tool_def | str_transform | aggregation_retrieval
 
 tools_by_name = {tool.name: tool for tool in tools}
 
@@ -88,14 +93,18 @@ async def call_model(state: dict):
     """
     try:
         if ToolMessage in state["messages"]:
-            response = await SONNET_3_5_LLM.ainvoke(state["messages"])
+            response = await HAIKU_3_5_LLM.ainvoke(state["messages"])
         else:
-            response = await retrieval_agent_chain.ainvoke(state["messages"])
+            response = await chain.ainvoke(state["messages"])
     except botocore.exceptions.EventStreamError as e:
         response = (
             "An error has occured:"
             f"Requested information exceeds model's context length: {e}"
         )
+
+    if isinstance(response, list):
+        response = str(response)
+
     return {"messages": [response]}
 
 
