@@ -55,15 +55,20 @@ def aggregation_retrieval(agg_pipeline: list) -> list:
 
 
 tools = [aggregation_retrieval]
-model = HAIKU_3_5_LLM.bind_tools(tools)
+
 template = hub.pull("eden19/shortened_entire_db_retrieval")
+model = HAIKU_3_5_LLM.bind_tools(tools)
 retrieval_agent = template | model
+
+sonnet_model = SONNET_3_5_LLM.bind_tools(tools)
+sonnet_agent = template | sonnet_model
+
 
 tool_def = RunnableLambda(lambda x: x.tool_calls[0]["args"])
 str_transform = RunnableLambda(lambda x: eval(x) if type(x) == str else x)
 
 
-chain = retrieval_agent | tool_def | str_transform | aggregation_retrieval
+chain = retrieval_agent #| tool_def | str_transform | aggregation_retrieval
 
 tools_by_name = {tool.name: tool for tool in tools}
 
@@ -93,7 +98,7 @@ async def call_model(state: dict):
     """
     try:
         if ToolMessage in state["messages"]:
-            response = await SONNET_3_5_LLM.ainvoke(state["messages"])
+            response = await HAIKU_3_5_LLM.ainvoke(state["messages"])
         else:
             response = await chain.ainvoke(state["messages"])
     except botocore.exceptions.EventStreamError as e:
@@ -101,7 +106,12 @@ async def call_model(state: dict):
             "An error has occured:"
             f"Requested information exceeds model's context length: {e}"
         )
+
+    if isinstance(response, list):
+        response = str(response)
+
     return {"messages": [response]}
+
 
 
 # Define the conditional edge that determines whether to continue or not
