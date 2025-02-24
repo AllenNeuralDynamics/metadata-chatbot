@@ -7,9 +7,8 @@ from aind_data_access_api.document_db import MetadataDbClient
 from langchain import hub
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
-from langchain_core.runnables import RunnableLambda
 
-from metadata_chatbot.nodes.utils import SONNET_3_5_LLM, HAIKU_3_5_LLM
+from metadata_chatbot.nodes.utils import HAIKU_3_5_LLM, SONNET_3_5_LLM
 
 API_GATEWAY_HOST = "api.allenneuraldynamics.org"
 DATABASE = "metadata_index"
@@ -64,11 +63,7 @@ sonnet_model = SONNET_3_5_LLM.bind_tools(tools)
 sonnet_agent = template | sonnet_model
 
 
-tool_def = RunnableLambda(lambda x: x.tool_calls[0]["args"])
-str_transform = RunnableLambda(lambda x: eval(x) if type(x) == str else x)
-
-
-chain = retrieval_agent #| tool_def | str_transform | aggregation_retrieval
+chain = retrieval_agent  # | tool_def | str_transform | aggregation_retrieval
 
 tools_by_name = {tool.name: tool for tool in tools}
 
@@ -111,7 +106,6 @@ async def call_model(state: dict):
         response = str(response)
 
     return {"messages": [response]}
-
 
 
 # Define the conditional edge that determines whether to continue or not
