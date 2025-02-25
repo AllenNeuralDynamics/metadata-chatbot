@@ -40,8 +40,8 @@ async def filter_generator(state: dict) -> dict:
         filter = result["filter_query"]
         top_k = result["top_k"]
         message = AIMessage(
-            f"Using MongoDB filter: {filter} on the database \
-                    and retrieving {top_k} documents"
+            f"Using MongoDB filter: {filter} on the database "
+            f"and retrieving {top_k} documents"
         )
 
     except Exception as ex:
