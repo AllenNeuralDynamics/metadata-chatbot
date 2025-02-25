@@ -102,8 +102,8 @@ async def call_model(state: dict):
             f"Requested information exceeds model's context length: {e}"
         )
 
-    if isinstance(response, list):
-        response = str(response)
+    # if isinstance(response, list):
+    #     response = str(response)
 
     return {"messages": [response]}
 
