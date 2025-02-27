@@ -21,7 +21,7 @@ class FilterGenerator(TypedDict):
 
 
 filter_prompt = hub.pull("eden19/filtergeneration")
-filter_generator_llm = HAIKU_3_5_LLM.with_structured_output(FilterGenerator)
+filter_generator_llm = SONNET_3_5_LLM.with_structured_output(FilterGenerator)
 filter_generation_chain = filter_prompt | filter_generator_llm
 
 
