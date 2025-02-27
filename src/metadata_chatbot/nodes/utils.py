@@ -23,4 +23,3 @@ SONNET_3_7_LLM = ChatBedrock(
     model_kwargs={"temperature": 0},
     streaming=True,
 )
-
