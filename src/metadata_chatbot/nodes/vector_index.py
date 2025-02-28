@@ -9,19 +9,19 @@ from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from typing_extensions import TypedDict
 
-from metadata_chatbot.nodes.utils import HAIKU_3_5_LLM, SONNET_3_5_LLM
+from metadata_chatbot.nodes.utils import HAIKU_3_5_LLM, SONNET_3_7_LLM
 from metadata_chatbot.retrievers.docdb_retriever import DocDBRetriever
 
 
 class FilterGenerator(TypedDict):
     """MongoDB filter to be applied before vector retrieval"""
 
-    filter_query: Annotated[dict, ..., "MongoDB filter"]
-    top_k: int = Annotated[dict, ..., "MongoDB filter"]
+    filter_query: Annotated[dict, ..., "MongoDB match filter"]
+    top_k: int = Annotated[dict, ..., "Number of documents"]
 
 
 filter_prompt = hub.pull("eden19/filtergeneration")
-filter_generator_llm = HAIKU_3_5_LLM.with_structured_output(FilterGenerator)
+filter_generator_llm = SONNET_3_7_LLM.with_structured_output(FilterGenerator)
 filter_generation_chain = filter_prompt | filter_generator_llm
 
 
@@ -96,7 +96,7 @@ class RetrievalGrader(TypedDict):
     ]
 
 
-retrieval_grader = SONNET_3_5_LLM.with_structured_output(RetrievalGrader)
+retrieval_grader = HAIKU_3_5_LLM.with_structured_output(RetrievalGrader)
 retrieval_grade_prompt = hub.pull("eden19/retrievalgrader")
 doc_grader = retrieval_grade_prompt | retrieval_grader
 
@@ -144,7 +144,7 @@ async def grade_documents(state: dict) -> dict:
 
 # Generating response to documents retrieved from the vector index
 answer_generation_prompt = hub.pull("eden19/answergeneration")
-rag_chain = answer_generation_prompt | SONNET_3_5_LLM | StrOutputParser()
+rag_chain = answer_generation_prompt | SONNET_3_7_LLM | StrOutputParser()
 
 
 async def generate_VI(state: dict) -> dict:

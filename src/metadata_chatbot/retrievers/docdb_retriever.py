@@ -144,6 +144,8 @@ class DocDBRetriever(BaseRetriever):
 
         pipeline = [vector_search, projection_stage]
         if query_filter:
+            if "$match" not in query_filter:
+                query_filter = {"$match": query_filter}
             pipeline.insert(0, query_filter)
 
         try:
