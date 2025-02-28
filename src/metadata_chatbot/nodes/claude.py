@@ -18,7 +18,8 @@ summary_chain = prompt | HAIKU_3_5_LLM | StrOutputParser()
 
 # Summarizing chat_history
 summary_prompt = ChatPromptTemplate.from_template(
-    "Succinctly summarize the chat history of the conversation {chat_history}, including the user's queries"
+    "Succinctly summarize the chat history of the conversation "
+    "{chat_history}, including the user's queries"
     " and the relevant answers retaining important details"
 )
 chat_history_chain = summary_prompt | HAIKU_3_5_LLM | StrOutputParser()
@@ -60,7 +61,7 @@ async def route_question(state: dict) -> dict:
         chat_history = await chat_history_chain.ainvoke(
             {"chat_history": state["messages"][-6:]}
         )
-        #print(chat_history)
+        # print(chat_history)
     else:
         chat_history = state["messages"]
 

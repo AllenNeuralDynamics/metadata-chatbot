@@ -1,14 +1,14 @@
 """GAMER nodes that connect to MongoDB"""
 
+import json
+
 import botocore
 from aind_data_access_api.document_db import MetadataDbClient
 from langchain import hub
-from langchain_core.tools import tool
-from langgraph.prebuilt import ToolNode
 from langchain_core.messages import ToolMessage
-import json
+from langchain_core.tools import tool
 
-from metadata_chatbot.nodes.utils import SONNET_3_7_LLM, HAIKU_3_5_LLM
+from metadata_chatbot.nodes.utils import HAIKU_3_5_LLM, SONNET_3_7_LLM
 from metadata_chatbot.nodes.vector_index import doc_grader
 
 API_GATEWAY_HOST = "api.allenneuraldynamics.org"
@@ -22,11 +22,11 @@ docdb_api_client = MetadataDbClient(
 )
 
 
-
 @tool
 def aggregation_retrieval(agg_pipeline: list) -> list:
     """
-    Executes a MongoDB aggregation pipeline for complex data transformations and analysis.
+    Executes a MongoDB aggregation pipeline for complex data
+    transformations and analysis.
 
     WHEN TO USE THIS FUNCTION:
     - When you need to perform multi-stage data processing operations
@@ -78,7 +78,8 @@ def aggregation_retrieval(agg_pipeline: list) -> list:
 @tool
 def get_records(filter: dict = {}, projection: dict = {}) -> dict:
     """
-    Retrieves documents from MongoDB database using simple filters and projections.
+    Retrieves documents from MongoDB database using simple filters and
+    projections.
 
     WHEN TO USE THIS FUNCTION:
     - For straightforward document retrieval based on specific criteria
@@ -133,7 +134,6 @@ summary_prompt = hub.pull("eden19/mongodb_summary")
 summary_agent = summary_prompt | HAIKU_3_5_LLM
 
 
-
 tools_by_name = {tool.name: tool for tool in tools}
 
 
@@ -141,7 +141,7 @@ async def tool_node(state: dict):
     """
     Determining if call to MongoDB is required
     """
-    query = state['query']
+    query = state["query"]
     outputs = []
     use_summary = False
 
@@ -172,10 +172,12 @@ async def call_model(state: dict):
     Invoking LLM to generate response
     """
     try:
-        if state.get('use_tool_summary', False) is True:
+        if state.get("use_tool_summary", False) is True:
             response = await summary_agent.ainvoke(
-                {"query": state['query'], 
-                 "documents": state["messages"][-1].content}
+                {
+                    "query": state["query"],
+                    "documents": state["messages"][-1].content,
+                }
             )
             return {"generation": response, "use_tool_summary": False}
 
