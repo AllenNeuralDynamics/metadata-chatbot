@@ -54,7 +54,7 @@ class GraphState(TypedDict):
     documents: Optional[List[str]]
     filter: Optional[dict]
     top_k: Optional[int]
-    use_tool_summary: False
+    tool_output: Optional[List[ToolMessage]]
 
 
 workflow = StateGraph(GraphState)
@@ -163,7 +163,7 @@ async def stream_response(inputs, config, app, prev_generation):
 # from langchain_core.messages import HumanMessage
 # import asyncio
 
-# query = "hi"
+# query = "Which assets have procedure dates that occurred before the subject's date of birth?"
 # prev_generation = "hi"
 
 # async def new_astream(query):
