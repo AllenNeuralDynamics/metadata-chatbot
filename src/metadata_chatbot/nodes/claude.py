@@ -1,28 +1,14 @@
-"""GAMER that connect to Claude"""
+"""GAMER nodes that only connect to Claude"""
 
 from typing import Annotated, Literal
 
 from langchain import hub
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, HumanMessage, RemoveMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from typing_extensions import TypedDict
 
 from metadata_chatbot.nodes.utils import HAIKU_3_5_LLM
-
-# Generating response from previous context
-prompt = ChatPromptTemplate.from_template(
-    "Answer {query} based on the following texts: {context}"
-)
-summary_chain = prompt | HAIKU_3_5_LLM | StrOutputParser()
-
-# Summarizing chat_history
-summary_prompt = ChatPromptTemplate.from_template(
-    "Succinctly summarize the chat history of the conversation "
-    "{chat_history}, including the user's queries"
-    " and the relevant answers retaining important details"
-)
-chat_history_chain = summary_prompt | HAIKU_3_5_LLM | StrOutputParser()
 
 
 # Determining if entire database needs to be surveyed
@@ -57,19 +43,32 @@ async def route_question(state: dict) -> dict:
     """
     query = state["messages"][-1].content
 
-    if len(state["messages"]) > 6:
-        chat_history = await chat_history_chain.ainvoke(
-            {"chat_history": state["messages"][-6:]}
-        )
-        # print(chat_history)
-    else:
+    if state.get("chat_history") is None or state.get("chat_history") == "":
         chat_history = state["messages"]
+    else:
+        chat_history = state["chat_history"]
 
     source = await datasource_router.ainvoke(
         {"query": query, "chat_history": chat_history}
     )
 
-    message = AIMessage("Connecting to relevant data source..")
+    data_source = source["datasource"]
+
+    if data_source == "direct_database":
+        message = AIMessage("Connecting to MongoDB and generating a query...")
+    elif data_source == "vectorstore":
+        message = AIMessage(
+            "Reviewing data assets and finding relevant information..."
+        )
+    elif data_source == "claude":
+        message = AIMessage(
+            "Reviewing chat history to find relevant information..."
+        )
+    elif data_source == "data_schema":
+        message = AIMessage(
+            "Reviewing the AIND data schema and "
+            "finding relevant information..."
+        )
 
     return {
         "query": query,
@@ -93,19 +92,25 @@ def determine_route(state: dict) -> dict:
         return "data_schema"
 
 
-async def generate_summary(state: dict) -> dict:
+# Generating response from previous context
+prompt = ChatPromptTemplate.from_template(
+    "Answer {query} based on the following texts: {context}"
+)
+summary_chain = prompt | HAIKU_3_5_LLM | StrOutputParser()
+
+
+async def generate_chat_history(state: dict) -> dict:
     """
     Generate answer
     """
+    query = state["query"]
 
-    if "query" in state and state["query"] is not None:
-        query = state["query"]
+    if state.get("chat_history") is None or state.get("chat_history") == "":
+        chat_history = state["messages"]
     else:
-        query = state["messages"][-1].content
-    chat_history = state["messages"]
+        chat_history = state["chat_history"]
 
     try:
-
         message = await summary_chain.ainvoke(
             {"query": query, "context": chat_history}
         )
@@ -117,3 +122,35 @@ async def generate_summary(state: dict) -> dict:
         "messages": [AIMessage(str(message))],
         "generation": message,
     }
+
+
+def should_summarize(state: dict):
+    """Return the next node to execute."""
+    messages = state["messages"]
+    # If there are more than six messages, then we summarize the conversation
+    if len(messages) > 6:
+        return "summarize"
+    # Otherwise we can just end
+    return "end"
+
+
+async def summarize_conversation(state: dict):
+    """Summarize chat"""
+    summary = state.get("chat_history", "")
+    if summary:
+        summary_message = (
+            f"This is summary of the conversation to date: {summary}\n\n"
+            "Extend the summary concisely by taking into account "
+            "the new messages above:"
+        )
+    else:
+        summary_message = (
+            "Create a summary of the conversation above. Be concise:"
+        )
+
+    messages = str(state["messages"] + [HumanMessage(content=summary_message)])
+    response = await HAIKU_3_5_LLM.ainvoke(messages)
+
+    delete_messages = [RemoveMessage(id=m.id) for m in state["messages"][:-2]]
+
+    return {"chat_history": response.content, "messages": delete_messages}

@@ -21,7 +21,7 @@ def retrieve_schema(state: dict) -> dict:
     query = state["query"]
 
     try:
-        retriever = DataSchemaRetriever(k=7)
+        retriever = DataSchemaRetriever(k=5)
         documents = retriever._get_relevant_documents(query=query)
         message = AIMessage("Retrieving context about data schema...")
 

@@ -140,7 +140,7 @@ class DocDBRetriever(BaseRetriever):
             }
         }
 
-        projection_stage = {"$project": {"textContent": 1, "_id": 0}}
+        projection_stage = {"$project": {"textContent": 1}}
 
         pipeline = [vector_search, projection_stage]
         if query_filter:
@@ -153,7 +153,9 @@ class DocDBRetriever(BaseRetriever):
                 pipeline=pipeline
             )
         except Exception as e:
-            print(e)
+            if run_manager:
+                await run_manager.on_retriever_error(e)
+                return []
 
         # Transform retrieved docs to langchain Documents
         async def process_document(document):

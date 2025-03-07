@@ -31,7 +31,10 @@ async def filter_generator(state: dict) -> dict:
     and determining number of documents to retrieve
     """
     query = state["query"]
-    chat_history = state["messages"]
+    if state.get("chat_history") is None or state.get("chat_history") == "":
+        chat_history = state["messages"]
+    else:
+        chat_history = state["chat_history"]
 
     try:
         result = await filter_generation_chain.ainvoke(
@@ -39,7 +42,7 @@ async def filter_generator(state: dict) -> dict:
         )
         filter = result["filter_query"]
         top_k = result["top_k"]
-        message = AIMessage(
+        message = (
             f"Using MongoDB filter: {filter} on the database "
             f"and retrieving {top_k} documents"
         )
@@ -53,7 +56,7 @@ async def filter_generator(state: dict) -> dict:
     return {
         "filter": filter,
         "top_k": top_k,
-        "messages": [message],
+        "messages": [AIMessage(message)],
     }
 
 
@@ -70,17 +73,16 @@ async def retrieve_VI(state: dict) -> dict:
         documents = await retriever.aget_relevant_documents(
             query=query, query_filter=filter
         )
-        message = AIMessage(
-            "Retrieving relevant documents from vector index..."
-        )
+        message = "Retrieving relevant documents from vector index..."
 
     except Exception as ex:
         template = "An exception of type {0} occurred. Arguments:\n{1!r}"
         message = template.format(type(ex).__name__, ex.args)
+        documents = []
 
     return {
         "documents": documents,
-        "messages": [message],
+        "messages": [AIMessage(message)],
     }
 
 

@@ -31,6 +31,7 @@ class DataSchemaRetriever(BaseRetriever):
     """
 
     k: int = Field(default=5, description="Number of documents to retrieve")
+    _model = None
 
     def _get_relevant_documents(
         self, query: str, **kwargs: Any
@@ -78,24 +79,19 @@ class DataSchemaRetriever(BaseRetriever):
             result = docdb_api_client.aggregate_docdb_records(
                 pipeline=pipeline
             )
+
+            # Process documents in a batch
+            documents = []
+            for document in result:
+                json_doc = json.loads(json_util.dumps(document))
+                page_content = json_doc.get("text", "")
+                # Create metadata by excluding the text field
+                metadata = {k: v for k, v in json_doc.items() if k != "text"}
+                documents.append(
+                    Document(page_content=page_content, metadata=metadata)
+                )
+
+            return documents
+
         except Exception as e:
             print(e)
-
-        async def process_document(document):
-            """Asynchronously changes retrieved docs to langchain documents"""
-            values_to_metadata = dict()
-            json_doc = json.loads(json_util.dumps(document))
-
-            for key, value in json_doc.items():
-                if key == "text":
-                    page_content = value
-                else:
-                    values_to_metadata[key] = value
-            return Document(
-                page_content=page_content, metadata=values_to_metadata
-            )
-
-        tasks = [process_document(document) for document in result]
-        result = await asyncio.gather(*tasks)
-
-        return result
