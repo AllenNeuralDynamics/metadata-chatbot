@@ -19,7 +19,7 @@ from metadata_chatbot.nodes.data_schema import (
     generate_schema,
     retrieve_schema,
 )
-from metadata_chatbot.nodes.test_mongodb import (
+from metadata_chatbot.nodes.mongodb import (
     call_model,
     generate_mongodb,
     tool_node,
