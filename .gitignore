@@ -13,7 +13,6 @@ embeddings.py
 umap_visualization.py
 logs/
 data_schema_agent.py
-streamlit_app.py
 test_mongodb.py
 test_data_schema.py
 test_workflow.py
