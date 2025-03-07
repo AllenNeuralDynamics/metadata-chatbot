@@ -1,15 +1,16 @@
 """GAMER nodes that connect to MongoDB"""
 
 import json
+from typing import Annotated, Literal, TypedDict
 
 import botocore
 from aind_data_access_api.document_db import MetadataDbClient
 from langchain import hub
 from langchain_core.messages import ToolMessage
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.tools import tool
 
 from metadata_chatbot.nodes.utils import HAIKU_3_5_LLM, SONNET_3_7_LLM
-from metadata_chatbot.nodes.vector_index import doc_grader
 
 API_GATEWAY_HOST = "api.allenneuraldynamics.org"
 DATABASE = "metadata_index"
@@ -25,8 +26,8 @@ docdb_api_client = MetadataDbClient(
 @tool
 def aggregation_retrieval(agg_pipeline: list) -> list:
     """
-    Executes a MongoDB aggregation pipeline for complex data
-    transformations and analysis.
+    Executes a MongoDB aggregation pipeline for complex data transformations
+    and analysis.
 
     WHEN TO USE THIS FUNCTION:
     - When you need to perform multi-stage data processing operations
@@ -78,8 +79,8 @@ def aggregation_retrieval(agg_pipeline: list) -> list:
 @tool
 def get_records(filter: dict = {}, projection: dict = {}) -> dict:
     """
-    Retrieves documents from MongoDB database using simple filters and
-    projections.
+    Retrieves documents from MongoDB database using simple filters
+    and projections.
 
     WHEN TO USE THIS FUNCTION:
     - For straightforward document retrieval based on specific criteria
@@ -125,13 +126,24 @@ def get_records(filter: dict = {}, projection: dict = {}) -> dict:
 tools = [get_records, aggregation_retrieval]
 
 template = hub.pull("eden19/entire_db_retrieval")
-
-
 sonnet_model = SONNET_3_7_LLM.bind_tools(tools)
 sonnet_agent = template | sonnet_model
 
-summary_prompt = hub.pull("eden19/mongodb_summary")
-summary_agent = summary_prompt | HAIKU_3_5_LLM
+
+async def call_model(state: dict):
+    """
+    Invoking LLM to call tools
+    """
+    try:
+        response = await sonnet_agent.ainvoke(state["messages"])
+
+    except botocore.exceptions.EventStreamError as e:
+        response = (
+            "An error has occured:"
+            f"Requested information exceeds model's context length: {e}"
+        )
+
+    return {"messages": [response]}
 
 
 tools_by_name = {tool.name: tool for tool in tools}
@@ -139,11 +151,9 @@ tools_by_name = {tool.name: tool for tool in tools}
 
 async def tool_node(state: dict):
     """
-    Determining if call to MongoDB is required
+    Retrieving information from MongoDB with tools
     """
-    query = state["query"]
     outputs = []
-    use_summary = False
 
     for tool_call in state["messages"][-1].tool_calls:
         tool_result = await tools_by_name[tool_call["name"]].ainvoke(
@@ -157,52 +167,54 @@ async def tool_node(state: dict):
             )
         )
 
-        score = await doc_grader.ainvoke(
-            {"query": query, "document": json.dumps(tool_result)}
-        )
-
-        if score == "yes":
-            use_summary = True
-
-        return {"messages": outputs, "use_tool_summary": use_summary}
+    return {"messages": outputs, "tool_output": outputs}
 
 
-async def call_model(state: dict):
-    """
-    Invoking LLM to generate response
-    """
-    try:
-        if state.get("use_tool_summary", False) is True:
-            response = await summary_agent.ainvoke(
-                {
-                    "query": state["query"],
-                    "documents": state["messages"][-1].content,
-                }
-            )
-            return {"generation": response, "use_tool_summary": False}
+class ToolSummarizer(TypedDict):
+    """Check if tool output answers user query"""
 
-        else:
-            response = await sonnet_agent.ainvoke(state["messages"])
-
-    except botocore.exceptions.EventStreamError as e:
-        response = (
-            "An error has occured:"
-            f"Requested information exceeds model's context length: {e}"
-        )
-
-    return {"messages": [response], "use_tool_summary": False}
+    query_tool_match: Annotated[
+        Literal["yes", "no"],
+        ...,
+        (
+            "Given a user's query and information retrieved from an external "
+            "database determine whether the query can be answered with the "
+            "information. If true answer 'yes', else, 'no'."
+        ),
+    ]
 
 
-# Define the conditional edge that determines whether to continue or not
-async def should_continue(state: dict):
-    """
-    Determining if model should continue querying DocDB to answer query
-    """
-    messages = state["messages"]
-    last_message = messages[-1]
-    # If there is no function call, then we finish
-    if not last_message.tool_calls:
+structured_tool_summarizer = HAIKU_3_5_LLM.with_structured_output(
+    ToolSummarizer
+)
+prompt = hub.pull("eden19/tool_summarizer")
+tool_summarizer_agent = prompt | structured_tool_summarizer
+
+
+async def tool_summarizer(state: dict):
+    """Check if tool output answers user query"""
+    query = state["query"]
+    tool_output = state["tool_output"][0].content
+
+    response = await tool_summarizer_agent.ainvoke(
+        {"query": query, "tool_output": tool_output}
+    )
+
+    if response["query_tool_match"] == "yes":
         return "end"
-    # Otherwise if there is, we continue
     else:
         return "continue"
+
+
+prompt = hub.pull("eden19/mongodb_summary")
+mongodb_summary_agent = prompt | HAIKU_3_5_LLM | StrOutputParser()
+
+
+async def generate_mongodb(state: dict):
+    """Generate response to user query based on tool output"""
+    query = state["query"]
+    tool_output = state["tool_output"]
+    response = await mongodb_summary_agent.ainvoke(
+        {"query": query, "documents": tool_output}
+    )
+    return {"generation": response}
