@@ -39,8 +39,6 @@ class DataSchemaRetriever(BaseRetriever):
         """Synnchronous retriever"""
 
         return asyncio.run(self._aget_relevant_documents(query, **kwargs))
-    
-    
 
     async def _aget_relevant_documents(
         self,
@@ -89,10 +87,11 @@ class DataSchemaRetriever(BaseRetriever):
                 page_content = json_doc.get("text", "")
                 # Create metadata by excluding the text field
                 metadata = {k: v for k, v in json_doc.items() if k != "text"}
-                documents.append(Document(page_content=page_content, metadata=metadata))
-            
+                documents.append(
+                    Document(page_content=page_content, metadata=metadata)
+                )
+
             return documents
-        
+
         except Exception as e:
             print(e)
-
