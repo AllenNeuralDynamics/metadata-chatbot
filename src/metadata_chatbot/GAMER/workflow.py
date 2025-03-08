@@ -140,7 +140,7 @@ workflow.add_edge("summarize_conversation", END)
 app = workflow.compile()
 
 
-async def stream_response(inputs, config, app, prev_generation):
+async def stream_response(inputs, config, app, prev_generation=''):
     """Stream responses in each node in workflow"""
 
     async for output in app.astream(
