@@ -30,6 +30,7 @@ from metadata_chatbot.nodes.vector_index import (
     generate_VI,
     grade_documents,
     retrieve_VI,
+    route_to_mongodb
 )
 
 warnings.filterwarnings("ignore")
@@ -60,6 +61,7 @@ class GraphState(TypedDict):
     filter: Optional[dict]
     top_k: Optional[int]
     tool_output: Optional[List[ToolMessage]]
+    route_to_mongodb: Optional[bool]
 
 
 workflow = StateGraph(GraphState)
@@ -117,7 +119,6 @@ workflow.add_conditional_edges(
         "end": "generate_mongodb",
     },
 )
-# workflow.add_edge("generate_mongodb", END)
 workflow.add_conditional_edges(
     "generate_mongodb",
     should_summarize,
@@ -126,7 +127,15 @@ workflow.add_conditional_edges(
 
 # vector index route
 workflow.add_edge("filter_generator", "retrieve")
-workflow.add_edge("retrieve", "grade_documents")
+workflow.add_conditional_edges(
+    "retrieve",
+    route_to_mongodb,
+    {
+        "route_query": "database_query",
+        "grade_documents": "grade_documents",
+    },
+)
+#workflow.add_edge("retrieve", "grade_documents")
 workflow.add_edge("grade_documents", "generate_VI")
 # workflow.add_edge("generate_vi", END)
 workflow.add_conditional_edges(
@@ -189,3 +198,23 @@ async def stream_response(inputs, config, app, prev_generation=''):
                     "content": "Retrieved output from MongoDB: ",
                 }
                 yield {"type": "tool_output", "content": message.content}
+
+# from langchain_core.messages import HumanMessage
+# import asyncio
+
+# query = "what was the average age of animals injected with CVS N2cdG-H2B-tdTomato at time of perfusion"
+
+# async def new_astream(query):
+
+#     inputs = {
+#         "messages": [HumanMessage(query)],
+#     }
+
+#     config = {}
+
+#     async for result in stream_response(inputs,config,app):
+#         print(result)  # Process the yielded results
+
+
+# # Run the main coroutine with asyncio
+# asyncio.run(new_astream(query))
