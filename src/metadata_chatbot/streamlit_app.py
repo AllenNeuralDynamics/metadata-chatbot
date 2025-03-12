@@ -57,8 +57,8 @@ def get_example_questions():
     """Cache example questions"""
     return [
         (
-            "What are the modalities that exist in the database? "
-            "What are the least and most common ones?"
+            "What are the unique instrument ids for SmartSPIM experiments?"
+
         ),
         (
             "What is the MongoDB query to find the injections used in "
@@ -165,13 +165,26 @@ async def main():
             "Prompt engineering guide :memo:", use_container_width=True
         ):
             st.markdown(
-                "For complex retrievals, ensure that your query clearly labels the information "
+                "If you are experiencing issues related to latency or robustness, "
+                "it is likely that the model in the background is overwhelmed with "
+                "the amount of information it has to retrieve or synthesize. "
+                "Here are some prompt optimization tips you can try: "
+            )
+            st.markdown(
+                "- Ensure that your query clearly labels the information "
                 "you seek (e.g. writing out the full project name to prevent ambiguity). "
+            )
+            st.markdown(
+                "- Explicitly specify a limit for the model to retrieve "
+                "(e.g. limit the search to 10 documents). "
+            )
+            st.markdown(
                 "If the chat history starts to become fuzzy, please refresh the tab. "
                 "Note that GAMER will not retain previous contexts if this action is taken."
-                "Please leave feeback through the faces you see after a response is generated!"
             )
-
+            st.markdown(
+                "Please leave feedback through the faces you see after a response is generated!"
+            )
 
         (
             "[Model architecture repository]"
