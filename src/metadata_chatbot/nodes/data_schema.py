@@ -4,7 +4,7 @@ from langchain import hub
 from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import StrOutputParser
 
-from metadata_chatbot.nodes.utils import SONNET_3_5_LLM
+from metadata_chatbot.utils import SONNET_3_5_LLM
 from metadata_chatbot.retrievers.data_schema_retriever import (
     DataSchemaRetriever,
 )

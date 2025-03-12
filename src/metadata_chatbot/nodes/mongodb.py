@@ -10,7 +10,7 @@ from langchain_core.messages import ToolMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.tools import tool
 
-from metadata_chatbot.nodes.utils import HAIKU_3_5_LLM, SONNET_3_7_LLM
+from metadata_chatbot.utils import HAIKU_3_5_LLM, SONNET_3_7_LLM
 
 API_GATEWAY_HOST = "api.allenneuraldynamics.org"
 DATABASE = "metadata_index"

@@ -9,7 +9,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from typing_extensions import TypedDict
 
-from metadata_chatbot.nodes.utils import HAIKU_3_5_LLM, SONNET_3_7_LLM
+from metadata_chatbot.utils import HAIKU_3_5_LLM, SONNET_3_7_LLM
 from metadata_chatbot.retrievers.docdb_retriever import DocDBRetriever
 
 

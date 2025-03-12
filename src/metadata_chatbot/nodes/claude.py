@@ -8,7 +8,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from typing_extensions import TypedDict
 
-from metadata_chatbot.nodes.utils import HAIKU_3_5_LLM
+from metadata_chatbot.utils import HAIKU_3_5_LLM
 
 
 # Determining if entire database needs to be surveyed
