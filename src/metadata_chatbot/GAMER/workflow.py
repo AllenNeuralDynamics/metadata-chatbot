@@ -30,7 +30,7 @@ from metadata_chatbot.nodes.vector_index import (
     generate_VI,
     grade_documents,
     retrieve_VI,
-    route_to_mongodb
+    route_to_mongodb,
 )
 
 warnings.filterwarnings("ignore")
@@ -136,7 +136,7 @@ workflow.add_conditional_edges(
         "grade_documents": "grade_documents",
     },
 )
-#workflow.add_edge("retrieve", "grade_documents")
+# workflow.add_edge("retrieve", "grade_documents")
 workflow.add_edge("grade_documents", "generate_VI")
 # workflow.add_edge("generate_vi", END)
 workflow.add_conditional_edges(
@@ -150,7 +150,7 @@ workflow.add_edge("summarize_conversation", END)
 app = workflow.compile()
 
 
-async def stream_response(inputs, config, app, prev_generation=''):
+async def stream_response(inputs, config, app, prev_generation=""):
     """Stream responses in each node in workflow"""
 
     async for output in app.astream(
@@ -200,10 +200,11 @@ async def stream_response(inputs, config, app, prev_generation=''):
                 }
                 yield {"type": "tool_output", "content": message.content}
 
+
 # from langchain_core.messages import HumanMessage
 # import asyncio
 
-# query = "Provide the mongodb query needed to find the channels used in the SmartSPIM session from subject 699834 on oct 31st 2023"
+# query = ""
 
 # async def new_astream(query):
 

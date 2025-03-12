@@ -160,7 +160,7 @@ async def tool_node(state: dict):
 
         agg_pipeline = state.get("mongodb_query", {})
 
-        agg_pipeline[f'tool_call_{i}'] = tool_call
+        agg_pipeline[f"tool_call_{i}"] = tool_call
 
         tool_result = await tools_by_name[tool_call["name"]].ainvoke(
             tool_call["args"]
@@ -173,9 +173,11 @@ async def tool_node(state: dict):
             )
         )
 
-    return {"messages": outputs, 
-            "tool_output": outputs, 
-            "mongodb_query": agg_pipeline}
+    return {
+        "messages": outputs,
+        "tool_output": outputs,
+        "mongodb_query": agg_pipeline,
+    }
 
 
 class ToolSummarizer(TypedDict):
@@ -222,11 +224,9 @@ async def generate_mongodb(state: dict):
     """Generate response to user query based on tool output"""
     query = state["query"]
     tool_output = state["tool_output"]
-    mongodb_query = state['mongodb_query']
+    mongodb_query = state["mongodb_query"]
 
     response = await mongodb_summary_agent.ainvoke(
-        {"query": query, 
-         "tool_call":  mongodb_query,
-         "documents": tool_output}
+        {"query": query, "tool_call": mongodb_query, "documents": tool_output}
     )
     return {"generation": response}

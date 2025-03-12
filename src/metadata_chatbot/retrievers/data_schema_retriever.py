@@ -5,19 +5,18 @@ import json
 import logging
 from typing import Any, List, Optional
 
-from pymongo.collection import Collection
 from aind_data_access_api.document_db import MetadataDbClient
 from bson import json_util
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from pydantic import Field
+from pymongo.collection import Collection
 from sentence_transformers import SentenceTransformer
 
 API_GATEWAY_HOST = "api.allenneuraldynamics-test.org"
 DATABASE = "metadata_vector_index"
-#COLLECTION = "aind_data_schema_vectors"
-
+# COLLECTION = "aind_data_schema_vectors"
 
 
 class DataSchemaRetriever(BaseRetriever):
@@ -98,6 +97,7 @@ class DataSchemaRetriever(BaseRetriever):
 
         except Exception as e:
             print(e)
+
 
 # query = "How many injections were performed across all animals in the thalamus in the middle project using the following coordinate: AP: 2.8, ML: 0.2, DV: 0.6?"
 

@@ -67,46 +67,51 @@ async def retrieve_VI(state: dict) -> dict:
     query = state["query"]
     filter = state["filter"]
     top_k = state["top_k"]
-    route_to_mongodb = False  
+    route_to_mongodb = False
     documents = []
 
     try:
-        message = AIMessage("Retrieving relevant documents from vector index...")
+        message = AIMessage(
+            "Retrieving relevant documents from vector index..."
+        )
         retriever = DocDBRetriever(k=top_k)
         documents = await retriever.aget_relevant_documents(
             query=query, query_filter=filter
         )
-        
+
         # If retrieval worked but returned no documents
         if not documents:
-            message = AIMessage("No documents found in vector index, routing to MongoDB.")
+            message = AIMessage(
+                "No documents found in vector index, routing to MongoDB."
+            )
             route_to_mongodb = True
-            
+
     except Exception as ex:
         # Catch all exceptions from the retrieval process
         error_type = type(ex).__name__
         error_message = str(ex)
-        
-        error = (f"Vector retrieval failed: {error_type} - {error_message}")
-        message = AIMessage(f"Vector index retrieval error. Routing to MongoDB.")
+
+        error = f"Vector retrieval failed: {error_type} - {error_message}"
+        message = AIMessage(
+            "Vector index retrieval error. Routing to MongoDB."
+        )
         route_to_mongodb = True
 
     return {
         "documents": documents,
         "messages": [message],
-        "route_to_mongodb": route_to_mongodb
+        "route_to_mongodb": route_to_mongodb,
     }
+
 
 # Check if vector index is able to retrieve relevant info, if not route to mongodb
 def route_to_mongodb(state: dict):
-    if state['route_to_mongodb'] == True:
+    if state["route_to_mongodb"] is True:
         return "route_query"
-    elif state.get('documents', None) == None:
+    elif state.get("documents", None) is None:
         return "route_query"
     else:
         return "grade_documents"
-
-
 
 
 # Check if retrieved documents answer question

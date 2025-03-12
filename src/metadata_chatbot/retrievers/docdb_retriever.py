@@ -174,19 +174,21 @@ class DocDBRetriever(BaseRetriever):
             result = await asyncio.gather(*tasks)
 
             return result
-        
+
         except Exception as e:
             # Make sure we log the error
             error = f"Error in vector retrieval: {type(e).__name__}: {str(e)}"
-            
+
             # Properly handle error notification to run_manager if it exists
             # but wrap it in another try/except to handle tracing errors
             if run_manager:
                 try:
                     await run_manager.on_retriever_error(e)
                 except Exception as trace_error:
-                    error = f"Warning: Error in run_manager callback: {str(trace_error)}"
+                    error = (
+                        "Warning: Error in run_manager callback: "
+                        f"{str(trace_error)}")
                     # Don't let callback errors stop us from routing to MongoDB
-            
+
             # Re-raise the error so it can be caught by retrieve_VI
             raise
