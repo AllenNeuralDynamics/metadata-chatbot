@@ -62,6 +62,7 @@ class GraphState(TypedDict):
     top_k: Optional[int]
     tool_output: Optional[List[ToolMessage]]
     route_to_mongodb: Optional[bool]
+    mongodb_query: Optional[dict]
 
 
 workflow = StateGraph(GraphState)
@@ -202,7 +203,7 @@ async def stream_response(inputs, config, app, prev_generation=''):
 # from langchain_core.messages import HumanMessage
 # import asyncio
 
-# query = "what was the average age of animals injected with CVS N2cdG-H2B-tdTomato at time of perfusion"
+# query = "Provide the mongodb query needed to find the channels used in the SmartSPIM session from subject 699834 on oct 31st 2023"
 
 # async def new_astream(query):
 
