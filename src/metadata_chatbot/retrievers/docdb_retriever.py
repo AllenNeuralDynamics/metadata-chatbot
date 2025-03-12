@@ -88,7 +88,7 @@ class DocDBRetriever(BaseRetriever):
             )
 
         except Exception as e:
-            print(f"Error during aggregation: {e}")
+            error = f"Error during aggregation: {e}"
             return []
 
         results = []
@@ -152,30 +152,41 @@ class DocDBRetriever(BaseRetriever):
             result = docdb_api_client.aggregate_docdb_records(
                 pipeline=pipeline
             )
+
+            async def process_document(document):
+                """
+                Converting retrieved docs to Langchain friendly format
+                """
+
+                values_to_metadata = dict()
+                json_doc = json.loads(json_util.dumps(document))
+
+                for key, value in json_doc.items():
+                    if key == "textContent":
+                        page_content = value
+                    else:
+                        values_to_metadata[key] = value
+                return Document(
+                    page_content=page_content, metadata=values_to_metadata
+                )
+
+            tasks = [process_document(document) for document in result]
+            result = await asyncio.gather(*tasks)
+
+            return result
+        
         except Exception as e:
+            # Make sure we log the error
+            error = f"Error in vector retrieval: {type(e).__name__}: {str(e)}"
+            
+            # Properly handle error notification to run_manager if it exists
+            # but wrap it in another try/except to handle tracing errors
             if run_manager:
-                await run_manager.on_retriever_error(e)
-                return []
-
-        # Transform retrieved docs to langchain Documents
-        async def process_document(document):
-            """
-            Converting retrieved docs to Langchain friendly format
-            """
-
-            values_to_metadata = dict()
-            json_doc = json.loads(json_util.dumps(document))
-
-            for key, value in json_doc.items():
-                if key == "textContent":
-                    page_content = value
-                else:
-                    values_to_metadata[key] = value
-            return Document(
-                page_content=page_content, metadata=values_to_metadata
-            )
-
-        tasks = [process_document(document) for document in result]
-        result = await asyncio.gather(*tasks)
-
-        return result
+                try:
+                    await run_manager.on_retriever_error(e)
+                except Exception as trace_error:
+                    error = f"Warning: Error in run_manager callback: {str(trace_error)}"
+                    # Don't let callback errors stop us from routing to MongoDB
+            
+            # Re-raise the error so it can be caught by retrieve_VI
+            raise
