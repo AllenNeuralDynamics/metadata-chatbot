@@ -179,6 +179,21 @@ async def main():
                 "(e.g. limit the search to 10 documents). "
             )
             st.markdown(
+                "- Break up complex queries. Ask queries one at a time, "
+                "ideally starting with a simple, broad query and increasing complexity."
+            )
+            st.markdown(
+                "- The model is relatively poor at fetching one random asset and applying "
+                "the specified task to the asset. In this case, ask it to fetch a random "
+                "data asset meeting a requirement (e.g. ophys experiment) and then ask it "
+                "to apply the task."
+            )
+            st.markdown(
+                "- The model does not know today's date. When asking temporal queries "
+                "(i.e. Retrieve all the assets uploaded to the database in the past week) "
+                "specify the date."
+            )
+            st.markdown(
                 "If the chat history starts to become fuzzy, please refresh the tab. "
                 "Note that GAMER will not retain previous contexts if this action is taken."
             )
