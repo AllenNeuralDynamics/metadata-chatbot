@@ -4,10 +4,13 @@ from langchain import hub
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-from metadata_chatbot.utils import (
-    HAIKU_3_5_LLM, SONNET_3_5_LLM, SONNET_3_7_LLM
-    )
 from metadata_chatbot.tools import tools
+from metadata_chatbot.utils import (
+    HAIKU_3_5_LLM,
+    SONNET_3_5_LLM,
+    SONNET_3_7_LLM,
+)
+
 
 # Determining if entire database needs to be surveyed
 class RouteQuery(TypedDict):
@@ -55,6 +58,7 @@ class ToolSummarizer(TypedDict):
         ),
     ]
 
+
 structured_tool_summarizer = HAIKU_3_5_LLM.with_structured_output(
     ToolSummarizer
 )
@@ -64,6 +68,7 @@ tool_summarizer_agent = prompt | structured_tool_summarizer
 # DB retrieval summary model
 prompt = hub.pull("eden19/mongodb_summary")
 mongodb_summary_agent = prompt | HAIKU_3_5_LLM | StrOutputParser()
+
 
 # Filter generator model
 class FilterGenerator(TypedDict):
@@ -76,6 +81,7 @@ class FilterGenerator(TypedDict):
 filter_prompt = hub.pull("eden19/filtergeneration")
 filter_generator_llm = SONNET_3_7_LLM.with_structured_output(FilterGenerator)
 filter_generation_chain = filter_prompt | filter_generator_llm
+
 
 # Check if retrieved documents answer question
 class RetrievalGrader(TypedDict):
@@ -97,6 +103,6 @@ doc_grader = retrieval_grade_prompt | retrieval_grader
 answer_generation_prompt = hub.pull("eden19/answergeneration")
 rag_chain = answer_generation_prompt | SONNET_3_7_LLM | StrOutputParser()
 
-# Schema generation 
+# Schema generation
 schema_prompt = hub.pull("eden19/data-schema-summary")
 schema_chain = schema_prompt | SONNET_3_5_LLM | StrOutputParser()
