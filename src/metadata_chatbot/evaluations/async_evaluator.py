@@ -1,13 +1,12 @@
 """Evaluator for GAMER's async workflow"""
 
-from langchain_core.prompts.prompt import PromptTemplate
-from langsmith import aevaluate
-from langsmith.evaluation import LangChainStringEvaluator
-from metadata_chatbot.utils import SONNET_3_7_LLM
-
-from metadata_chatbot.GAMER.workflow import app, stream_response
-
 from langchain_core.messages import HumanMessage
+from langchain_core.prompts.prompt import PromptTemplate
+from langsmith import Client, aevaluate
+from langsmith.evaluation import LangChainStringEvaluator
+
+from metadata_chatbot.evaluations.eval_workflow import app
+from metadata_chatbot.utils import SONNET_3_5_LLM
 
 dataset_name = "RAG testing example Dataset"
 
@@ -20,9 +19,11 @@ Here is the real answer:
 {answer}
 You are grading the following predicted answer:
 {result}
-Keep in mind that the real answer and predicted answer might not be the same.
+Keep in mind that the real answer and predicted answer might not be exactly the same.
 The predicted answers are generated based on a database that undergoes changes everyday.
-If the numbers are different, that should be okay. Ensure that any mongodb query generated makes sense.
+If the numbers are different, that should be okay. 
+Ensure that any mongodb query generated makes sense.
+If the expected answer is in the generated answer, mark it as correct.
 Respond with CORRECT or INCORRECT:
 Grade:
 """
@@ -32,8 +33,10 @@ PROMPT = PromptTemplate(
 )
 
 evaluator = LangChainStringEvaluator(
-    "qa", config={"llm": SONNET_3_7_LLM, "prompt": PROMPT}
+    "qa", config={"llm": SONNET_3_5_LLM, "prompt": PROMPT}
 )
+
+client = Client()
 
 
 async def my_app(query):
@@ -44,7 +47,8 @@ async def my_app(query):
 
     answer = await app.ainvoke(inputs)
 
-    return answer['generation']
+    return answer["generation"]
+
 
 async def langsmith_app(inputs):
     """Writing GAMER's generations to langsmith"""
@@ -56,7 +60,9 @@ async def main():
     """Evaluating quality of GAMER's response"""
     experiment_results = await aevaluate(
         langsmith_app,  # Your AI system
-        data=dataset_name,  # The data to predict and grade over
+        data=client.list_examples(
+            dataset_name=dataset_name, splits=["verified"]
+        ),  # The data to predict and grade over
         evaluators=[evaluator],  # The evaluators to score the results
         experiment_prefix="GAMER-0.3.8",
     )
