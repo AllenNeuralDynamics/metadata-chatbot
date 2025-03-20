@@ -11,17 +11,12 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from pydantic import Field
+from pymongo.collection import Collection
 from sentence_transformers import SentenceTransformer
 
 API_GATEWAY_HOST = "api.allenneuraldynamics-test.org"
 DATABASE = "metadata_vector_index"
-COLLECTION = "aind_data_schema_vectors"
-
-docdb_api_client = MetadataDbClient(
-    host=API_GATEWAY_HOST,
-    database=DATABASE,
-    collection=COLLECTION,
-)
+# COLLECTION = "aind_data_schema_vectors"
 
 
 class DataSchemaRetriever(BaseRetriever):
@@ -31,6 +26,7 @@ class DataSchemaRetriever(BaseRetriever):
     """
 
     k: int = Field(default=5, description="Number of documents to retrieve")
+    collection: str = Field(description="MongoDB collection to retrieve from")
     _model = None
 
     def _get_relevant_documents(
@@ -47,6 +43,12 @@ class DataSchemaRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> List[Document]:
         """Asynchronous retriever"""
+
+        docdb_api_client = MetadataDbClient(
+            host=API_GATEWAY_HOST,
+            database=DATABASE,
+            collection=self.collection,
+        )
 
         # Embed query
         logging.info("connecting to embedding model")
@@ -95,3 +97,11 @@ class DataSchemaRetriever(BaseRetriever):
 
         except Exception as e:
             print(e)
+
+
+# query = "How many injections were performed across all animals in the thalamus in the middle project using the following coordinate: AP: 2.8, ML: 0.2, DV: 0.6?"
+
+
+# retriever = DataSchemaRetriever(k=2, collection = "mongodb_node_vectors")
+# documents = retriever._get_relevant_documents(query=query)
+# print(documents)

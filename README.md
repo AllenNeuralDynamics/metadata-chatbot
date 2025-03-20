@@ -31,24 +31,30 @@ pip install metadata-chatbot
 
 ## Usage
 
-To call the model,
+To stream results from the model,
 
 ```bash
-from metadata_chatbot.agents.GAMER import GAMER
+from langchain_core.messages import HumanMessage
+import asyncio
 
 query = "What was the refractive index of the chamber immersion medium used in this experiment SmartSPIM_675387_2023-05-23_23-05-56"
-model = GAMER()
-result = model.invoke(query)
 
-print(result)
+async def new_astream(query):
+
+    inputs = {"messages": [HumanMessage(query)]}
+
+    config = {}
+
+    async for result in stream_response(inputs,config,app):
+        print(result)  # Process the yielded results
+
+asyncio.run(new_astream(query))
 ```
 
-To call the model asynchronously, which reduces the model's call time by ~50%, run --
-
-```bash
-result = await model.ainvoke(query)
-print(result)
-```
+## Relevant repositories
+[Vector embeddings generation script for metadata assets](https://github.com/AllenNeuralDynamics/aind-metadata-embeddings)
+[Vector embeddings generation script for AIND data schema repository](https://github.com/AllenNeuralDynamics/aind_data_schema_embeddings)
+[Streamlit app respository](https://github.com/sreyakumar/aind-GAMER-app)
 
 ## High Level Overview
 
@@ -64,20 +70,28 @@ The main framework used by the model is Retrieval Augmented Generation (RAG), a 
 
 A multi-agent workflow is created using Langgraph, allowing for parallel execution of tasks, like document retrieval from the vector index, and increased developer control over the the RAG process.
 
-![Worfklow](2025_01_GAMER_workflow.PNG)
+![Worfklow](GAMER_workflow.jpeg)
 
 This model uses a multi agent framework on Langraph to retrieve and summarize metadata information based on a user's natural language query. This workflow consists of 6 agents, or nodes, where a decision is made and there is new context provided to either the model or the user. Here are some decisions incorporated into the framework:
 1. To best answer the query, which data source should the model refer to?
     - Input: `x (query)`
     - Decides best data to query against
-    - Output: `entire_database, vector_embeddings, claude`
+    - Output: `entire_database, vector_embeddings, claude, data_schema`
 2. If querying against the vector embeddings, does the index need to be filtered further with metdata tags, to improve optimization of retrieval?
     - Input: `x (query)`
     - Decides whether database can be further filtered by applying a MongoDB query
     - Output: `MongoDB query, None`
 3. Are the documents retrieved during retrieval relevant to the question?
-    - Input: `x (query)`
+    - Input: `x (query), y (documents)`
     - Decides whether document should be kept or tossed during summarization
+    - Output: `yes, no`
+4. Is the tool output retrieved through tool calling relevant to the question?
+    - Input: `x (query), y (tool output)`
+    - Decides whether MongoDB queries need to be reconstructed to retrieve more relevant output
+    - Output: `yes, no`
+5. Does the conversation need to be summarized?
+    - Input: `x (message list)`
+    - If the conversation list exceeds 6 messages, the chat history will be summarized, and earlier messages will be deleted
     - Output: `yes, no`
 
 ## Data Retrieval
