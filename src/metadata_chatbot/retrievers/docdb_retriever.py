@@ -187,7 +187,8 @@ class DocDBRetriever(BaseRetriever):
                 except Exception as trace_error:
                     error = (
                         "Warning: Error in run_manager callback: "
-                        f"{str(trace_error)}")
+                        f"{str(trace_error)}"
+                    )
                     # Don't let callback errors stop us from routing to MongoDB
 
             # Re-raise the error so it can be caught by retrieve_VI

@@ -108,9 +108,7 @@ def get_records(filter: dict = {}, projection: dict = {}) -> dict:
     """
 
     records = docdb_api_client.retrieve_docdb_records(
-        filter_query=filter,
-        projection=projection,
-        limit = 100
+        filter_query=filter, projection=projection, limit=100
     )
 
     return records
