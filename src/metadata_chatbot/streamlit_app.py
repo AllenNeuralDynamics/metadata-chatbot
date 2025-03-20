@@ -194,6 +194,9 @@ async def main():
                 "specify the date."
             )
             st.markdown(
+                "Prompt it to return python code using the AIND data access api."
+            )
+            st.markdown(
                 "If the chat history starts to become fuzzy, please refresh the tab. "
                 "Note that GAMER will not retain previous contexts if this action is taken."
             )
