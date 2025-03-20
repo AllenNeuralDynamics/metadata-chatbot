@@ -1,35 +1,9 @@
 """GAMER nodes that only connect to Claude"""
 
-from typing import Annotated, Literal
-
-from langchain import hub
 from langchain_core.messages import AIMessage, HumanMessage, RemoveMessage
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from typing_extensions import TypedDict
 
+from metadata_chatbot.models import datasource_router, summary_chain
 from metadata_chatbot.utils import HAIKU_3_5_LLM
-
-
-# Determining if entire database needs to be surveyed
-class RouteQuery(TypedDict):
-    """Route a user query to the most relevant datasource."""
-
-    datasource: Annotated[
-        Literal["vectorstore", "direct_database", "claude", "data_schema"],
-        ...,
-        (
-            "Given a user question choose to route it to the direct database"
-            "or its vectorstore. If a question can be answered without"
-            "retrieval, route to claude. If a question is about the"
-            "schema/structure/definitions, route to data schema"
-        ),
-    ]
-
-
-structured_llm_router = HAIKU_3_5_LLM.with_structured_output(RouteQuery)
-router_prompt = hub.pull("eden19/query_rerouter")
-datasource_router = router_prompt | structured_llm_router
 
 
 async def route_question(state: dict) -> dict:
@@ -90,13 +64,6 @@ def determine_route(state: dict) -> dict:
         return "claude"
     elif data_source == "data_schema":
         return "data_schema"
-
-
-# Generating response from previous context
-prompt = ChatPromptTemplate.from_template(
-    "Answer {query} based on the following texts: {context}"
-)
-summary_chain = prompt | HAIKU_3_5_LLM | StrOutputParser()
 
 
 async def generate_chat_history(state: dict) -> dict:

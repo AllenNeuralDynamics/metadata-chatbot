@@ -1,28 +1,16 @@
 """GAMER that connect to vectorized data assets"""
 
 import asyncio
-from typing import Annotated, Literal
 
-from langchain import hub
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage
-from langchain_core.output_parsers import StrOutputParser
-from typing_extensions import TypedDict
 
-from metadata_chatbot.utils import HAIKU_3_5_LLM, SONNET_3_7_LLM
+from metadata_chatbot.models import (
+    doc_grader,
+    filter_generation_chain,
+    rag_chain,
+)
 from metadata_chatbot.retrievers.docdb_retriever import DocDBRetriever
-
-
-class FilterGenerator(TypedDict):
-    """MongoDB filter to be applied before vector retrieval"""
-
-    filter_query: Annotated[dict, ..., "MongoDB match filter"]
-    top_k: int = Annotated[dict, ..., "Number of documents"]
-
-
-filter_prompt = hub.pull("eden19/filtergeneration")
-filter_generator_llm = SONNET_3_7_LLM.with_structured_output(FilterGenerator)
-filter_generation_chain = filter_prompt | filter_generator_llm
 
 
 async def filter_generator(state: dict) -> dict:
@@ -114,23 +102,6 @@ def route_to_mongodb(state: dict):
         return "grade_documents"
 
 
-# Check if retrieved documents answer question
-class RetrievalGrader(TypedDict):
-    """Relevant material in the retrieved document +
-    Binary score to check relevance to the question"""
-
-    binary_score: Annotated[
-        Literal["yes", "no"],
-        ...,
-        "Retrieved documents are relevant to the query, 'yes' or 'no'",
-    ]
-
-
-retrieval_grader = HAIKU_3_5_LLM.with_structured_output(RetrievalGrader)
-retrieval_grade_prompt = hub.pull("eden19/retrievalgrader")
-doc_grader = retrieval_grade_prompt | retrieval_grader
-
-
 async def grade_doc(query: str, doc: Document):
     """
     Grades whether each document is relevant to query
@@ -170,11 +141,6 @@ async def grade_documents(state: dict) -> dict:
             AIMessage("Checking document relevancy to your query...")
         ],
     }
-
-
-# Generating response to documents retrieved from the vector index
-answer_generation_prompt = hub.pull("eden19/answergeneration")
-rag_chain = answer_generation_prompt | SONNET_3_7_LLM | StrOutputParser()
 
 
 async def generate_VI(state: dict) -> dict:
