@@ -1,10 +1,8 @@
 """GAMER that connect to vectorized data schema"""
 
-from langchain import hub
 from langchain_core.messages import AIMessage
-from langchain_core.output_parsers import StrOutputParser
 
-from metadata_chatbot.nodes.utils import SONNET_3_5_LLM
+from metadata_chatbot.models import schema_chain
 from metadata_chatbot.retrievers.data_schema_retriever import (
     DataSchemaRetriever,
 )
@@ -21,7 +19,9 @@ def retrieve_schema(state: dict) -> dict:
     query = state["query"]
 
     try:
-        retriever = DataSchemaRetriever(k=5)
+        retriever = DataSchemaRetriever(
+            k=5, collection="aind_data_schema_vectors"
+        )
         documents = retriever._get_relevant_documents(query=query)
         message = AIMessage("Retrieving context about data schema...")
 
@@ -34,10 +34,6 @@ def retrieve_schema(state: dict) -> dict:
         "documents": documents,
         "messages": [message],
     }
-
-
-schema_prompt = hub.pull("eden19/data-schema-summary")
-schema_chain = schema_prompt | SONNET_3_5_LLM | StrOutputParser()
 
 
 async def generate_schema(state: dict) -> dict:
