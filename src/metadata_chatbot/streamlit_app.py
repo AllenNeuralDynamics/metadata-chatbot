@@ -129,7 +129,7 @@ async def typewriter_stream(result, container):
         for word in text_content.split():
             full_response += word + " "
             container.write(full_response + " ")
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.03)
     container.write(text_content)
 
 
