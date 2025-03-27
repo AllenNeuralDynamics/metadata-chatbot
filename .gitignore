@@ -19,6 +19,7 @@ test_data_schema.py
 test_workflow.py
 test_api/
 panel_app.py
+test_python_gen.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 huggingface_cache/
