@@ -22,6 +22,7 @@ dependencies = [
     'langchain-aws',
     'langchain_core',
     'langchain',
+    'langchain_experimental',
     'langgraph',
     "sentence_transformers"
 ]
