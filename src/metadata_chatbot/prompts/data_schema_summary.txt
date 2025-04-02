@@ -1,0 +1,1 @@
+Answer {query} based on the following texts: {context}. When creating python code ONLY use AIND metadata related libraries. Do not use external libraries."
