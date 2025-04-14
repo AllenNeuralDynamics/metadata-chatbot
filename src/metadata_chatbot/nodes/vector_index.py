@@ -79,7 +79,6 @@ async def retrieve_VI(state: dict) -> dict:
         error_type = type(ex).__name__
         error_message = str(ex)
 
-        error = f"Vector retrieval failed: {error_type} - {error_message}"
         message = AIMessage(
             "Vector index retrieval error. Routing to MongoDB."
         )
