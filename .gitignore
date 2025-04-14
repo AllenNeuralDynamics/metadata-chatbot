@@ -1,5 +1,5 @@
 #scratch
-evaluations/
+
 chatbot.ipynb
 *.pkl
 *.png
@@ -20,6 +20,7 @@ test_workflow.py
 test_api/
 panel_app.py
 test_python_gen.py
+test_models.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 huggingface_cache/
