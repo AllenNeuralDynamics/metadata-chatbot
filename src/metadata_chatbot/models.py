@@ -106,3 +106,29 @@ rag_chain = answer_generation_prompt | SONNET_3_7_LLM | StrOutputParser()
 # Schema generation
 schema_prompt = hub.pull("eden19/data-schema-summary")
 schema_chain = schema_prompt | SONNET_3_5_LLM | StrOutputParser()
+
+
+# Evaluator
+class Evaluator(TypedDict):
+    """Relevant material in the retrieved document +
+    Binary score to check relevance to the question"""
+
+    score: Annotated[
+        Literal["CORRECT", "INCORRECT", "ERROR"],
+        ...,
+        (
+            "Predicted response matched target response, 'correct' or 'incorrect'"
+            "Predicted response is an error message, 'error'"
+        ),
+    ]
+
+
+evaluator = SONNET_3_7_LLM.with_structured_output(Evaluator)
+evaluator_prompt = hub.pull("eden19/evaluator")
+evaluator_chain = evaluator_prompt | evaluator
+
+# Evaluator
+
+evaluator_python = SONNET_3_7_LLM.with_structured_output(Evaluator)
+evaluator_python_prompt = hub.pull("eden19/evaluator_python")
+evaluator_python_chain = evaluator_python_prompt | evaluator_python
