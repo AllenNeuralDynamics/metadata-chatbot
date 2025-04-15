@@ -202,10 +202,12 @@ async def stream_response(inputs, config, app, prev_generation=""):
                 yield {"type": "tool_output", "content": message.content}
 
 
-# from langchain_core.messages import HumanMessage
 # import asyncio
 
-# query = ""
+# from langchain_core.messages import HumanMessage
+
+# query = "Which experimenter conducted the most sessions in the past 6 months, given that the date is 3/31/25?"
+
 
 # async def new_astream(query):
 
@@ -215,8 +217,8 @@ async def stream_response(inputs, config, app, prev_generation=""):
 
 #     config = {}
 
-#     async for result in stream_response(inputs,config,app):
-#         print(result)  # Process the yielded results
+#     async for result in stream_response(inputs, config, app):
+#         r = result  # Process the yielded results
 
 
 # # Run the main coroutine with asyncio
