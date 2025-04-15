@@ -6,7 +6,7 @@ from langsmith import Client, aevaluate
 from langsmith.evaluation import LangChainStringEvaluator
 
 from metadata_chatbot.evaluations.eval_workflow import app
-from metadata_chatbot.utils import SONNET_3_5_LLM
+from metadata_chatbot.utils import SONNET_3_7_LLM
 
 dataset_name = "RAG testing example Dataset"
 
@@ -33,7 +33,7 @@ PROMPT = PromptTemplate(
 )
 
 evaluator = LangChainStringEvaluator(
-    "qa", config={"llm": SONNET_3_5_LLM, "prompt": PROMPT}
+    "qa", config={"llm": SONNET_3_7_LLM, "prompt": PROMPT}
 )
 
 client = Client()
