@@ -4,9 +4,8 @@ import json
 
 import botocore
 from langchain_core.messages import HumanMessage, ToolMessage
-from langchain_core.tools import tool
 
-from metadata_chatbot.models import (
+from metadata_chatbot.models import (  # mongodb_agent,
     mongodb_summary_agent,
     sonnet_agent,
     tool_summarizer_agent,
@@ -70,15 +69,15 @@ async def tool_node(state: dict):
 async def tool_summarizer(state: dict):
     """Check if tool output answers user query"""
     query = state["query"]
-    tool_output = state["tool_output"][0].content
-
-    if len(tool_output) > 10000:  # Adjust threshold as needed
-        # Simple chunking approach
-        tool_output = (
-            tool_output[:10000] + "... [Content truncated due to length]"
-        )
 
     try:
+
+        tool_output = state["tool_output"][0].content
+        if len(tool_output) > 10000:  # Adjust threshold as needed
+            # Simple chunking approach
+            tool_output = (
+                tool_output[:10000] + "... [Content truncated due to length]"
+            )
 
         response = await tool_summarizer_agent.ainvoke(
             {"query": query, "tool_output": tool_output}
