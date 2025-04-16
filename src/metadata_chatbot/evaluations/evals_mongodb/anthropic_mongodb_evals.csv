@@ -1,0 +1,2096 @@
+input_question,target_mongodb_query,target_answer,predicted_answer,predicted_mongodb_query,generation_time,mongodb_evaluation,mongodb_score,response_evaluation,response_score
+"for mouse 721291 can you make a table of sessions, date, and session_type?","{""filter"":{""subject.subject_id"":""721291""},""projection"":{""name"":1,""session.session_type"":1,""session.session_start_time"":1,""_id"":0}}","Sessions for Mouse 721291
+ Session, Date, Session Type
+1,2024-04-26,TRAINING_3_images_A_10uL_reward
+2,2024-04-29,TRAINING_3_images_A_10uL_reward 
+3,2024-04-30,TRAINING_3_images_A_10uL_reward 
+ The table shows all three sessions recorded for mouse 721291, with dates extracted from the session_start_time field and the consistent session type across all sessions","I'll create an aggregation pipeline to retrieve the sessions for mouse 721291:
+
+```python
+[
+    {""$match"": {""subject.subject_id"": ""721291""}},
+    {""$unwind"": ""$session""},
+    {""$project"": {
+        ""_id"": 0,
+        ""date"": {""$substr"": [""$session.session_start_time"", 0, 10]},
+        ""session_type"": ""$session.session_type""
+    }}
+]
+```
+
+This query will:
+1. Match only records for subject 721291
+2. Unwind the session array
+3. Project out the date and session type
+4. Format the date to just show YYYY-MM-DD
+
+Would you like me to run this query and display the results?","{'filter': {'subject.subject_id': '721291'}, 'projection': {'name': 1, 'session.session_start_time': 1, 'session.session_type': 1}}",45.25880026817322,CORRECT,1.0,INCORRECT,0.0
+Tell me about mouse 747107,"{""subject.subject_id"": ""747107""}","Mouse 747107 is a female Mus musculus with the genotype Slc32a1-IRES-Cre/wt;Oi1(TIT2L-jGCaMP8s-WPRE-ICL-IRES-tTA2)/wt. The mouse was housed in cage 8272325 in room 221 and was sourced from the Allen Institute. 
+
+The mouse underwent planar optical physiology (pophys) experiments using a mesoscope setup. The imaging was performed with a 920nm wavelength laser at various depths in the visual cortex (VISp). Multiple field of views (FOVs) were recorded at different imaging depths ranging from 68 to 260 micrometers, with a frame rate of 9.48 Hz. 
+
+The experimental setup included eye and face cameras to monitor the mouse's behavior, and the mouse was placed on a running disk platform manufactured by the Allen Institute for Neural Dynamics, which had a radius of 8.255 centimeters.","I'll help you retrieve the details for mouse 747107. I'll focus on creating an aggregation pipeline that pulls key information about this subject from the database.
+
+```python
+[
+    {""$match"": {""subject.subject_id"": ""747107""}},
+    {""$project"": {
+        ""subject_id"": ""$subject.subject_id"",
+        ""sex"": ""$subject.sex"",
+        ""date_of_birth"": ""$subject.date_of_birth"",
+        ""species"": ""$subject.species.name"",
+        ""genotype"": ""$subject.genotype"",
+        ""background_strain"": ""$subject.background_strain"",
+        ""source"": ""$subject.source.name"",
+        ""breeding_info"": {
+            ""maternal_id"": ""$subject.breeding_info.maternal_id"",
+            ""paternal_id"": ""$subject.breeding_info.paternal_id"",
+            ""breeding_group"": ""$subject.breeding_info.breeding_group""
+        }
+    }}
+]
+```
+
+This pipeline will extract the most important information about mouse 747107.","{'filter': {'subject.subject_id': '747107'}, 'projection': {'name': 1, 'subject': 1, 'data_description.modality': 1}}",11.560473203659058,CORRECT,1.0,INCORRECT,0.0
+How many records use the session.data_streams.slap_fovs field,"{""agg_pipeline"":[{""$match"":{""session.data_streams.slap_fovs"":{""$exists"":true}}},{""$count"":""count""}]}",there are 5488 records with session.data_streams.slap_fovs,"Here's a query to count records that have a non-null slap_fovs field in the session.data_streams:
+
+```python
+[
+    {""$unwind"": ""$session.data_streams""},
+    {""$match"": {""session.data_streams.slap_fovs"": {""$ne"": None}}},
+    {""$count"": ""slap_fovs_count""}
+]
+```
+
+This pipeline will:
+1. Unwind the data_streams array
+2. Match records where slap_fovs is not null
+3. Count the number of such records
+
+Would you like me to execute this query for you?","{'agg_pipeline': [{'$match': {'session.data_streams.slap_fovs': {'$exists': True}}}, {'$count': 'records_with_slap_fovs'}]}",10.611998319625854,CORRECT,1.0,CORRECT,1.0
+can you tell me how many sessions exist for 775745,"filter = {""subject.subject_id"": ""775745""}
+projection = {""name"": 1, ""_id"": 1}",There are 50 sessions for subject 775745,"I'll help you count the number of sessions for subject 775745. I'll use a MongoDB aggregation pipeline to do this efficiently.
+
+```python
+[
+    {
+        ""$match"": {
+            ""subject.subject_id"": ""775745""
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$subject.subject_id"",
+            ""total_sessions"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$project"": {
+            ""_id"": 0,
+            ""subject_id"": ""$_id"",
+            ""total_sessions"": 1
+        }
+    }
+]
+```
+
+This pipeline will:
+1. Match all records with subject_id 775745
+2. Count the total number of unique records/sessions
+3. Project a clean output with subject ID and session count
+
+Would you like me to run this query in the database and give you the exact number?","{'agg_pipeline': [{'$match': {'subject.subject_id': '775745'}}, {'$count': 'total_sessions'}]}",10.799715995788574,CORRECT,1.0,INCORRECT,0.0
+Find how many experimental sessions conducted by experimenter Marton Rozsa in 2022.,"{""agg_pipeline"":[{""$match"":{""$or"":[{""acquisition.experimenter_full_name"":""Marton Rozsa"",""acquisition.session_start_time"":{""$regex"":""2022-"",""$options"":""i""}},{""session.experimenter_full_name"":{""$in"":[""Marton Rozsa""]},""session.session_start_time"":{""$regex"":""2022-"",""$options"":""i""}}]}},{""$count"":""total_sessions""}]}",86 sessions were conducted by Marton Rozsa,"Error: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'prompt is too long: 217216 tokens > 200000 maximum'}}","Error: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'prompt is too long: 217216 tokens > 200000 maximum'}}",10.799715995788574,ERROR,0.0,ERROR,0.0
+Generate code to find experiments where the animal weight decreased by more than 10% between consecutive procedures.,"{""agg_pipeline"":[{""$match"":{""procedures.subject_procedures"":{""$exists"":true,""$ne"":[]}}},{""$project"":{""_id"":1,""subject_id"":""$procedures.subject_id"",""subject_procedures"":""$procedures.subject_procedures""}},{""$unwind"":""$subject_procedures""},{""$match"":{""subject_procedures.animal_weight_prior"":{""$exists"":true,""$ne"":null},""subject_procedures.animal_weight_post"":{""$exists"":true,""$ne"":null}}},{""$project"":{""_id"":1,""subject_id"":1,""procedure_type"":""$subject_procedures.procedure_type"",""start_date"":""$subject_procedures.start_date"",""weight_prior"":{""$toDouble"":""$subject_procedures.animal_weight_prior""},""weight_post"":{""$toDouble"":""$subject_procedures.animal_weight_post""},""weight_unit"":""$subject_procedures.weight_unit""}},{""$match"":{""weight_prior"":{""$ne"":null},""weight_post"":{""$ne"":null}}},{""$project"":{""_id"":1,""subject_id"":1,""procedure_type"":1,""start_date"":1,""weight_prior"":1,""weight_post"":1,""weight_unit"":1,""weight_change_percent"":{""$multiply"":[{""$divide"":[{""$subtract"":[""$weight_post"",""$weight_prior""]},""$weight_prior""]},100]}}},{""$match"":{""weight_change_percent"":{""$lt"":-10}}},{""$group"":{""_id"":""$subject_id""}},{""$project"":{""_id"":0,""subject_id"":""$_id""}},{""$sort"":{""subject_id"":1}}]}","I'll create a MongoDB aggregation pipeline to find all unique subject IDs where the animal weight decreased by more than 10% between consecutive procedures. Here's the Python code that implements this:
+
+import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    # Match records with subject procedures
+    {'$match': {'procedures.subject_procedures': {'$exists': True, '$ne': []}}},
+
+    # Project relevant fields
+    {'$project': {
+        '_id': 1, 
+        'subject_id': '$procedures.subject_id', 
+        'subject_procedures': '$procedures.subject_procedures'
+    }},
+
+    # Unwind subject procedures
+    {'$unwind': '$subject_procedures'},
+
+    # Match procedures with valid weight measurements
+    {'$match': {
+        'subject_procedures.animal_weight_prior': {'$exists': True, '$ne': None},
+        'subject_procedures.animal_weight_post': {'$exists': True, '$ne': None}
+    }},
+
+    # Project and convert weights to numeric
+    {'$project': {
+        '_id': 1, 
+        'subject_id': 1, 
+        'procedure_type': '$subject_procedures.procedure_type',
+        'start_date': '$subject_procedures.start_date',
+        'weight_prior': {'$toDouble': '$subject_procedures.animal_weight_prior'},
+        'weight_post': {'$toDouble': '$subject_procedures.animal_weight_post'},
+        'weight_unit': '$subject_procedures.weight_unit'
+    }},
+
+    # Remove null weight entries
+    {'$match': {
+        'weight_prior': {'$ne': None}, 
+        'weight_post': {'$ne': None}
+    }},
+
+    # Calculate percentage weight change
+    {'$project': {
+        '_id': 1, 
+        'subject_id': 1, 
+        'procedure_type': 1, 
+        'start_date': 1,
+        'weight_prior': 1, 
+        'weight_post': 1, 
+        'weight_unit': 1, 
+        'weight_change_percent': {'$multiply': [
+            {'$divide': [
+                {'$subtract': ['$weight_post', '$weight_prior']}, 
+                '$weight_prior'
+            ]}, 
+            100
+        ]}
+    }},
+
+    # Filter for weight decrease > 10%
+    {'$match': {'weight_change_percent': {'$lt': -10}}},
+
+    # Group by subject_id to get unique subjects
+    {'$group': {'_id': '$subject_id'}},
+
+    # Format output
+    {'$project': {'_id': 0, 'subject_id': '$_id'}},
+
+    # Sort results
+    {'$sort': {'subject_id': 1}}
+]
+
+# Execute the aggregation
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print results
+print(""Unique Subject IDs with Weight Decrease > 10%:"")
+for record in result:
+    print(f""Subject ID: {record['subject_id']}"")
+
+# Print total count
+print(f""\nTotal number of unique subjects: {len(result)}"")
+
+The query found 7 unique subject IDs where the animal weight decreased by more than 10% between procedures:
+
+Subject ID: 661797
+Subject ID: 671413
+Subject ID: 697930
+Subject ID: 730049
+Subject ID: 734159
+Subject ID: 741752
+Subject ID: 750101
+This code:
+
+Matches records with subject procedures
+Projects the relevant fields
+Unwinds the subject procedures array
+Filters for procedures with valid weight measurements
+Converts string weights to numeric values
+Calculates the weight change percentage
+Filters","Here's a MongoDB aggregation pipeline to find experiments where the animal's weight decreased by more than 10% between consecutive procedures:
+
+```python
+[
+    # Unwind procedures to handle multiple procedures per subject
+    {""$unwind"": ""$procedures.subject_procedures""},
+    
+    # Group by subject_id and sort procedures by date
+    {""$group"": {
+        ""_id"": ""$subject.subject_id"",
+        ""procedures"": {
+            ""$push"": {
+                ""date"": ""$procedures.subject_procedures.start_date"", 
+                ""weight"": {""$toDouble"": ""$procedures.subject_procedures.animal_weight_prior""}
+            }
+        }
+    }},
+    
+    # Sort procedures chronologically within each subject group
+    {""$project"": {
+        ""subject_id"": ""$_id"",
+        ""sorted_procedures"": {
+            ""$sortArray"": {
+                ""input"": ""$procedures"",
+                ""sortBy"": {""date"": 1}
+            }
+        }
+    }},
+    
+    # Calculate weight change percentage
+    {""$project"": {
+        ""subject_id"": 1,
+        ""weight_changes"": {
+            ""$map"": {
+                ""input"": {""$range"": [1, {""$size"": ""$sorted_procedures""}]},
+                ""as"": ""i"",
+                ""in"": {
+                    ""previous_weight"": {""$arrayElemAt"": [""$sorted_procedures"", {""$subtract"": [{""$toInt"": ""$$i""}, 1]}]},
+                    ""current_weight"": {""$arrayElemAt"": [""$sorted_procedures"", {""$toInt"": ""$$i""}]},
+                    ""weight_change_percent"": {
+                        ""$multiply"": [
+                            {""$divide"": [
+                                {""$subtract"": [
+                                    {""$arrayElemAt"": [""$sorted_procedures"", {""$toInt"": ""$$i""}]}.weight,
+                                    {""$arrayElemAt"": [""$sorted_procedures"", {""$subtract"": [{""$toInt"": ""$$i""}, 1]}]}.weight
+                                ]},
+                                {""$arrayElemAt"": [""$sorted_procedures"", {""$subtract"": [{""$toInt"": ""$$i""}, 1]}]}.weight
+                            ]},
+                            100
+                        ]
+                    }
+                }
+            }
+        }
+    }},
+    
+    # Filter for weight decreases > 10%
+    {""$project"": {
+        ""subject_id"": 1,
+        ""significant_weight_drops"": {
+            ""$filter"": {
+                ""input"": ""$weight_changes"",
+                ""as"": ""change"",
+                ""cond"": {""$lt"": [""$$change.weight_change_percent"", -10]}
+            }
+        }
+    }},
+    
+    # Match only subjects with significant weight drops
+    {""$match"": {
+        ""significant_weight_drops"": {""$ne"": []}
+    }},
+    
+    # Project relevant details
+    {""$project"": {
+        ""_id"": 0,
+        ""subject_id"": 1,
+        ""weight_drops"": ""$significant_weight_drops""
+    }}
+]
+```
+
+This pipeline does the following:
+
+1. Unwind subject procedures to process each procedure
+2. Group procedures by subject_id and extract weights
+3. Sort procedures chronologically for each subject
+4. Calculate percentage weight change between consecutive procedures
+5. Filter for weight drops exceeding 10%
+6. Return subjects with significant weight changes
+
+Key considerations:
+- Uses only `animal_weight_prior` to track weight changes
+- Calculates percentage change relative to previous weight
+- Ensures chronological ordering of procedures
+- Handles cases with multiple procedures
+
+Notes:
+- Requires weight to be numeric (converted to float)
+- Assumes weight is recorded consistently
+- Handles potential missing or null weight values
+
+Would you like me to elaborate on any part of the aggregation pipeline?","{'agg_pipeline': [{'$match': {'procedures.subject_procedures': {'$exists': True, '$ne': []}}}, {'$project': {'_id': 1, 'name': 1, 'subject_id': '$procedures.subject_id', 'procedures': '$procedures.subject_procedures'}}, {'$unwind': '$procedures'}, {'$match': {'procedures.animal_weight_prior': {'$exists': True, '$ne': None}, 'procedures.animal_weight_post': {'$exists': True, '$ne': None}}}, {'$group': {'_id': '$subject_id', 'procedures': {'$push': {'experiment_id': '$_id', 'experiment_name': '$name', 'procedure_date': '$procedures.start_date', 'weight_prior': '$procedures.animal_weight_prior', 'weight_post': '$procedures.animal_weight_post'}}}}, {'$project': {'subject_id': '$_id', 'procedures': 1, '_id': 0}}, {'$limit': 10}]}",47.189229249954224,INCORRECT,0.0,CORRECT,1.0
+What are the injections for SmartSPIM_675387_2023-05-23_23-05-56?,"{""filter"":{""name"":""SmartSPIM_675387_2023-05-23_23-05-56""},""projection"":{""procedures.subject_procedures"":1}}","
+                    Based on the provided context, the injections for SmartSPIM_675387_2023-05-23_23-05-56 are:
+                    1. AAVrg-Syn-H2B-Turquoise virus with titer 48000000000000 gc/mL, injected at coordinates ML 1.0 mm, AP 1.2 mm, depth 0.8 mm from Bregma, with injection volume 50.0 nanoliters, targeting the Isocortex in the right hemisphere.
+                    2. AAVrg-Syn-H2B-tdTomato virus with titer 51000000000000 gc/mL, injected at coordinates ML 1.4 mm, AP 1.2 mm, depth 0.8 mm from Bregma, with injection volume 50.0 nanoliters, targeting the Isocortex in the right hemisphere.
+                    Both injections were performed using the Nanoject injection procedure with a 5.0 minute recovery time.
+                    ","I'll help you retrieve the injection details for this specific subject. I'll break this down into a MongoDB aggregation pipeline to extract the procedures with injection information.
+
+```python
+[
+    {""$match"": {""name"": ""SmartSPIM_675387_2023-05-23_23-05-56""}},
+    {""$unwind"": ""$procedures.subject_procedures""},
+    {""$match"": {""procedures.subject_procedures.procedure_type"": ""Nanoject injection""}},
+    {""$project"": {
+        ""injection_materials"": ""$procedures.subject_procedures.injection_materials"",
+        ""injection_coordinate_ml"": ""$procedures.subject_procedures.injection_coordinate_ml"",
+        ""injection_coordinate_ap"": ""$procedures.subject_procedures.injection_coordinate_ap"",
+        ""injection_coordinate_depth"": ""$procedures.subject_procedures.injection_coordinate_depth"",
+        ""injection_volume"": ""$procedures.subject_procedures.injection_volume"",
+        ""targeted_structure"": ""$procedures.subject_procedures.targeted_structure"",
+        ""injection_hemisphere"": ""$procedures.subject_procedures.injection_hemisphere""
+    }}
+]
+```
+
+This will retrieve details about all Nanoject injection procedures for the specified data asset.","{'filter': {'name': 'SmartSPIM_675387_2023-05-23_23-05-56'}, 'projection': {'procedures.subject_procedures': 1}}",11.712992191314697,CORRECT,1.0,INCORRECT,0.0
+In 2024 which month had the most number of metadata assets collected?,"{""agg_pipeline"":[{""$match"":{""created"":{""$gte"":""2024-01-01T00:00:00.000Z"",""$lt"":""2025-01-01T00:00:00.000Z""}}},{""$project"":{""month"":{""$month"":{""$toDate"":""$created""}}}},{""$group"":{""_id"":""$month"",""count"":{""$sum"":1}}},{""$sort"":{""count"":-1}}]}","July (month 7) had the most metadata assets collected in 2024 with 9,360 assets.",Error: list index out of range,Error: list index out of range,11.712992191314697,ERROR,0.0,ERROR,0.0
+"How many injections were performed across all animals in the thalamus in the middle project using the following coordinate: AP: 2.8, ML: 0.2, DV: 0.6?","{""agg_pipeline"":[{""$match"":{""data_description.project_name"":""Thalamus in the middle"",""procedures.subject_procedures"":{""$elemMatch"":{""procedures"":{""$elemMatch"":{""injection_coordinate_ap"":""2.8"",""injection_coordinate_ml"":""0.2"",""injection_coordinate_depth"":""0.6""}}}}}},{""$project"":{""_id"":1,""name"":1,""data_description.project_name"":1,""procedures.subject_procedures.procedures"":{""$filter"":{""input"":{""$reduce"":{""input"":""$procedures.subject_procedures"",""initialValue"":[],""in"":{""$concatArrays"":[""$$value"",{""$filter"":{""input"":""$$this.procedures"",""as"":""proc"",""cond"":{""$and"":[{""$eq"":[""$$proc.injection_coordinate_ap"",""2.8""]},{""$eq"":[""$$proc.injection_coordinate_ml"",""0.2""]},{""$eq"":[""$$proc.injection_coordinate_depth"",""0.6""]}]}}}]}}},""as"":""proc"",""cond"":{""$eq"":[""$$proc.injection_coordinate_ap"",""2.8""]}}}}},{""$count"":""total_injections""}]}",There are 20 injections with that coordinate.,"Error: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'prompt is too long: 217796 tokens > 200000 maximum'}}","Error: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'prompt is too long: 217796 tokens > 200000 maximum'}}",11.712992191314697,ERROR,0.0,ERROR,0.0
+Provide the mongodb query needed to find the channels used in the SmartSPIM session from subject 699834 on oct 31st 2023,"[{$match:{'subject.subject_id': '699834','data_description.creation_time': { $gte: '2023-10-31T00:00:00Z', $lt: '2023-11-01T00:00:00Z'},'data_description.modality.name': 'Selective plane illumination microscopy'}},{$project: {name: 1, channels: '$acquisition.tiles.channel.channel_name'}},{$unwind: '$channels'},{$group: { _id: '$name', unique_channels: {$addToSet: '$channels'}}}]`","Based on the MongoDB query executed and the results returned, I can provide you with the MongoDB query needed to find the channels used in the SmartSPIM session from subject 699834 on October 31st, 2023. Here's the explanation of the query and its results: MongoDB Query:```javascript[{$match:{'subject.subject_id': '699834','data_description.creation_time': { $gte: '2023-10-31T00:00:00Z', $lt: '2023-11-01T00:00:00Z'},'data_description.modality.name': 'Selective plane illumination microscopy'}},{$project: {name: 1, channels: '$acquisition.tiles.channel.channel_name'}},{$unwind: '$channels'},{$group: { _id: '$name', unique_channels: {$addToSet: '$channels'}}}]``` Explanation of the query: 1. The `$match` stage filters the documents based on the subject ID, date range, and modality. 2. The `$project` stage selects the name field and extracts the channel names from the acquisition tiles. 3. The `$unwind` stage deconstructs the channels array. 4. The `$group` stage groups the results by the experiment name and collects unique channel names. Results: The query returned the following results: ```json [{'_id': 'SmartSPIM_699834_2023-10-31_16-31-46_stitched_2023-11-01_14-53-14', 'unique_channels': ['488', '561', '639']},{'_id': 'SmartSPIM_699834_2023-10-31_16-31-46','unique_channels': ['488', '561', '639']}]``` This shows that there were two entries for the SmartSPIM session on October 31st, 2023, for subject 699834: 1. The original session: 'SmartSPIM_699834_2023-10-31_16-31-46' 2. A stitched version: 'SmartSPIM_699834_2023-10-31_16-31-46_stitched_2023-11-01_14-53-14' Both entries used the same channels: 488 nm, 561 nm, and 639 nm. This query effectively retrieves the channels used in the SmartSPIM session for the specified subject and date.",Error: list index out of range,Error: list index out of range,11.712992191314697,ERROR,0.0,ERROR,0.0
+ Are there any data assets within the patch foraging group that are missing metadata fields?,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$regex"":""patch foraging"",""$options"":""i""}}},{""$project"":{""_id"":1,""name"":1,""subject_id"":""$subject.subject_id"",""missing_fields"":{""$objectToArray"":{""subject"":{""$cond"":[{""$eq"":[""$subject"",null]},""missing"",""present""]},""data_description"":{""$cond"":[{""$eq"":[""$data_description"",null]},""missing"",""present""]},""procedures"":{""$cond"":[{""$eq"":[""$procedures"",null]},""missing"",""present""]},""session"":{""$cond"":[{""$eq"":[""$session"",null]},""missing"",""present""]},""rig"":{""$cond"":[{""$eq"":[""$rig"",null]},""missing"",""present""]},""processing"":{""$cond"":[{""$eq"":[""$processing"",null]},""missing"",""present""]},""acquisition"":{""$cond"":[{""$eq"":[""$acquisition"",null]},""missing"",""present""]},""instrument"":{""$cond"":[{""$eq"":[""$instrument"",null]},""missing"",""present""]},""quality_control"":{""$cond"":[{""$eq"":[""$quality_control"",null]},""missing"",""present""]}}}}},{""$match"":{""missing_fields.v"":""missing""}}]}","Missing Metadata Fields in Patch Foraging Group:
+acquisition: 907 records
+instrument: 907 records
+quality_control: 907 records
+procedures: 372 records
+
+Total Records with Missing Fields: 907","I'll help you create a query to check for data assets in the patch foraging group with incomplete metadata. I'll use the following strategy:
+
+```python
+[
+    {
+        ""$match"": {
+            ""data_description.group"": ""patch foraging""
+        }
+    },
+    {
+        ""$project"": {
+            ""name"": 1,
+            ""missing_fields"": {
+                ""$filter"": {
+                    ""input"": [
+                        {""field"": ""acquisition"", ""exists"": {""$eq"": [{""$type"": ""$acquisition""}, ""null""]}},
+                        {""field"": ""procedures"", ""exists"": {""$eq"": [{""$type"": ""$procedures""}, ""null""]}},
+                        {""field"": ""instrument"", ""exists"": {""$eq"": [{""$type"": ""$instrument""}, ""null""]}},
+                        {""field"": ""processing"", ""exists"": {""$eq"": [{""$type"": ""$processing""}, ""null""]}},
+                        {""field"": ""session"", ""exists"": {""$eq"": [{""$type"": ""$session""}, ""null""]}},
+                        {""field"": ""subject"", ""exists"": {""$eq"": [{""$type"": ""$subject""}, ""null""]}}
+                    ],
+                    ""as"": ""field"",
+                    ""cond"": ""$$field.exists""
+                }
+            }
+        }
+    },
+    {
+        ""$match"": {
+            ""$expr"": {""$gt"": [{""$size"": ""$missing_fields""}, 0]}
+        }
+    },
+    {
+        ""$project"": {
+            ""name"": 1,
+            ""missing_field_names"": ""$missing_fields.field""
+        }
+    }
+]
+```
+
+This query will:
+1. Match data assets in the ""patch foraging"" group
+2. Identify which core metadata schemas are null
+3. Filter for assets with at least one missing field
+4. Project the asset name and list of missing fields
+
+Would you like me to run this query?","{'agg_pipeline': [{'$match': {'data_description.project_name': {'$regex': 'patch foraging', '$options': 'i'}}}, {'$project': {'_id': 1, 'name': 1, 'metadata_status': 1, 'data_description': 1, 'subject': {'$ifNull': ['$subject', 'missing']}, 'procedures': {'$ifNull': ['$procedures', 'missing']}, 'acquisition': {'$ifNull': ['$acquisition', 'missing']}, 'processing': {'$ifNull': ['$processing', 'missing']}, 'session': {'$ifNull': ['$session', 'missing']}, 'rig': {'$ifNull': ['$rig', 'missing']}, 'instrument': {'$ifNull': ['$instrument', 'missing']}}}, {'$limit': 100}]}",20.284276485443115,INCORRECT,0.0,INCORRECT,0.0
+Can you show me how to construct a mongodb query to identify a specific smartspim experiment?," agg_pipeline:[{
+    ""$match"": {
+      ""data_description.modality.name"": ""Selective plane illumination microscopy"",
+      ""name"": ""SmartSPIM_662616_2023-04-14_15-11-04""
+    }
+  },
+  {
+    ""$project"": {
+      ""_id"": 1,
+      ""name"": 1,
+      ""subject.subject_id"": 1,
+      ""data_description.creation_time"": 1
+    }
+  }]","To construct a MongoDB query for a specific SmartSPIM experiment:
+
+1. Use the `$match` stage to filter for SmartSPIM experiments.
+2. Specify unique identifiers for the experiment you're looking for.
+3. Use the `$project` stage to select the fields you want to retrieve.
+
+Here's the example query broken down:
+
+```javascript
+[
+  {
+    ""$match"": {
+      ""data_description.modality.name"": ""Selective plane illumination microscopy"",
+      ""name"": ""SmartSPIM_662616_2023-04-14_15-11-04""
+    }
+  },
+  {
+    ""$project"": {
+      ""_id"": 1,
+      ""name"": 1,
+      ""subject.subject_id"": 1,
+      ""data_description.creation_time"": 1
+    }
+  }
+]
+```
+
+Explanation:
+
+1. `$match` stage:
+   - Filters for experiments with the modality ""Selective plane illumination microscopy"" (which is what SmartSPIM uses).
+   - Specifies the exact name of the experiment we're looking for.
+
+2. `$project` stage:
+   - Selects which fields to include in the output.
+   - `1` means include the field, `0` would mean exclude it.
+   - We're including the experiment ID, name, subject ID, and creation time.
+
+To use this query for a different SmartSPIM experiment, you would modify the `name` field in the `$match` stage to the specific experiment you're looking for. For example:
+
+```javascript
+""name"": ""SmartSPIM_ANOTHER-ID_YYYY-MM-DD_HH-MM-SS""
+```
+
+You can also add more fields to the `$match` stage if you need to be more specific, or to the `$project` stage if you want to retrieve additional information.
+
+This query, when executed, returned the following result:
+
+```json
+[
+  {
+    ""_id"": ""ff7b07e8-3187-4fcc-96c5-62ea1750340c"",
+    ""data_description"": {
+      ""creation_time"": ""2023-04-14T15:11:04-04:00""
+    },
+    ""name"": ""SmartSPIM_662616_2023-04-14_15-11-04"",
+    ""subject"": {
+      ""subject_id"": ""662616""
+    }
+  }
+]
+```
+
+This shows that the query successfully identified the specific SmartSPIM experiment and returned the requested information.",Error: list index out of range,Error: list index out of range,20.284276485443115,ERROR,0.0,ERROR,0.0
+Show me how to create a mongodb query for the imaging channels present in a specific stitched data asset.,"filter = {
+    ""name"": # INSERT ASSET NAME
+}
+
+# Projection to extract only the channel information
+projection = {
+    ""acquisition.tiles.channel"": 1
+}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Filter for the specific SmartSPIM dataset
+filter = {
+    ""name"": # INSERT ASSET NAME
+}
+
+# Projection to extract only the channel information
+projection = {
+    ""acquisition.tiles.channel"": 1
+}
+
+# Retrieve records with limit 1
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection,
+    limit=1
+)
+
+# Extract unique channels
+unique_channels = set()
+for record in records:
+    for tile in record.get('acquisition', {}).get('tiles', []):
+        channel = tile.get('channel', {})
+        unique_channels.add(channel.get('channel_name'))
+
+print(""Unique Channels:"")
+print(json.dumps(list(unique_channels), indent=2))",Error: list index out of range,Error: list index out of range,20.284276485443115,ERROR,0.0,INCORRECT,0.0
+"For subject 675387, create a timeline showing all procedures performed and identify any temporal overlaps between different experiment types.","{""filter"":{""subject.subject_id"":""675387""},""projection"":{""name"":1,""procedures"":1,""data_description.modality"":1}}","Timeline of Procedures for Subject 675387
+Subject Procedures
+March 31, 2023: Surgery - Nanoject injections
+
+Experimenter: Mathew Summers
+IACUC Protocol: 2109
+Two virus injections performed:
+AAVrg-Syn-H2B-Turquoise into Isocortex (right hemisphere)
+AAVrg-Syn-H2B-tdTomato into Isocortex (right hemisphere)
+Anesthesia: Isoflurane (1.5%) for 45 minutes
+April 28, 2023: Surgery - Perfusion
+
+Output specimen ID: 675387
+Specimen Procedures
+April 21-24, 2023: SHIELD OFF Fixation
+
+Experimenter: DT
+April 24-25, 2023: SHIELD ON Fixation
+
+Experimenter: DT
+April 30-May 1, 2023: 24h Delipidation
+
+Experimenter: DT
+May 1-3, 2023: Active Delipidation
+
+Experimenter: DT
+May 3-4, 2023: 50% EasyIndex (Refractive index matching)
+
+Experimenter: DT
+May 4-5, 2023: 100% EasyIndex (Refractive index matching)
+
+Experimenter: DT
+May 8-10, 2023: SHIELD OFF Fixation (repeated)
+
+Experimenter: DT
+May 10-11, 2023: SHIELD ON Fixation (repeated)
+
+Experimenter: DT
+May 15-16, 2023: Passive Delipidation (repeated)
+
+Experimenter: DT
+May 16-18, 2023: Active Delipidation (repeated)
+
+Experimenter: DT
+May 18-19, 2023: 50% EasyIndex (repeated)
+
+Experimenter: DT
+May 19-20, 2023: 100% EasyIndex (repeated)
+
+Experimenter: DT
+May 23-24, 2023: SmartSPIM Imaging
+
+Session start: May 23, 2023, 23:05:56
+Session end: May 24, 2023, 04:10:10
+Experimenter: John Rohde
+Temporal Overlaps
+No temporal overlaps between different experiment types were identified in the procedures.
+All procedures were performed sequentially with clear start and end dates.","I'll help you create a timeline for subject 675387 by first generating an aggregation pipeline that will extract and organize the procedure information chronologically.
+
+```python
+timeline_pipeline = [
+    # Match specific subject
+    {""$match"": {""subject.subject_id"": ""675387""}},
+    
+    # Unwind procedures to handle multiple procedures
+    {""$unwind"": ""$procedures.subject_procedures""},
+    
+    # Project relevant procedure details
+    {""$project"": {
+        ""procedure_type"": ""$procedures.subject_procedures.procedure_type"",
+        ""start_date"": ""$procedures.subject_procedures.start_date"",
+        ""experimenter_full_name"": ""$procedures.subject_procedures.experimenter_full_name"",
+        ""details"": ""$procedures.subject_procedures""
+    }},
+    
+    # Sort by date to establish chronological order
+    {""$sort"": {""start_date"": 1}}
+]
+```
+
+This pipeline will provide a comprehensive view of procedures for the subject, sorted chronologically. Would you like me to elaborate on the specific approach to visualizing temporal overlaps, or would you prefer the raw data first?","{'filter': {'subject.subject_id': '675387'}, 'projection': {'name': 1, 'procedures': 1, 'data_description.modality': 1}}",12.390753984451294,CORRECT,1.0,INCORRECT,0.0
+Give me the query used to identify 5 subject IDs that appear in 3 different assets with different modalities,"agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.modality"": {""$exists"": True, ""$ne"": []},
+            ""subject.subject_id"": {""$exists"": True, ""$ne"": None}
+        }
+    },
+    {
+        ""$project"": {
+            ""subject_id"": ""$subject.subject_id"",
+            ""modalities"": ""$data_description.modality.name""
+        }
+    },
+    {""$unwind"": ""$modalities""},
+    {
+        ""$group"": {
+            ""_id"": {""subject_id"": ""$subject_id"", ""modality"": ""$modalities""}
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$_id.subject_id"",
+            ""unique_modalities"": {""$addToSet"": ""$_id.modality""},
+            ""modality_count"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$match"": {
+            ""modality_count"": {""$gte"": 3}
+        }
+    },
+    {
+        ""$project"": {
+            ""_id"": 0,
+            ""subject_id"": ""$_id"",
+            ""unique_modalities"": 1,
+            ""modality_count"": 1
+        }
+    },
+    {""$sort"": {""modality_count"": -1}},
+    {""$limit"": 5}
+]
+","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.modality"": {""$exists"": True, ""$ne"": []},
+            ""subject.subject_id"": {""$exists"": True, ""$ne"": None}
+        }
+    },
+    {
+        ""$project"": {
+            ""subject_id"": ""$subject.subject_id"",
+            ""modalities"": ""$data_description.modality.name""
+        }
+    },
+    {""$unwind"": ""$modalities""},
+    {
+        ""$group"": {
+            ""_id"": {""subject_id"": ""$subject_id"", ""modality"": ""$modalities""}
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$_id.subject_id"",
+            ""unique_modalities"": {""$addToSet"": ""$_id.modality""},
+            ""modality_count"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$match"": {
+            ""modality_count"": {""$gte"": 3}
+        }
+    },
+    {
+        ""$project"": {
+            ""_id"": 0,
+            ""subject_id"": ""$_id"",
+            ""unique_modalities"": 1,
+            ""modality_count"": 1
+        }
+    },
+    {""$sort"": {""modality_count"": -1}},
+    {""$limit"": 5}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=2))","Here's a MongoDB aggregation pipeline that will find 5 subject IDs that appear in at least 3 different assets with different modalities:
+
+```python
+[
+    # Unwind the modalities to process each modality separately
+    {""$unwind"": ""$data_description.modality""},
+    
+    # Group by subject ID and collect unique modalities and asset names
+    {""$group"": {
+        ""_id"": ""$data_description.subject_id"",
+        ""modalities"": {""$addToSet"": ""$data_description.modality.name""},
+        ""asset_count"": {""$sum"": 1}
+    }},
+    
+    # Filter for subjects with at least 3 total assets
+    # and more than 2 unique modalities
+    {""$match"": {
+        ""asset_count"": {""$gte"": 3},
+        ""$expr"": {""$gt"": [{""$size"": ""$modalities""}, 2]}
+    }},
+    
+    # Sort by asset count in descending order
+    {""$sort"": {""asset_count"": -1}},
+    
+    # Limit to 5 results
+    {""$limit"": 5},
+    
+    # Project the final result
+    {""$project"": {
+        ""_id"": 1,
+        ""subject_id"": ""$_id"",
+        ""total_assets"": ""$asset_count"",
+        ""unique_modalities"": {""$size"": ""$modalities""}
+    }}
+]
+```
+
+This query will return 5 subject IDs that:
+1. Appear in at least 3 different assets
+2. Have data across at least 3 different modalities
+3. Sorted by total number of assets in descending order","{'agg_pipeline': [{'$match': {'subject.subject_id': {'$exists': True, '$ne': None}}}, {'$group': {'_id': '$subject.subject_id', 'modalityCount': {'$addToSet': '$data_description.modality.name'}}}, {'$project': {'subject_id': '$_id', 'modalityCount': {'$size': '$modalityCount'}}}, {'$match': {'modalityCount': {'$gte': 3}}}, {'$limit': 5}]}",57.706040382385254,INCORRECT,0.0,INCORRECT,0.0
+what are the unique instrument ids for smartspim experiments,"{""agg_pipeline"":[{""$match"":{""data_description.modality.name"":""Selective plane illumination microscopy""}},{""$project"":{""instrument_id"":""$instrument.instrument_id""}},{""$group"":{""_id"":""$instrument_id""}},{""$sort"":{""_id"":1}}]}","Unique SmartSPIM Instrument IDs:
+440_SmartSPIM1_20240229
+440_SmartSPIM1_20240325
+440_SmartSPIM1_20240613
+440_SmartSPIM1_20240710
+440_SmartSPIM1_20241024
+440_SmartSPIM1_20250116
+440_SmartSPIM2_20240229
+440_SmartSPIM2_20240321
+440_SmartSPIM2_20240514
+440_SmartSPIM2_20241025
+440_SmartSPIM2_20250114
+440_SmartSPIM3_20240229
+440_SmartSPIM3_20240308
+440_SmartSPIM3_20240321
+440_SmartSPIM3_20240510
+440_SmartSPIM3_20241025
+440_SmartSPIM3_20250125
+SmartSPIM1-1
+SmartSPIM1-2
+SmartSPIM1-4
+SmartSPIM1-5
+SmartSPIM1-6
+SmartSPIM1-7
+SmartSPIM2-1
+SmartSPIM2-2
+SmartSPIM2-4
+SmartSPIM3-2
+exaSPIM1-01","Here's a MongoDB aggregation pipeline to find unique instrument IDs for SmartSPIM experiments:
+
+```python
+[
+    {""$match"": {""data_description.modality.name"": ""SmartSPIM""}},
+    {""$group"": {""_id"": ""$instrument.instrument_id""}},
+    {""$project"": {""instrument_id"": ""$_id"", ""_id"": 0}},
+    {""$sort"": {""instrument_id"": 1}}
+]
+```
+
+This pipeline will:
+1. Match only SmartSPIM modality experiments
+2. Group by instrument_id 
+3. Project just the instrument ID
+4. Sort the results
+
+Would you like me to run this query or do you want to see the detailed results?","{'agg_pipeline': [{'$match': {'data_description.modality.name': 'Selective plane illumination microscopy'}}, {'$project': {'instrument_id': '$instrument.instrument_id'}}, {'$group': {'_id': '$instrument_id'}}, {'$sort': {'_id': 1}}]}",11.749444007873535,CORRECT,1.0,INCORRECT,0.0
+"For asset SmartSPIM_675387_2023-05-23_23-05-56, extract all coordinate_transformations from the tiles","{""filter"":{""name"":""SmartSPIM_675387_2023-05-23_23-05-56""},""projection"":{""acquisition.tiles.coordinate_transformations"":1}}","Total number of tiles: 84
+
+Unique Coordinate Transformations:
+{'translation': [54034, 48622, 4.2], 'type': 'translation'}
+{'translation': [47554, 51214, 4.2], 'type': 'translation'}
+{'translation': [54034, 40846, 4.2], 'type': 'translation'}
+{'translation': [44314, 53806, 4.2], 'type': 'translation'}
+{'translation': [54034, 51214, 4.2], 'type': 'translation'}
+{'translation': [54034, 46030, 4.2], 'type': 'translation'}
+{'translation': [47554, 53806, 4.2], 'type': 'translation'}
+{'translation': [50794, 46030, 4.2], 'type': 'translation'}
+{'translation': [50794, 56398, 4.2], 'type': 'translation'}
+{'translation': [50794, 48622, 4.2], 'type': 'translation'}
+{'translation': [47554, 43438, 4.2], 'type': 'translation'}
+{'translation': [47554, 40846, 4.2], 'type': 'translation'}
+{'translation': [54034, 53806, 4.2], 'type': 'translation'}
+{'translation': [44314, 48622, 4.2], 'type': 'translation'}
+{'translation': [44314, 43438, 4.2], 'type': 'translation'}
+{'translation': [47554, 46030, 4.2], 'type': 'translation'}
+{'translation': [47554, 56398, 4.2], 'type': 'translation'}
+{'translation': [50794, 53806, 4.2], 'type': 'translation'}
+{'translation': [54034, 43438, 4.2], 'type': 'translation'}
+{'translation': [44314, 40846, 4.2], 'type': 'translation'}
+{'translation': [50794, 43438, 4.2], 'type': 'translation'}
+{'translation': [54034, 56398, 4.2], 'type': 'translation'}
+{'translation': [44314, 56398, 4.2], 'type': 'translation'}
+{'scale': [1.8, 1.8, 2], 'type': 'scale'}
+{'translation': [44314, 46030, 4.2], 'type': 'translation'}
+{'translation': [44314, 51214, 4.2], 'type': 'translation'}
+{'translation': [50794, 51214, 4.2], 'type': 'translation'}
+{'translation': [50794, 40846, 4.2], 'type': 'translation'}
+{'translation': [47554, 48622, 4.2], 'type': 'translation'}","I'll help you retrieve the coordinate transformations for the tiles in the specified asset. Based on the schema, I'll construct an aggregation pipeline to unwind the tiles and extract their coordinate transformations.
+
+```python
+[
+    {""$match"": {""name"": ""SmartSPIM_675387_2023-05-23_23-05-56""}},
+    {""$unwind"": ""$acquisition.tiles""},
+    {""$project"": {
+        ""tile_name"": ""$acquisition.tiles.name"",
+        ""coordinate_transformations"": ""$acquisition.tiles.coordinate_transformations""
+    }}
+]
+```
+
+This pipeline will:
+1. Match the specific asset by name
+2. Unwind the tiles array
+3. Project only the tile name and its coordinate transformations
+
+Would you like me to explain the specific details you're interested in about these coordinate transformations?","{'filter': {'name': 'SmartSPIM_675387_2023-05-23_23-05-56'}, 'projection': {'acquisition.tiles.coordinate_transformations': 1}}",11.118502616882324,CORRECT,1.0,INCORRECT,0.0
+"for the thalamus in the middle project, what brain structures are data collected from?","{""filter"":{""data_description.project_name"":""Thalamus in the middle""},""projection"":{""data_description.project_name"":1,""procedures.subject_procedures.procedures.targeted_structure"":1}}","Brain structures data was collected from:
+[
+   {
+      ""brain_structure"": ""VM""
+   },
+   {
+      ""brain_structure"": ""aPVT""
+   },
+   {
+      ""brain_structure"": ""pPVT""
+   },
+   {
+      ""brain_structure"": ""c. ALM""
+   },
+   {
+      ""brain_structure"": ""mPFC""
+   },
+   {
+      ""brain_structure"": ""PVT""
+   },
+   {
+      ""brain_structure"": ""ALM""
+   },
+   {
+      ""brain_structure"": ""Isocortex""
+   },
+   {
+      ""brain_structure"": ""c. mPFC""
+   },
+   {
+      ""brain_structure"": null
+   },
+   {
+      ""brain_structure"": ""IL""
+   }
+]
+","I'll create an aggregation pipeline to find unique brain structures across thalamic data assets:
+
+```python
+[
+    {""$match"": {
+        ""data_description.data_summary"": {""$regex"": ""thalamus"", ""$options"": ""i""},
+        ""rig.modalities"": {""$elemMatch"": {""name"": ""Planar optical physiology""}}
+    }},
+    {""$unwind"": ""$session.data_streams""},
+    {""$unwind"": ""$session.data_streams.stack_parameters.channels""},
+    {""$match"": {
+        ""session.data_streams.stack_parameters.channels.targeted_structure"": {""$exists"": true}
+    }},
+    {""$group"": {
+        ""_id"": ""$session.data_streams.stack_parameters.channels.targeted_structure""
+    }},
+    {""$project"": {
+        ""structure"": ""$_id"",
+        ""_id"": 0
+    }}
+]
+```
+
+Would you like me to execute this query to find the specific brain structures?","{'agg_pipeline': [{'$match': {'data_description.project_name': {'$regex': 'Thalamus in the middle', '$options': 'i'}}}, {'$project': {'_id': 1, 'name': 1, 'data_description.project_name': 1, 'procedures.subject_procedures.procedures.targeted_structure': 1}}]}",15.755298852920532,CORRECT,1.0,INCORRECT,0.0
+"generate a query i can use to find the number of animals in the thalamus in the middle project who received injections in the following coordinate: AP: 2.8, ML: 0.2, DV: 0.6?","agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.project_name"": ""Thalamus in the middle"",
+            ""procedures.subject_procedures.procedures.injection_coordinate_ap"": ""2.8"",
+            ""procedures.subject_procedures.procedures.injection_coordinate_ml"": ""0.2"", 
+            ""procedures.subject_procedures.procedures.injection_coordinate_depth"": ""0.6""
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$procedures.subject_id"", 
+            ""count"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$count"": ""total_unique_animals""
+    }
+]","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.project_name"": ""Thalamus in the middle"",
+            ""procedures.subject_procedures.procedures.injection_coordinate_ap"": ""2.8"",
+            ""procedures.subject_procedures.procedures.injection_coordinate_ml"": ""0.2"", 
+            ""procedures.subject_procedures.procedures.injection_coordinate_depth"": ""0.6""
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$procedures.subject_id"", 
+            ""count"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$count"": ""total_unique_animals""
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+print(json.dumps(result, indent=2))",Error: list index out of range,Error: list index out of range,15.755298852920532,ERROR,0.0,ERROR,0.0
+determine the unique genotypes used in the Brain Computer Interface project,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$regex"":""Brain Computer Interface"",""$options"":""i""}}},{""$group"":{""_id"":""$subject.genotype""}},{""$project"":{""genotype"":""$_id"",""_id"":0}}]}","There are 12 unique genotypes. These are the genotypes: 
+Emx1-IRES-Cre/wt;Camk2a-tTA/wt;Ai94(TITL-GCaMP6s)/wt
+Camk2a-tTA/wt;tetO-GCaMP6s/wt
+wt/wt
+Slc17a6-IRES-Cre/wt;Ai230(TIT2L-XCaMPG-WPRE-ICL-ChRmine-oScarlet-IRES2-tTA2-WPRE)-hyg/wt
+Camk2a-tTA/wt;TetO-jGCaMP8s-01/wt
+Slc17a7-IRES2-Cre/wt;Ai228(TIT2L-GC6m-WPRE-ICL-ChRmine-oScarlet-WPRE-ICL-IRES-tTA2-WPRE)-hyg/wt
+Oi8(H11-CAG-Cas9)/Oi8(H11-CAG-Cas9)
+Dbh-Cre-KI/wt;Thy1-jRGECO1a-WPRE/wt
+None
+Slc17a7-IRES2-Cre/wt;Camk2a-tTA/wt;Ai94(TITL-GCaMP6s)/wt
+Camk2a-CreERT2/wt;Ai228(TIT2L-GC6m-WPRE-ICL-ChRmine-oScarlet-WPRE-ICL-IRES-tTA2-WPRE)-hyg/wt
+Dbh-Cre-KI/wt","I'll help you find the unique genotypes used in the Brain Computer Interface (BCI) project. I'll use a MongoDB aggregation pipeline to extract and analyze the unique genotypes from the dataset.
+
+```python
+[
+    {
+        ""$match"": {
+            ""session.session_type"": ""BCI""
+        }
+    },
+    {
+        ""$project"": {
+            ""genotype"": ""$subject.genotype""
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$genotype"",
+            ""count"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$sort"": {""count"": -1}
+    }
+]
+```
+
+This pipeline will:
+1. Match only BCI session records
+2. Project only the genotype
+3. Group and count unique genotypes
+4. Sort by count in descending order
+
+The result in this specific dataset shows a single unique genotype:
+""Emx1-IRES-Cre/wt;Camk2a-tTA/wt;Ai94(TITL-GCaMP6s)/wt""
+
+This genotype suggests a transgenic mouse line with:
+- Emx1-IRES-Cre (heterozygous)
+- Camk2a-tTA (heterozygous)
+- Ai94(TITL-GCaMP6s) (heterozygous)
+
+Likely designed for conditional GCaMP6s expression in specific neuronal populations.","{'agg_pipeline': [{'$match': {'data_description.project_name': {'$regex': 'Brain Computer Interface', '$options': 'i'}}}, {'$group': {'_id': '$subject.genotype', 'count': {'$sum': 1}}}, {'$sort': {'count': -1}}]}",15.34641170501709,CORRECT,1.0,INCORRECT,0.0
+what are the unique viruses in the brain computer interface project?,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$regex"":""Brain Computer Interface"",""$options"":""i""}}},{""$match"":{""procedures.subject_procedures"":{""$exists"":true,""$ne"":[]}}},{""$unwind"":""$procedures.subject_procedures""},{""$unwind"":""$procedures.subject_procedures.procedures""},{""$match"":{""procedures.subject_procedures.procedures.injection_materials"":{""$exists"":true,""$ne"":[]}}},{""$unwind"":""$procedures.subject_procedures.procedures.injection_materials""},{""$match"":{""procedures.subject_procedures.procedures.injection_materials.material_type"":""Virus""}},{""$group"":{""_id"":""$procedures.subject_procedures.procedures.injection_materials.name""}},{""$project"":{""virus_name"":""$_id"",""_id"":0}}]}","Here are the unique viruses: 
+AiP32125
+CamKIIa_ChrimsonR_FusionRed_Kv2.1
+VIR32066_PHPeB
+VIR32098_PHPeB
+VT5417G
+it's not in the database yet..
+pAAV-CaMKIIa-ChRmine-oScarlet-Kv2.1-WPRE - 7413
+pAAV-hSyn-RiboL1-jGCaMP8s-WPRE
+pAAV-hSyn1-RiboL1-GCaMP8s-WPRE","I'll create an aggregation pipeline to extract unique viruses from the procedures section, focusing specifically on the virus names used in injection procedures:
+
+```python
+[
+    {""$unwind"": ""$procedures.subject_procedures""},
+    {""$unwind"": ""$procedures.subject_procedures.procedures""},
+    {""$match"": {
+        ""procedures.subject_procedures.procedures.procedure_type"": ""Nanoject injection"",
+        ""procedures.subject_procedures.procedures.injection_materials.material_type"": ""Virus""
+    }},
+    {""$project"": {
+        ""virus_name"": ""$procedures.subject_procedures.procedures.injection_materials.name""
+    }},
+    {""$unwind"": ""$virus_name""},
+    {""$group"": {
+        ""_id"": ""$virus_name""
+    }},
+    {""$project"": {
+        ""_id"": 1
+    }}
+]
+```
+
+This pipeline will extract unique virus names used in Nanoject injection procedures for this brain computer interface project.
+
+Based on the specific data asset you've shown, there is only one unique virus:
+
+""CamKIIa_ChrimsonR_FusionRed_Kv2.1""
+
+The key details about this virus are:
+- Used in multiple injections at different coordinates
+- Titer: 1,800,000,000,000 gc/mL
+- Injected across multiple brain locations in the motor cortex (MOp)
+
+Would you like me to elaborate on any specific aspect of this virus usage?","{'agg_pipeline': [{'$match': {'data_description.project_name': {'$regex': 'brain computer interface', '$options': 'i'}}}, {'$unwind': {'path': '$procedures.subject_procedures', 'preserveNullAndEmptyArrays': False}}, {'$unwind': {'path': '$procedures.subject_procedures.procedures', 'preserveNullAndEmptyArrays': False}}, {'$unwind': {'path': '$procedures.subject_procedures.procedures.injection_materials', 'preserveNullAndEmptyArrays': False}}, {'$match': {'procedures.subject_procedures.procedures.injection_materials.material_type': 'Virus'}}, {'$group': {'_id': '$procedures.subject_procedures.procedures.injection_materials.name', 'count': {'$sum': 1}}}, {'$sort': {'_id': 1}}]}",20.68790054321289,CORRECT,1.0,INCORRECT,0.0
+" list the subject ids, and virus names for mice in the ""Thalamus in the middle"" project that had injections in VM","{""agg_pipeline"":[{""$match"":{""data_description.project_name"":""Thalamus in the middle"",""procedures.subject_procedures"":{""$elemMatch"":{""procedures"":{""$elemMatch"":{""targeted_structure"":""VM""}}}}}},{""$project"":{""subject_id"":""$subject.subject_id"",""procedures"":""$procedures.subject_procedures""}}]}","Subject ID: 658207
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 658208
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 658209
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 658207
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 673394
+Virus Names:
+- ['SL1-hSyn-Cre', 'FluoSphere (Dark Red)']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 666941
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 662616
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 662616
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 666941
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 668125
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 668126
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 661792
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 661792
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 661790
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 662585
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 662585
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 662616
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 662616
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 669120
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 669120
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 656374
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 669121
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 669121
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 658208
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 673394
+Virus Names:
+- ['SL1-hSyn-Cre', 'FluoSphere (Dark Red)']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 673393
+Virus Names:
+- ['SL1-hSyn-Cre', 'FluoSphere (Dark Red)']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 652504
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 654095
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 652504
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 652505
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---","I'll help you construct a MongoDB aggregation pipeline to retrieve subject IDs and virus names for mice in the ""Thalamus in the middle"" project with injections in the VM (Ventral Medial) region.
+
+```python
+[
+    # Stage 1: Match the specific project
+    {""$match"": {
+        ""data_description.project_name"": ""Thalamus in the middle""
+    }},
+    
+    # Stage 2: Unwind procedures to access individual procedures
+    {""$unwind"": ""$procedures.subject_procedures""},
+    
+    # Stage 3: Match procedures with VM injections
+    {""$match"": {
+        ""procedures.subject_procedures.procedures.injection_coordinate_ml"": {""$exists"": true},
+        ""procedures.subject_procedures.procedures.targeted_structure"": {""$regex"": ""VM"", ""$options"": ""i""}
+    }},
+    
+    # Stage 4: Project only the required fields
+    {""$project"": {
+        ""subject_id"": ""$subject.subject_id"",
+        ""virus_names"": {
+            ""$map"": {
+                ""input"": ""$procedures.subject_procedures.procedures"",
+                ""as"": ""proc"",
+                ""in"": {
+                    ""$cond"": [
+                        {""$eq"": [{""$type"": ""$$proc.injection_materials""}, ""array""]},
+                        {""$map"": {
+                            ""input"": ""$$proc.injection_materials"",
+                            ""as"": ""mat"",
+                            ""in"": ""$$mat.name""
+                        }},
+                        null
+                    ]
+                }
+            }
+        }
+    }},
+    
+    # Stage 5: Remove empty entries
+    {""$match"": {
+        ""virus_names"": {""$ne"": [null]}
+    }},
+    
+    # Stage 6: Optional: Flatten virus names
+    {""$project"": {
+        ""subject_id"": 1,
+        ""virus_names"": {""$reduce"": {
+            ""input"": ""$virus_names"",
+            ""initialValue"": [],
+            ""in"": {""$setUnion"": [""$$value"", ""$$this""]}
+        }}
+    }}
+]
+```
+
+This pipeline will:
+1. Find data assets in the ""Thalamus in the middle"" project
+2. Unwind procedures to examine individual subject procedures
+3. Filter for procedures targeting VM
+4. Extract subject ID and virus names
+5. Remove entries without virus names
+6. Flatten virus names to ensure unique entries
+
+Would you like me to explain any part of the pipeline in more detail?","{'agg_pipeline': [{'$match': {'data_description.project_name': {'$regex': 'Thalamus in the middle', '$options': 'i'}, 'procedures.subject_procedures': {'$elemMatch': {'procedures': {'$elemMatch': {'targeted_structure': {'$regex': 'VM', '$options': 'i'}}}}}}}, {'$project': {'subject_id': '$subject.subject_id', 'procedures': '$procedures.subject_procedures'}}]}",21.483076095581055,CORRECT,1.0,CORRECT,1.0
+"Which experimenter who conducted the most sessions in the past 6 months, given that the date is 3/31/25?","{""agg_pipeline"":[{""$match"":{""$or"":[{""session.session_start_time"":{""$gte"":""2024-10-01T00:00:00"",""$lte"":""2025-03-31T23:59:59""}},{""acquisition.session_start_time"":{""$gte"":""2024-10-01T00:00:00"",""$lte"":""2025-03-31T23:59:59""}}]}},{""$project"":{""experimenter"":{""$cond"":{""if"":{""$isArray"":""$session.experimenter_full_name""},""then"":""$session.experimenter_full_name"",""else"":{""$cond"":{""if"":{""$isArray"":""$acquisition.experimenter_full_name""},""then"":""$acquisition.experimenter_full_name"",""else"":[]}}}}}},{""$unwind"":""$experimenter""},{""$group"":{""_id"":""$experimenter"",""count"":{""$sum"":1}}},{""$sort"":{""count"":-1}},{""$limit"":1}]}",Bowen Tan,"I'll help you find the experimenter who conducted the most sessions in the past 6 months, with the reference date of 3/31/25. Here's a MongoDB aggregation pipeline to solve this:
+
+```python
+[
+    {
+        '$match': {
+            'session.session_start_time': {
+                '$gte': '2024-09-30T00:00:00',
+                '$lte': '2025-03-31T23:59:59'
+            }
+        }
+    },
+    {
+        '$unwind': '$session.experimenter_full_name'
+    },
+    {
+        '$group': {
+            '_id': '$session.experimenter_full_name',
+            'session_count': {'$sum': 1}
+        }
+    },
+    {
+        '$sort': {'session_count': -1}
+    },
+    {
+        '$limit': 1
+    }
+]
+```
+
+Key points in this pipeline:
+- Matches sessions between 9/30/24 and 3/31/25
+- Unwinds experimenter names in case of multiple experimenters
+- Groups and counts sessions per experimenter
+- Sorts in descending order
+- Limits to top result","{'agg_pipeline': [{'$match': {'$or': [{'session.session_start_time': {'$gte': '2024-10-01T00:00:00', '$lte': '2025-03-31T23:59:59'}}, {'acquisition.session_start_time': {'$gte': '2024-10-01T00:00:00', '$lte': '2025-03-31T23:59:59'}}]}}, {'$project': {'experimenter': {'$cond': [{'$ifNull': ['$session.experimenter_full_name', False]}, '$session.experimenter_full_name', '$acquisition.experimenter_full_name']}}}, {'$unwind': {'path': '$experimenter', 'preserveNullAndEmptyArrays': False}}, {'$group': {'_id': '$experimenter', 'session_count': {'$sum': 1}}}, {'$sort': {'session_count': -1}}, {'$limit': 10}]}",21.05277681350708,INCORRECT,0.0,CORRECT,1.0
+Give me a timeline of Data Acquisition Streams for single-plane-ophys_621025_2022-07-05_17-48-34,"{""filter"":{""name"":""single-plane-ophys_621025_2022-07-05_17-48-34""},""projection"":{""session.data_streams"":1,""name"":1}}","Stream 1:
+Start Time: 2022-07-05T16:45:38.865000-07:00
+End Time: 2022-07-05T16:46:40.913314-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:stack
+
+Stream 2:
+Start Time: 2022-07-05T17:48:34.118000-07:00
+End Time: 2022-07-05T17:49:37.048710-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:stackpost
+
+Stream 3:
+Start Time: 2022-07-05T17:43:34.002000-07:00
+End Time: 2022-07-05T17:43:56.011630-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:spontPost
+
+Stream 4:
+Start Time: 2022-07-05T17:44:09.611000-07:00
+End Time: 2022-07-05T17:48:02.349575-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:spontPost_again
+
+Stream 5:
+Start Time: 2022-07-05T16:49:55.924999-07:00
+End Time: 2022-07-05T16:50:51.417821-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:spont
+
+Stream 6:
+Start Time: 2022-07-05T16:53:21.731999-07:00
+End Time: 2022-07-05T16:57:17.360622-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:spont_again
+
+Stream 7:
+Start Time: 2022-07-05T16:57:53.490999-07:00
+End Time: 2022-07-05T17:15:04.813925-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology', 'Behavior', 'Behavior videos']
+Notes: tiff_stem:Neuron1
+
+Stream 8:
+Start Time: 2022-07-05T17:17:57.798000-07:00
+End Time: 2022-07-05T17:43:09.523928-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:_slm2","I'll create a chronological timeline of the data acquisition streams for this dataset:
+
+1. Stream at 16:49:55 - 16:50:51 (56 sec)
+   - Modality: Planar optical physiology
+   - Tiff Stem: ""spont""
+   - Notes: Spontaneous activity recording
+
+2. Stream at 16:53:21 - 16:57:17 (3 min 56 sec)
+   - Modality: Planar optical physiology
+   - Tiff Stem: ""spont_again""
+   - Notes: Another spontaneous activity recording
+
+3. Stream at 16:57:53 - 17:15:04 (17 min 11 sec)
+   - Modalities: 
+     * Planar optical physiology
+     * Behavior
+     * Behavior videos
+   - Tiff Stem: ""Neuron1""
+   - Notes: Single neuron BCI conditioning
+   - Details: 
+     * Total trials: 76
+     * Total hits: 57
+     * Average hit rate: 0.75
+
+4. Stream at 17:17:57 - 17:43:09 (25 min 12 sec)
+   - Modality: Planar optical physiology
+   - Tiff Stem: ""_slm2""
+   - Notes: 2p photostimulation
+   - Stimulus Details:
+     * 100 neuron groups stimulated
+     * Laser power: 20%
+     * Each group had 10-32 trials
+     * 10 spirals per trial
+
+5. Stream at 17:43:34 - 17:43:56 (22 sec)
+   - Modality: Planar optical physiology
+   - Tiff Stem: ""spontPost""
+   - Notes: Spontaneous activity recording
+
+6. Stream at 17:44:09 - 17:48:02 (3 min 53 sec)
+   - Modality: Planar optical physiology
+   - Tiff Stem: ""spontPost_again""
+   - Notes: Another spontaneous activity recording
+
+7. Stream at 17:48:34 - 17:49:37 (1 min 3 sec)
+   - Modality: Planar optical physiology
+   - Tiff Stem: ""stackpost""
+   - Notes: Final recording of the session","{'filter': {'name': 'single-plane-ophys_621025_2022-07-05_17-48-34'}, 'projection': {'session.data_streams': 1, 'session.session_start_time': 1, 'session.session_end_time': 1}}",15.76089596748352,CORRECT,1.0,INCORRECT,0.0
+return the count of how many subjects had sessions that contained both optical physiology and behavior data streams,"{""agg_pipeline"":[{""$match"":{""data_description.modality"":{""$exists"":true}}},{""$project"":{""subject_id"":""$data_description.subject_id"",""modalities"":""$data_description.modality.name""}},{""$match"":{""subject_id"":{""$exists"":true,""$ne"":null}}},{""$group"":{""_id"":""$subject_id"",""modalities"":{""$addToSet"":""$modalities""}}},{""$match"":{""modalities"":{""$all"":[{""$elemMatch"":{""$regex"":""optical physiology"",""$options"":""i""}},{""$elemMatch"":{""$regex"":""behavior"",""$options"":""i""}}]}}},{""$project"":{""_id"":0,""subject_id"":""$_id"",""modalities"":1}},{""$limit"":50}]}",There are 101 subjects that match the criteria.,"I'll create an aggregation pipeline to count subjects with sessions containing both optical physiology and behavior data streams. Here's the query:
+
+```python
+[
+    {""$unwind"": ""$session.data_streams""},
+    {""$match"": {
+        ""session.data_streams.stream_modalities"": {
+            ""$elemMatch"": {""abbreviation"": ""ophys""}
+        }
+    }},
+    {""$match"": {
+        ""session.data_streams.stream_modalities"": {
+            ""$elemMatch"": {""abbreviation"": ""behavior""}
+        }
+    }},
+    {""$group"": {""_id"": ""$subject.subject_id""}},
+    {""$count"": ""subject_count""}
+]
+```
+
+This pipeline does the following:
+1. Unwind the data_streams array
+2. First match ensures the stream includes optical physiology
+3. Second match ensures the same stream includes behavior
+4. Group by subject ID to get unique subjects
+5. Count the number of unique subjects
+
+The result will give the total count of subjects with sessions that contained both optical physiology and behavior data streams.","{'filter': {'session': {'$exists': True}, 'session.data_streams': {'$exists': True}}, 'projection': {'_id': 1, 'subject.subject_id': 1, 'name': 1}}",101.5421233177185,INCORRECT,0.0,INCORRECT,0.0
+What is the genotype for subject 675387?,"{
+""filter"":{
+""subject.subject_id"":""675387""
+}
+""projection"":{
+""subject.genotype"":1
+}
+}",The genotype for subject 675387 is wt/wt,Error: list index out of range,Error: list index out of range,101.5421233177185,ERROR,0.0,ERROR,0.0
+What are all the assets using mouse 744330,"{""filter"":{""subject.subject_id"":""744330""},""projection"":{""name"":1,""_id"":0}}","""""""behavior_744330_2024-09-18_09-19-56_processed_2024-09-25_04-01-44"""", """"behavior_744330_2024-10-09_09-28-02"""", """"behavior_744330_2024-12-05_17-09-52"""", """"behavior_744330_2024-12-04_13-24-28"""", """"behavior_744330_2024-12-02_13-45-51"""", """"behavior_744330_2024-12-03_10-56-30"""", """"behavior_744330_2024-11-13_13-59-24"""", """"behavior_744330_2024-11-21_14-06-34"""", 
+""""behavior_744330_2024-11-25_13-55-30"""", """"behavior_744330_2024-10-04_09-21-04_processed_2025-02-23_03-11-03"""",  """"behavior_744330_2024-09-20_09-07-42_processed_2025-02-23_01-24-27"""", """"behavior_744330_2024-09-16_09-33-31_processed_2025-02-23_00-40-08""""""","I'll construct a MongoDB aggregation pipeline to find all assets associated with subject 744330:
+
+```python
+[
+    {""$match"": {""subject.subject_id"": ""744330""}},
+    {""$project"": {
+        ""name"": 1, 
+        ""data_description.modality.name"": 1,
+        ""data_description.data_level"": 1,
+        ""session.session_type"": 1,
+        ""location"": 1
+    }}
+]
+```
+
+This query will return all data assets for mouse 744330, showing their name, modalities, data level, session type, and storage location.
+
+Would you like me to elaborate on any specific details about these assets?","{'filter': {'subject.subject_id': '744330'}, 'projection': {'_id': 1, 'name': 1, 'data_description.modality': 1}}",11.081582307815552,CORRECT,1.0,INCORRECT,0.0
+Write a MongoDB query to find the genotype of SmartSPIM_675387_2023-05-23_23-05-56,"{
+""filter"":{
+""name"":""SmartSPIM_675387_2023-05-23_23-05-56""
+}
+""projection"":{
+""subject.genotype"":1
+""_id"":0
+}
+}","
+                    <query>{
+                            ""$match"": {""name"":""SmartSPIM_675387_2023-05-23_23-05-56""},
+                            ""$project"": {""_id"": 0, ""genotype"": ""$subject.genotype""}
+                    }</query>
+                    To find the genotype for the experiment with the name ""SmartSPIM_675387_2023-05-23_23-05-56"", the MongoDB query would be:
+                    1. The `$match` stage filters the documents to only include the one with the specified name.
+                    2. The `$project` stage excludes the `_id` field and includes the `genotype` field from the nested `subject` object.
+                    The retrieved output shows that the genotype for this experiment is ""wt/wt"".
+                    ","Here's a MongoDB aggregation pipeline to retrieve the genotype for the specific data asset:
+
+```python
+[
+    {""$match"": {""name"": ""SmartSPIM_675387_2023-05-23_23-05-56""}},
+    {""$project"": {
+        ""subject_genotype"": ""$subject.genotype"",
+        ""_id"": 0
+    }}
+]
+```
+
+This pipeline will:
+1. Match the exact data asset name
+2. Project only the genotype from the subject schema
+3. Exclude the MongoDB _id field
+4. Return just the genotype string","{'filter': {'name': 'SmartSPIM_675387_2023-05-23_23-05-56'}, 'projection': {'subject.genotype': 1}}",10.5303053855896,CORRECT,1.0,INCORRECT,0.0
+What is the genotype for the subject in ecephys_737403_2024-09-27_10-30-18_sorted_2024-11-19_19-28-46?,"{
+""filter"":{
+""name"":""SmartSPIM_675387_2023-05-23_23-05-56""
+}
+""projection"":{
+""subject.genotype"":1
+}
+}",The genotype for the subject in ecephys_737403_2024-09-27_10-30-18_sorted_2024-11-19_19-28-46 is Vip-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt,"I'll help you find the genotype by creating an aggregation pipeline to retrieve the subject's genotype for the specific dataset.
+
+```python
+[
+    {""$match"": {""name"": ""ecephys_737403_2024-09-27_10-30-18_sorted_2024-11-19_19-28-46""}},
+    {""$project"": {""subject_genotype"": ""$subject.genotype""}}
+]
+```
+
+This pipeline will match the exact dataset name and project out just the subject's genotype.","{'filter': {'name': 'ecephys_737403_2024-09-27_10-30-18_sorted_2024-11-19_19-28-46'}, 'projection': {'subject.genotype': 1, 'subject.subject_id': 1}}",10.247635126113892,INCORRECT,0.0,INCORRECT,0.0
+What are the stereotactic coordinates for all fiber implants in asset ophys_661797_2023-02-15_11-19-14?,"{""filter"":{""name"":""ophys_661797_2023-02-15_11-19-14""},""projection"":{""procedures.subject_procedures"":1}}","Based on the provided context, the stereotactic coordinates for the fiber implants in asset ""ophys_661797_2023-02-15_11-19-14"" are:
+
+Probe A:
+
+AP (anterior-posterior): 1.2 mm
+ML (medial-lateral): -1.3 mm (left hemisphere)
+DV (dorsal-ventral): 4.0 mm
+Angle: 0.0 degrees
+Probe B:
+
+AP (anterior-posterior): 1.2 mm
+ML (medial-lateral): 1.3 mm (right hemisphere)
+DV (dorsal-ventral): 4.0 mm
+Angle: 0.0 degrees
+Both fiber implants were placed at the same depth and AP coordinates, but in opposite hemispheres.","I'll help you find the stereotactic coordinates for fiber implants. I'll construct an aggregation pipeline to retrieve this information specifically for the asset you mentioned.
+
+```python
+[
+    {""$match"": {""name"": ""ophys_661797_2023-02-15_11-19-14""}},
+    {""$unwind"": ""$procedures.subject_procedures""},
+    {""$match"": {
+        ""procedures.subject_procedures.procedure_type"": {""$regex"": ""Fiber Implant"", ""$options"": ""i""}
+    }},
+    {""$project"": {
+        ""ml_coordinate"": ""$procedures.subject_procedures.fiber_implant_coordinate_ml"",
+        ""ap_coordinate"": ""$procedures.subject_procedures.fiber_implant_coordinate_ap"",
+        ""depth_coordinate"": ""$procedures.subject_procedures.fiber_implant_coordinate_depth"",
+        ""coordinate_reference"": ""$procedures.subject_procedures.fiber_implant_coordinate_reference"",
+        ""coordinate_unit"": ""$procedures.subject_procedures.fiber_implant_coordinate_unit""
+    }}
+]
+```
+
+This pipeline will:
+1. Match the specific asset
+2. Unwind the subject procedures
+3. Filter for fiber implant procedures
+4. Project the relevant coordinate details
+
+Would you like me to execute this query for you?","{'filter': {'name': 'ophys_661797_2023-02-15_11-19-14'}, 'projection': {'procedures': 1}}",12.544362545013428,INCORRECT,0.0,INCORRECT,0.0
+What percentage of fiber photometry experiments include complementary behavioral data,"{""agg_pipeline"":[{""$match"":{""data_description.modality.name"":{""$regex"":""fiber photometry"",""$options"":""i""}}},{""$project"":{""_id"":1,""name"":1,""has_behavior"":{""$cond"":[{""$or"":[{""$in"":[""Behavior"",""$data_description.modality.name""]},{""$in"":[""Behavior videos"",""$data_description.modality.name""]},{""$in"":[""Trained behavior"",""$data_description.modality.name""]}]},true,false]}}},{""$group"":{""_id"":null,""total_count"":{""$sum"":1},""with_behavior_count"":{""$sum"":{""$cond"":[""$has_behavior"",1,0]}}}},{""$project"":{""_id"":0,""total_count"":1,""with_behavior_count"":1,""percentage"":{""$multiply"":[{""$divide"":[""$with_behavior_count"",""$total_count""]},100]}}}]}","Analysis of the Results:
+
+Total Fiber Photometry Experiments: 2062
+Experiments with Behavioral Data: 1985
+Percentage of Experiments with Behavioral Data: 96.27%","I'll help you calculate this. I'll create an aggregation pipeline that:
+1. Identifies fiber photometry experiments
+2. Checks for presence of behavioral data streams
+3. Calculates the percentage of experiments with behavioral data
+
+```python
+[
+    # Match fiber photometry modality experiments
+    {""$match"": {
+        ""data_description.modality"": {
+            ""$elemMatch"": {
+                ""name"": ""Fiber photometry""
+            }
+        }
+    }},
+    
+    # Unwind session data streams to analyze them
+    {""$unwind"": ""$session.data_streams""},
+    
+    # Check for behavioral modalities
+    {""$match"": {
+        ""session.data_streams.stream_modalities"": {
+            ""$elemMatch"": {
+                ""abbreviation"": {""$in"": [""behavior"", ""behavior-videos""]}
+            }
+        }
+    }},
+    
+    # Group and count total and behavioral experiments
+    {""$group"": {
+        ""_id"": null,
+        ""total_fiber_photometry_experiments"": {""$sum"": 1}
+    }},
+    
+    # Calculate percentage
+    {""$project"": {
+        ""percentage_with_behavioral_data"": {
+            ""$multiply"": [
+                {""$divide"": [""$total_fiber_photometry_experiments"", ""$total_fiber_photometry_experiments""]},
+                100
+            ]
+        }
+    }}
+]
+```
+
+This pipeline will provide the precise percentage of fiber photometry experiments with complementary behavioral data.
+
+Would you like me to explain the methodology or discuss potential variations in the analysis?","{'agg_pipeline': [{'$match': {'data_description.modality.name': 'Fiber photometry'}}, {'$project': {'_id': 1, 'name': 1, 'modalities': '$data_description.modality.name', 'has_behavioral_data': {'$cond': {'if': {'$or': [{'$in': ['Behavior', '$data_description.modality.name']}, {'$in': ['Behavior videos', '$data_description.modality.name']}, {'$in': ['Trained behavior', '$data_description.modality.name']}]}, 'then': True, 'else': False}}}}, {'$group': {'_id': None, 'total': {'$sum': 1}, 'with_behavior': {'$sum': {'$cond': ['$has_behavioral_data', 1, 0]}}}}, {'$project': {'_id': 0, 'total': 1, 'with_behavior': 1, 'percentage': {'$multiply': [{'$divide': ['$with_behavior', '$total']}, 100]}}}]}",28.701215505599976,CORRECT,1.0,INCORRECT,0.0
+Compare the processing durations for assets from the same subject (661797) across different experimental sessions.,"{""filter"":{""subject.subject_id"":""661797"",""processing"":{""$exists"":true}},""projection"":{""_id"":1,""name"":1,""processing"":1}}","Processing Durations for Subject 661797:
+
+Session: HSFP_661797_2023-02-15_11-17-30
+Version: 0.16.2
+Start Time: 2023-05-10 20:46:59.340832+00:00
+End Time: 2023-05-10 20:48:47.913348+00:00
+Duration: 0:01:48.572516
+
+Session: HSFP_661797_2023-02-15_11-19-14
+Version: 0.16.2
+Start Time: 2023-05-10 20:48:50.288500+00:00
+End Time: 2023-05-10 20:52:03.246558+00:00
+Duration: 0:03:12.958058
+
+Session: HSFP_661797_2023-02-15_11-30-14
+Version: 0.16.2
+Start Time: 2023-05-10 20:57:46.472980+00:00
+End Time: 2023-05-10 20:58:00.440152+00:00
+Duration: 0:00:13.967172
+
+Session: ophys_661797_2023-02-15_11-17-30
+Version: 0.14.1
+Start Time: 2023-04-28 22:52:21.482118+00:00
+End Time: 2023-04-28 22:54:11.934957+00:00
+Duration: 0:01:50.452839
+
+Session: ophys_661797_2023-02-15_11-19-14
+Version: 0.14.1
+Start Time: 2023-04-28 22:54:14.586823+00:00
+End Time: 2023-04-28 22:57:37.682176+00:00
+Duration: 0:03:23.095353
+
+Session: ophys_661797_2023-02-15_11-21-35
+Version: 0.14.1
+Start Time: 2023-04-28 22:57:40.368245+00:00
+End Time: 2023-04-28 23:04:43.812168+00:00
+Duration: 0:07:03.443923
+
+Session: ophys_661797_2023-02-15_11-30-14
+Version: 0.14.1
+Start Time: 2023-04-28 23:04:47.088237+00:00
+End Time: 2023-04-28 23:05:01.978967+00:00
+Duration: 0:00:14.890730","I'll help you compare the processing durations for assets from subject 661797 across different experimental sessions. Here's an aggregation pipeline to extract this information:
+
+```python
+[
+    {""$match"": {
+        ""data_description.subject_id"": ""661797"",
+        ""procedures.subject_procedures"": {""$exists"": True}
+    }},
+    {""$unwind"": ""$session.stimulus_epochs""},
+    {""$project"": {
+        ""name"": ""$name"",
+        ""session_start_time"": ""$session.session_start_time"",
+        ""session_type"": ""$session.session_type"",
+        ""stimulus_name"": ""$session.stimulus_epochs.stimulus_name"",
+        ""start_time"": ""$session.stimulus_epochs.stimulus_start_time"", 
+        ""end_time"": ""$session.stimulus_epochs.stimulus_end_time"",
+        ""duration"": {
+            ""$subtract"": [
+                {""$dateFromString"": {""dateString"": ""$session.stimulus_epochs.stimulus_end_time""}},
+                {""$dateFromString"": {""dateString"": ""$session.stimulus_epochs.stimulus_start_time""}}
+            ]
+        }
+    }},
+    {""$match"": {
+        ""duration"": {""$exists"": True, ""$ne"": null}
+    }},
+    {""$group"": {
+        ""_id"": {
+            ""stimulus_name"": ""$stimulus_name"", 
+            ""session_type"": ""$session_type""
+        },
+        ""total_duration"": {""$sum"": ""$duration""},
+        ""avg_duration"": {""$avg"": ""$duration""},
+        ""min_duration"": {""$min"": ""$duration""},
+        ""max_duration"": {""$max"": ""$duration""},
+        ""num_sessions"": {""$sum"": 1}
+    }},
+    {""$sort"": {""total_duration"": -1}}
+]
+```
+
+This pipeline will:
+1. Match assets for subject 661797
+2. Unwind stimulus epochs
+3. Calculate duration of each stimulus epoch
+4. Group by stimulus name and session type
+5. Compute total, average, min, and max durations
+6. Sort by total duration descending
+
+Would you like me to explain the results or modify the query?","{'filter': {'subject.subject_id': '661797'}, 'projection': {'name': 1, 'acquisition.session_start_time': 1, 'acquisition.session_end_time': 1}}",12.886081218719482,INCORRECT,0.0,INCORRECT,0.0
+How many records are stored in the database?,"{""agg_pipeline"":[{""$count"":""total_records""}]}","There are 15,000 records found in the database.
+","[{""$count"": ""total_records""}]","{'filter': {}, 'projection': {'_id': 1}}",6.419578313827515,INCORRECT,0.0,CORRECT,1.0
+How many assets have injections in the isocortex,"{""agg_pipeline"":[{""$match"":{""procedures.subject_procedures"":{""$elemMatch"":{""procedures"":{""$elemMatch"":{""targeted_structure"":{""$regex"":""isocortex"",""$options"":""i""}}}}}}},{""$count"":""total""}]}",There are 111 assets that have injections in the isocortex,"I'll help you count the number of assets with injections in the isocortex. I'll create an aggregation pipeline that looks specifically for procedures with injection coordinates in the isocortex region.
+
+```python
+[
+    {""$unwind"": ""$procedures.subject_procedures""},
+    {""$unwind"": ""$procedures.subject_procedures.procedures""},
+    {""$match"": {
+        ""procedures.subject_procedures.procedures.procedure_type"": ""Nanoject injection"",
+        ""procedures.subject_procedures.procedures.targeted_structure"": {""$regex"": ""isocortex"", ""$options"": ""i""}
+    }},
+    {""$count"": ""isocortex_injection_count""}
+]
+```
+
+This pipeline will:
+1. Unwind the subject procedures
+2. Unwind the specific procedures within those subject procedures
+3. Match procedures that are:
+   - Nanoject injections
+   - Targeted to the isocortex (case-insensitive)
+4. Count the number of matching assets
+
+Would you like me to execute this query?","{'agg_pipeline': [{'$match': {'procedures.subject_procedures': {'$elemMatch': {'procedures': {'$elemMatch': {'targeted_structure': {'$regex': 'isocortex', '$options': 'i'}}}}}}}, {'$count': 'count'}]}",18.25360941886902,CORRECT,1.0,INCORRECT,0.0
+What are the unique modalities found in the database?,"{""agg_pipeline"":[{""$project"":{""modality"":""$data_description.modality.name""}},{""$unwind"":{""path"":""$modality"",""preserveNullAndEmptyArrays"":true}},{""$group"":{""_id"":""$modality""}},{""$sort"":{""_id"":1}}]}","""The unique modalities in the database are Behavior
+Behavior videos
+Dual inverted selective plane illumination microscopy
+Electrophysiology
+Extracellular electrophysiology
+Fiber photometry
+Hyperspectral fiber photometry
+Planar optical physiology
+Selective plane illumination microscopy
+Trained behavior""","I'll help you find the unique modalities in the database. To do this, I'll use an aggregation pipeline with the following steps:
+1. Unwind the modalities array
+2. Group and collect unique modality names
+
+```python
+[
+    {""$unwind"": ""$data_description.modality""},
+    {""$group"": {
+        ""_id"": ""$data_description.modality.name"",
+        ""count"": {""$sum"": 1}
+    }},
+    {""$sort"": {""count"": -1}}
+]
+```
+
+This pipeline will:
+- Break apart the modality array
+- Group by unique modality names
+- Count occurrences
+- Sort in descending order of frequency
+
+The result will give you a list of unique modalities across all data assets, along with their frequency in the database.","{'agg_pipeline': [{'$project': {'modality': '$data_description.modality.name'}}, {'$unwind': {'path': '$modality', 'preserveNullAndEmptyArrays': True}}, {'$group': {'_id': '$modality'}}, {'$sort': {'_id': 1}}]}",13.31931757926941,CORRECT,1.0,INCORRECT,0.0
+Which channels were imaged in asset SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06?,"{""filter"":{""name"":""SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06""},""projection"":{""acquisition.tiles.channel"":1}}","The channels imaged in the asset are 488 nm, 561 nm, and 639 nm.","I'll help you find the channels for this specific asset. Here's an aggregation pipeline to retrieve the channel information:
+
+```python
+[
+    {""$match"": {""name"": ""SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06""}},
+    {""$unwind"": ""$session.data_streams""},
+    {""$project"": {
+        ""channels"": ""$session.data_streams.stack_parameters.channels.channel_name"",
+        ""_id"": 0
+    }}
+]
+```
+
+This pipeline will:
+1. Match the specific asset by name
+2. Unwind the data_streams to handle multiple streams
+3. Project only the channel names
+
+Would you like me to retrieve the full channel details, including metadata like excitation wavelength and detector names?","{'filter': {'name': 'SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06'}, 'projection': {'acquisition.tiles.channel': 1}}",13.67184829711914,CORRECT,1.0,INCORRECT,0.0
+What is the total duration of the imaging session for the subject in SmartSPIM_675387_2023-05-23_23-05-56,"{""filter"":{""name"":""SmartSPIM_675387_2023-05-23_23-05-56""},""projection"":{""acquisition.session_start_time"":1,""acquisition.session_end_time"":1}}",The total duration of the imaging session for the subject in SmartSPIM_675387_2023-05-23_23-05-56 was approximately 5 hours and 4 minutes. This can be calculated from the session_start_time of 2023-05-23T23:05:56 and the session_end_time of 2023-05-24T04:10:10 provided in the context.,"To calculate the total duration of the imaging session, I'll need to aggregate the time between session start and end times. I'll break down the steps to retrieve this information:
+
+[
+    {
+        ""$match"": {
+            ""name"": ""SmartSPIM_675387_2023-05-23_23-05-56""
+        }
+    },
+    {
+        ""$project"": {
+            ""session_start_time"": ""$session.session_start_time"",
+            ""session_end_time"": ""$session.session_end_time""
+        }
+    }
+]
+
+This aggregation pipeline will retrieve the start and end times. The total duration will be the difference between these times.","{'filter': {'name': 'SmartSPIM_675387_2023-05-23_23-05-56'}, 'projection': {'acquisition.session_start_time': 1, 'acquisition.session_end_time': 1}}",9.001822233200073,CORRECT,1.0,CORRECT,1.0
+What was the refractive index of the chamber immersion medium used in this experiment SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06?,"{""filter"":{""name"":""SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06""},""projection"":{""acquisition.chamber_immersion.refractive_index"":1}}","The refractive index of the chamber immersion medium used in the experiment SmartSPIM_675387_2023-05-23_23-05-56 was 1.558, the medium was Ethyl cinnamate.","I apologize, but the example data asset you previously shared does not correspond to the specific dataset ""SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06"" that you're asking about. Without access to the actual metadata for that specific dataset, I cannot confidently provide the refractive index of the chamber immersion medium. 
+
+To accurately retrieve this information, I would need to see the specific metadata for that data asset, particularly the details in the acquisition or instrument sections which might contain immersion medium details.","{'filter': {'name': 'SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06'}, 'projection': {'acquisition.chamber_immersion': 1}}",9.514197826385498,INCORRECT,0.0,INCORRECT,0.0
+"Can you list all the procedures performed on the specimen, including their start and end dates? in SmartSPIM_662616_2023-03-06_17-47-13","{""filter"":{""name"":""SmartSPIM_662616_2023-03-06_17-47-13""},""projection"":{""procedures.specimen_procedures"":1}}","Subject procedures: 1. Surgery on 2023-01-25 with virus injections, 2. Surgery on 2023-01-25 with virus injection, Specimen procedures:1. Fixation (SHIELD OFF) from 2023-02-10 to 2023-02-122. Fixation (SHIELD ON) from 2023-02-12 to 2023-02-133. Delipidation (24h Delipidation) from 2023-02-15 to 2023-02-16  4. Delipidation (Active Delipidation) from 2023-02-16 to 2023-02-185. Refractive index matching (50% EasyIndex) from 2023-02-19 to 2023-02-206. Refractive index matching (100% EasyIndex) from 2023-02-20 to 2023-02-21, Imaging procedure: 1. SmartSPIM imaging session from 2023-03-06T17:47:13 to 2023-03-06T22:59:16","I'll help you retrieve the procedures for the specified dataset. I'll create an aggregation pipeline to unwind and extract procedure details from the specimen_procedures and subject_procedures arrays.
+
+```python
+[
+    {""$match"": {""name"": ""SmartSPIM_662616_2023-03-06_17-47-13""}},
+    {""$unwind"": {""path"": ""$procedures.specimen_procedures"", ""preserveNullAndEmptyArrays"": True}},
+    {""$unwind"": {""path"": ""$procedures.subject_procedures"", ""preserveNullAndEmptyArrays"": True}},
+    {""$project"": {
+        ""procedure_type"": {
+            ""$ifNull"": [
+                ""$procedures.specimen_procedures.procedure_type"", 
+                ""$procedures.subject_procedures.procedure_type""
+            ]
+        },
+        ""start_date"": {
+            ""$ifNull"": [
+                ""$procedures.specimen_procedures.start_date"", 
+                ""$procedures.subject_procedures.start_date""
+            ]
+        },
+        ""end_date"": {
+            ""$ifNull"": [
+                ""$procedures.specimen_procedures.end_date"", 
+                ""$procedures.subject_procedures.end_date""
+            ]
+        },
+        ""additional_details"": {
+            ""$ifNull"": [
+                ""$procedures.specimen_procedures"", 
+                ""$procedures.subject_procedures""
+            ]
+        }
+    }},
+    {""$match"": {""procedure_type"": {""$ne"": null}}},
+    {""$project"": {
+        ""procedure_type"": 1,
+        ""start_date"": 1,
+        ""end_date"": 1,
+        ""details"": ""$additional_details""
+    }}
+]
+```
+
+Would you like me to explain the key aspects of this query, or shall I proceed with retrieving the results?","{'filter': {'name': 'SmartSPIM_662616_2023-03-06_17-47-13'}, 'projection': {'procedures.specimen_procedures': 1}}",15.692004919052124,CORRECT,1.0,INCORRECT,0.0
+For the thalamus in the middle project what were the genotypes used,"{
+""filter"":{
+""data_description.project_name"":""Thalamus in the middle""
+}
+""projection"":{
+""subject.genotype"":1
+""name"":1
+}
+}","Genotypes used:
+[
+  {
+    ""genotype"": ""Slc32a1-IRES-Cre/wt""
+  },
+  {
+    ""genotype"": ""wt/wt ""
+  },
+  {
+    ""genotype"": ""Ai224(TICL-NLS-EGFP-ICF-NLS-dT)-hyg/wt""
+  },
+  {
+    ""genotype"": ""RCL-H2B-GFP/wt""
+  },
+  {
+    ""genotype"": ""VGAT-ChR2-YFP/wt""
+  },
+  {
+    ""genotype"": null
+  },
+  {
+    ""genotype"": ""wt/wt""
+  }
+]","I'll help you extract the genotype information. In this specific data asset, the subject's genotype is:
+
+""Emx1-IRES-Cre/wt;Camk2a-tTA/wt;Ai94(TITL-GCaMP6s)/wt""
+
+Breaking this down:
+1. Emx1-IRES-Cre/wt: Heterozygous for Emx1-IRES-Cre
+2. Camk2a-tTA/wt: Heterozygous for Camk2a-tTA
+3. Ai94(TITL-GCaMP6s)/wt: Heterozygous for Ai94 (GCaMP6s)
+
+The breeding group is listed as: ""Emx1-IRES-Cre;Camk2a-tTA;Ai94(ND)""
+
+Would you like me to elaborate on any part of the genotype or provide additional context?","{'agg_pipeline': [{'$match': {'data_description.project_name': {'$regex': 'Thalamus in the middle', '$options': 'i'}}}, {'$project': {'_id': 1, 'name': 1, 'subject_id': '$subject.subject_id', 'genotype': '$subject.genotype', 'project_name': '$data_description.project_name'}}]}",15.963098049163818,CORRECT,1.0,INCORRECT,0.0
+how many unique iacuc protocols are there?,"{""agg_pipeline"":[{""$match"":{""procedures.subject_procedures"":{""$exists"":true,""$ne"":[]}}},{""$project"":{""iacuc_protocols"":""$procedures.subject_procedures.iacuc_protocol""}},{""$unwind"":""$iacuc_protocols""},{""$match"":{""iacuc_protocols"":{""$ne"":null}}},{""$group"":{""_id"":""$iacuc_protocols""}},{""$group"":{""_id"":null,""count"":{""$sum"":1}}}]}",Number of unique IACUC protocols: 22,"I'll help you count the unique IACUC protocols. Here's a MongoDB aggregation pipeline to count distinct IACUC protocols:
+
+```python
+[
+    {""$match"": {""session.iacuc_protocol"": {""$ne"": None}}},
+    {""$group"": {""_id"": ""$session.iacuc_protocol""}},
+    {""$count"": ""unique_protocols""}
+]
+```
+
+This pipeline will:
+1. Match documents where IACUC protocol is not null
+2. Group by unique protocol values
+3. Count the number of unique groups
+
+Would you like me to execute this query?","{'filter': {'procedures.subject_procedures.iacuc_protocol': {'$exists': True, '$ne': None}}, 'projection': {'procedures.subject_procedures.iacuc_protocol': 1}}",72.7791337966919,INCORRECT,0.0,INCORRECT,0.0
+I'm trying to understand an issue with misspelled project names. Could you help me write a query to get all project names and their counts? I don't need any other parts of the records for now.,"agg_pipeline = [{'$group': {'_id': '$project_name', 'count': {'$sum': 1}}},{'$sort': {'count': -1}}]","agg_pipeline = [{'$group': {'_id': '$project_name', 'count': {'$sum': 1}}},{'$sort': {'count': -1}}]","Here's a MongoDB aggregation pipeline to get project names and their counts:
+
+```python
+[
+    {
+        ""$group"": {
+            ""_id"": ""$data_description.project_name"",
+            ""count"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$sort"": {""count"": -1}
+    }
+]
+```
+
+This pipeline will:
+1. Group by the project_name field
+2. Count occurrences of each unique project name
+3. Sort results in descending order of count
+
+The result will look like:
+```
+[
+    {""_id"": ""My Project"", ""count"": 50},
+    {""_id"": ""My Porject"", ""count"": 25},  # Potential misspelling
+    {""_id"": null, ""count"": 100}  # Projects with no name
+]
+```
+
+Do you want me to elaborate on anything specific about the query?","{'agg_pipeline': [{'$project': {'project_name': '$data_description.project_name'}}, {'$group': {'_id': '$project_name', 'count': {'$sum': 1}}}, {'$sort': {'count': -1}}]}",19.2160062789917,INCORRECT,0.0,INCORRECT,0.0
+Which assets have procedure dates that occurred before the subject's date of birth?,"{""agg_pipeline"":[{""$match"":{""procedures"":{""$exists"":true},""subject.date_of_birth"":{""$exists"":true}}},{""$project"":{""_id"":1,""name"":1,""subject_id"":""$subject.subject_id"",""date_of_birth"":""$subject.date_of_birth"",""procedures"":""$procedures.subject_procedures""}},{""$unwind"":""$procedures""},{""$match"":{""$expr"":{""$lt"":[{""$dateFromString"":{""dateString"":""$procedures.start_date""}},{""$dateFromString"":{""dateString"":""$date_of_birth""}}]}}},{""$project"":{""_id"":1,""name"":1,""subject_id"":1,""date_of_birth"":1,""procedure_date"":""$procedures.start_date"",""procedure_type"":""$procedures.procedure_type""}},{""$limit"":100}]}","[
+  {
+    ""_id"": ""a0ce0a8e-74bb-497e-ba13-9361c5b74dae"",
+    ""name"": ""behavior_708032_2024-03-14_12-55-23"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""31dc4ada-3ef0-4ec7-95ac-6ecf2dde93eb"",
+    ""name"": ""behavior_708032_2024-03-07_14-08-34"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""130a47ef-33df-43c5-b8e0-e01fe2c4c443"",
+    ""name"": ""behavior_708032_2024-03-13_14-06-41"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""bdd1ece5-f178-4872-9af0-5505c1517a58"",
+    ""name"": ""behavior_708032_2024-03-21_16-00-51"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""ecb51f81-6ff0-4fc8-958b-78ee4e2b25f1"",
+    ""name"": ""behavior_708032_2024-03-11_13-48-50"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""420ae7e8-3c49-4a76-9d67-b7ebd0451c26"",
+    ""name"": ""behavior_708032_2024-03-22_15-54-25"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""7dfcc710-445f-4551-ab70-b905b4ed67e9"",
+    ""name"": ""behavior_708032_2024-03-18_14-23-51"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""48b21fdc-f578-4f2b-a91a-3a12f8be4cb8"",
+    ""name"": ""behavior_708032_2024-03-06_17-39-03"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""dd5ba8b2-0287-4fe1-854f-a646ee259b28"",
+    ""name"": ""behavior_708032_2024-03-05_17-25-28"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""ae10fc4e-38ee-4433-9144-4081bf3defa9"",
+    ""name"": ""behavior_708032_2024-03-08_14-42-09"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""77d8c58b-319b-4662-b58b-d37f871f0d94"",
+    ""name"": ""behavior_708032_2024-03-15_12-23-18"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""2cde4f27-78ef-4c85-ab72-e99e40357585"",
+    ""name"": ""behavior_708032_2024-03-20_15-02-54"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  }
+]
+
+Total number of assets with procedures before birth date: 12",Error: list index out of range,Error: list index out of range,19.2160062789917,ERROR,0.0,ERROR,0.0
+How many injections were done in total in the Ai224 animals?,"{""agg_pipeline"":[{""$match"":{""procedures.subject_procedures"":{""$exists"":true},""subject.genotype"":{""$regex"":""Ai224"",""$options"":""i""}}},{""$unwind"":""$procedures.subject_procedures""},{""$unwind"":""$procedures.subject_procedures.procedures""},{""$match"":{""procedures.subject_procedures.procedures.procedure_type"":{""$regex"":""injection"",""$options"":""i""}}},{""$count"":""total_injections""}]}",The total number of injections performed on Ai224 animals was 155.,"I'll help you count the total number of injections for this animal. Based on the procedures section, I can see multiple nanoject injection entries. Let me count them carefully.
+
+```python
+[
+    {
+        ""procedure_type"": ""Nanoject injection"",
+        ...details of first injection...
+    },
+    ...repeated multiple times
+]
+```
+
+In this specific record, there are 8 identical nanoject injection procedures:
+1. Injection at ML: 2.0, AP: 0.1, Depth: 0.4
+2. Injection at ML: 2.0, AP: 0.4, Depth: 0.4
+3. Injection at ML: 2.6, AP: 0.4, Depth: 0.4
+4. Injection at ML: 2.6, AP: 1.0, Depth: 0.4
+5. Injection at ML: 2.6, AP: 1.6, Depth: 0.4
+6. Injection at ML: 2.0, AP: 1.6, Depth: 0.4
+7. Injection at ML: 1.4, AP: 1.6, Depth: 0.4
+8. Injection at ML: 1.4, AP: 1.0, Depth: 0.4
+
+In each injection, they used the same virus: CamKIIa_ChrimsonR_FusionRed_Kv2.1, with 40.0 nanoliters per injection.
+
+Total number of injections: 8
+
+Would you like me to elaborate on any specific details about these injections?","{'agg_pipeline': [{'$match': {'procedures.subject_procedures.procedures.procedure_type': 'Nanoject injection', 'subject.genotype': {'$regex': 'Ai224', '$options': 'i'}}}, {'$project': {'subject_id': '$subject.subject_id', 'genotype': '$subject.genotype', 'procedures': 1}}]}",18.53971791267395,INCORRECT,0.0,INCORRECT,0.0
+Give me a a concise summary of missing metadata fields in the 'Cognitive flexibility in patch foraging' project,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$regex"":""Cognitive flexibility in patch foraging"",""$options"":""i""}}},{""$project"":{""_id"":1,""name"":1,""subject_id"":""$subject.subject_id"",""project_name"":""$data_description.project_name"",""missing_subject_fields"":{""$objectToArray"":{""$ifNull"":[""$subject"",{}]}},""missing_data_description_fields"":{""$objectToArray"":{""$ifNull"":[""$data_description"",{}]}},""missing_procedures_fields"":{""$objectToArray"":{""$ifNull"":[""$procedures"",{}]}}}},{""$limit"":20}]}","Based on the provided metadata records, the following fields are missing or incomplete across the project: Data Description: data_summary field is consistently null across all records group field is consistently null label field is consistently null Rig Information: Some records have complete rig information while others have rig: null Missing lens information for some camera setups (e.g., focal length for Bottom face Camera) Session Information: trials_finished, trials_rewarded, and trials_total are consistently null in stimulus epochs protocol_id is often empty or incomplete headframe_registration is consistently null Subject Information: background_strain is null breeding_info is null light_cycle information is missing in housing data home_cage_enrichment details are missing Quality Control: quality_control field is consistently null across all records These missing fields could be important for comprehensive analysis and reproducibility of the research conducted in this project.","I apologize, but I cannot provide a summary of missing metadata fields for a specific project without context. The data asset you've shared appears to be a single experimental session for a single-plane optical physiology experiment, which doesn't represent an entire project.
+
+To help you effectively, I would need:
+1. A specific definition of the 'Cognitive flexibility in patch foraging' project
+2. Access to multiple data assets from this project
+3. A clear specification of what you consider ""missing"" metadata
+
+Would you like me to:
+- Help you define what metadata might be considered essential for such a project?
+- Review this specific data asset for potential metadata gaps?
+- Discuss metadata completeness strategies?","{'agg_pipeline': [{'$match': {'data_description.project_name': {'$regex': 'Cognitive flexibility in patch foraging', '$options': 'i'}}}, {'$project': {'_id': 1, 'name': 1, 'data_description.project_name': 1}}, {'$limit': 10}]}",10.65064001083374,INCORRECT,0.0,INCORRECT,0.0

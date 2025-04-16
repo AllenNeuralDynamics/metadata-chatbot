@@ -1,9 +1,13 @@
 from aind_data_access_api.document_db import MetadataDbClient
 from langchain_core.tools import tool
 
-API_GATEWAY_HOST = "api.allenneuraldynamics.org"
-DATABASE = "metadata_index"
-COLLECTION = "data_assets"
+# API_GATEWAY_HOST = "api.allenneuraldynamics.org"
+# DATABASE = "metadata_index"
+# COLLECTION = "data_assets"
+
+API_GATEWAY_HOST = "api.allenneuraldynamics-test.org"
+DATABASE = "metadata_vector_index"
+COLLECTION = "static_eval_data_assets_3_14"
 
 docdb_api_client = MetadataDbClient(
     host=API_GATEWAY_HOST,

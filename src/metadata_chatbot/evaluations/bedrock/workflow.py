@@ -3,7 +3,7 @@
 import warnings
 from typing import Annotated, List, Optional
 
-from langchain_core.messages import AIMessage, AnyMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, ToolMessage, HumanMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from typing_extensions import TypedDict
@@ -22,7 +22,6 @@ from metadata_chatbot.nodes.data_schema import (
 from metadata_chatbot.nodes.mongodb import (
     call_model,
     generate_mongodb,
-    tool_node,
     tool_summarizer,
 )
 from metadata_chatbot.nodes.vector_index import (
@@ -32,6 +31,8 @@ from metadata_chatbot.nodes.vector_index import (
     retrieve_VI,
     route_to_mongodb,
 )
+
+from metadata_chatbot.evaluations.bedrock.mongodb_bedrock import tool_node
 
 warnings.filterwarnings("ignore")
 
@@ -64,6 +65,7 @@ class GraphState(TypedDict):
     route_to_mongodb: Optional[bool]
     mongodb_query: Optional[dict]
     error: Optional[str]
+    tool_output_size: Optional[int]
 
 
 workflow = StateGraph(GraphState)
@@ -150,76 +152,19 @@ workflow.add_edge("summarize_conversation", END)
 
 app = workflow.compile()
 
-
-async def stream_response(inputs, config, app, prev_generation=""):
-    """Stream responses in each node in workflow"""
-
-    async for output in app.astream(
-        inputs, config, stream_mode=["values", "updates"]
-    ):
-        # message = output["messages"][-1]
-        ai_message = output[1]
-
-        if (
-            "generation" in ai_message
-            and ai_message["generation"] != prev_generation
-        ):
-            message = ai_message["generation"]
-            # print(message)
-            yield {"type": "final_response", "content": message}
-
-        elif output[0] == "values":
-            message = ai_message["messages"][-1]
-
-            if isinstance(message, AIMessage):
-                if message.tool_calls:
-                    yield {
-                        "type": "intermediate_steps",
-                        "content": message.content[0]["text"],
-                    }
-                    yield {
-                        "type": "agg_pipeline",
-                        "content": message.tool_calls[0][
-                            "args"
-                        ],  # ["agg_pipeline"],
-                    }
-                elif isinstance(message.content, str):
-                    yield {
-                        "type": "backend_process",
-                        "content": message.content,
-                    }
-                elif isinstance(message.content[0]["text"], str):
-                    yield {
-                        "type": "final_response",
-                        "content": message.content[0]["text"],
-                    }
-
-            if isinstance(message, ToolMessage):
-                yield {
-                    "type": "tool_response",
-                    "content": "Retrieved output from MongoDB: ",
-                }
-                yield {"type": "tool_output", "content": message.content}
-
-
-# import asyncio
-
-# from langchain_core.messages import HumanMessage
-
-# query = "Which experimenter conducted the most sessions in the past 6 months, given that the date is 3/31/25?"
-
-
-# async def new_astream(query):
+# async def main(query: str):
 
 #     inputs = {
 #         "messages": [HumanMessage(query)],
+#         "query": query
 #     }
 
-#     config = {}
+#     answer = await app.ainvoke(inputs)
 
-#     async for result in stream_response(inputs, config, app):
-#         r = result  # Process the yielded results
+#     print(answer)
 
 
-# # Run the main coroutine with asyncio
-# asyncio.run(new_astream(query))
+# if __name__ == "__main__":
+#     import asyncio
+
+#     asyncio.run(main("what is the genotype of mouse 740955"))

@@ -11,7 +11,6 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from pydantic import Field
-from pymongo.collection import Collection
 from sentence_transformers import SentenceTransformer
 
 API_GATEWAY_HOST = "api.allenneuraldynamics-test.org"
@@ -99,7 +98,7 @@ class DataSchemaRetriever(BaseRetriever):
             print(e)
 
 
-# query = "How many injections were performed across all animals in the thalamus in the middle project using the following coordinate: AP: 2.8, ML: 0.2, DV: 0.6?"
+# query = ""
 
 
 # retriever = DataSchemaRetriever(k=2, collection = "mongodb_node_vectors")

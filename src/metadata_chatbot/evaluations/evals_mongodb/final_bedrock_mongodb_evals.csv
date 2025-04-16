@@ -1,0 +1,4826 @@
+input_question,target_mongodb_query,target_python,target_answer,predicted_answer,data_source,generation_time,response_evaluation,response_score,predicted_mongodb_query,mongodb_evaluation,mongodb_score,tool_output_size,query_type
+Generate code to find experiments where the animal weight decreased by more than 10% between consecutive procedures.,"{""agg_pipeline"":[{""$match"":{""procedures.subject_procedures"":{""$exists"":true,""$ne"":[]}}},{""$project"":{""_id"":1,""subject_id"":""$procedures.subject_id"",""subject_procedures"":""$procedures.subject_procedures""}},{""$unwind"":""$subject_procedures""},{""$match"":{""subject_procedures.animal_weight_prior"":{""$exists"":true,""$ne"":null},""subject_procedures.animal_weight_post"":{""$exists"":true,""$ne"":null}}},{""$project"":{""_id"":1,""subject_id"":1,""procedure_type"":""$subject_procedures.procedure_type"",""start_date"":""$subject_procedures.start_date"",""weight_prior"":{""$toDouble"":""$subject_procedures.animal_weight_prior""},""weight_post"":{""$toDouble"":""$subject_procedures.animal_weight_post""},""weight_unit"":""$subject_procedures.weight_unit""}},{""$match"":{""weight_prior"":{""$ne"":null},""weight_post"":{""$ne"":null}}},{""$project"":{""_id"":1,""subject_id"":1,""procedure_type"":1,""start_date"":1,""weight_prior"":1,""weight_post"":1,""weight_unit"":1,""weight_change_percent"":{""$multiply"":[{""$divide"":[{""$subtract"":[""$weight_post"",""$weight_prior""]},""$weight_prior""]},100]}}},{""$match"":{""weight_change_percent"":{""$lt"":-10}}},{""$group"":{""_id"":""$subject_id""}},{""$project"":{""_id"":0,""subject_id"":""$_id""}},{""$sort"":{""subject_id"":1}}]}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    # Match records with subject procedures
+    {'$match': {'procedures.subject_procedures': {'$exists': True, '$ne': []}}},
+
+    # Project relevant fields
+    {'$project': {
+        '_id': 1, 
+        'subject_id': '$procedures.subject_id', 
+        'subject_procedures': '$procedures.subject_procedures'
+    }},
+
+    # Unwind subject procedures
+    {'$unwind': '$subject_procedures'},
+
+    # Match procedures with valid weight measurements
+    {'$match': {
+        'subject_procedures.animal_weight_prior': {'$exists': True, '$ne': None},
+        'subject_procedures.animal_weight_post': {'$exists': True, '$ne': None}
+    }},
+
+    # Project and convert weights to numeric
+    {'$project': {
+        '_id': 1, 
+        'subject_id': 1, 
+        'procedure_type': '$subject_procedures.procedure_type',
+        'start_date': '$subject_procedures.start_date',
+        'weight_prior': {'$toDouble': '$subject_procedures.animal_weight_prior'},
+        'weight_post': {'$toDouble': '$subject_procedures.animal_weight_post'},
+        'weight_unit': '$subject_procedures.weight_unit'
+    }},
+
+    # Remove null weight entries
+    {'$match': {
+        'weight_prior': {'$ne': None}, 
+        'weight_post': {'$ne': None}
+    }},
+
+    # Calculate percentage weight change
+    {'$project': {
+        '_id': 1, 
+        'subject_id': 1, 
+        'procedure_type': 1, 
+        'start_date': 1,
+        'weight_prior': 1, 
+        'weight_post': 1, 
+        'weight_unit': 1, 
+        'weight_change_percent': {'$multiply': [
+            {'$divide': [
+                {'$subtract': ['$weight_post', '$weight_prior']}, 
+                '$weight_prior'
+            ]}, 
+            100
+        ]}
+    }},
+
+    # Filter for weight decrease > 10%
+    {'$match': {'weight_change_percent': {'$lt': -10}}},
+
+    # Group by subject_id to get unique subjects
+    {'$group': {'_id': '$subject_id'}},
+
+    # Format output
+    {'$project': {'_id': 0, 'subject_id': '$_id'}},
+
+    # Sort results
+    {'$sort': {'subject_id': 1}}
+]
+
+# Execute the aggregation
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print results
+print(""Unique Subject IDs with Weight Decrease > 10%:"")
+for record in result:
+    print(f""Subject ID: {record['subject_id']}"")
+
+# Print total count
+print(f""\nTotal number of unique subjects: {len(result)}"")","I'll create a MongoDB aggregation pipeline to find all unique subject IDs where the animal weight decreased by more than 10% between consecutive procedures. Here's the Python code that implements this:
+
+import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    # Match records with subject procedures
+    {'$match': {'procedures.subject_procedures': {'$exists': True, '$ne': []}}},
+
+    # Project relevant fields
+    {'$project': {
+        '_id': 1, 
+        'subject_id': '$procedures.subject_id', 
+        'subject_procedures': '$procedures.subject_procedures'
+    }},
+
+    # Unwind subject procedures
+    {'$unwind': '$subject_procedures'},
+
+    # Match procedures with valid weight measurements
+    {'$match': {
+        'subject_procedures.animal_weight_prior': {'$exists': True, '$ne': None},
+        'subject_procedures.animal_weight_post': {'$exists': True, '$ne': None}
+    }},
+
+    # Project and convert weights to numeric
+    {'$project': {
+        '_id': 1, 
+        'subject_id': 1, 
+        'procedure_type': '$subject_procedures.procedure_type',
+        'start_date': '$subject_procedures.start_date',
+        'weight_prior': {'$toDouble': '$subject_procedures.animal_weight_prior'},
+        'weight_post': {'$toDouble': '$subject_procedures.animal_weight_post'},
+        'weight_unit': '$subject_procedures.weight_unit'
+    }},
+
+    # Remove null weight entries
+    {'$match': {
+        'weight_prior': {'$ne': None}, 
+        'weight_post': {'$ne': None}
+    }},
+
+    # Calculate percentage weight change
+    {'$project': {
+        '_id': 1, 
+        'subject_id': 1, 
+        'procedure_type': 1, 
+        'start_date': 1,
+        'weight_prior': 1, 
+        'weight_post': 1, 
+        'weight_unit': 1, 
+        'weight_change_percent': {'$multiply': [
+            {'$divide': [
+                {'$subtract': ['$weight_post', '$weight_prior']}, 
+                '$weight_prior'
+            ]}, 
+            100
+        ]}
+    }},
+
+    # Filter for weight decrease > 10%
+    {'$match': {'weight_change_percent': {'$lt': -10}}},
+
+    # Group by subject_id to get unique subjects
+    {'$group': {'_id': '$subject_id'}},
+
+    # Format output
+    {'$project': {'_id': 0, 'subject_id': '$_id'}},
+
+    # Sort results
+    {'$sort': {'subject_id': 1}}
+]
+
+# Execute the aggregation
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print results
+print(""Unique Subject IDs with Weight Decrease > 10%:"")
+for record in result:
+    print(f""Subject ID: {record['subject_id']}"")
+
+# Print total count
+print(f""\nTotal number of unique subjects: {len(result)}"")
+
+The query found 7 unique subject IDs where the animal weight decreased by more than 10% between procedures:
+
+Subject ID: 661797
+Subject ID: 671413
+Subject ID: 697930
+Subject ID: 730049
+Subject ID: 734159
+Subject ID: 741752
+Subject ID: 750101
+This code:
+
+Matches records with subject procedures
+Projects the relevant fields
+Unwinds the subject procedures array
+Filters for procedures with valid weight measurements
+Converts string weights to numeric values
+Calculates the weight change percentage
+Filters","I'll help you generate code to find experiments where the animal weight decreased by more than 10% between consecutive procedures. Based on the retrieved data, I'll create a comprehensive Python script using the AIND data access API.
+
+```python
+import json
+from aind_data_access_api.document_db import MetadataDbClient
+import pandas as pd
+import numpy as np
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+def find_weight_decrease_experiments():
+    # Aggregation pipeline to retrieve procedures with weight information
+    agg_pipeline = [
+        {'$match': {'procedures.subject_procedures': {'$exists': True, '$ne': []}}},
+        {'$project': {
+            '_id': 1, 
+            'name': 1, 
+            'subject_id': '$subject.subject_id', 
+            'procedures': '$procedures.subject_procedures'
+        }},
+        {'$unwind': '$procedures'},
+        {'$match': {
+            'procedures.animal_weight_prior': {'$exists': True, '$ne': None},
+            'procedures.animal_weight_post': {'$exists': True, '$ne': None}
+        }},
+        {'$project': {
+            '_id': 1, 
+            'name': 1, 
+            'subject_id': 1, 
+            'procedure_date': '$procedures.start_date', 
+            'procedure_type': '$procedures.procedure_type', 
+            'weight_prior': {'$toDouble': '$procedures.animal_weight_prior'},
+            'weight_post': {'$toDouble': '$procedures.animal_weight_post'}
+        }},
+        {'$sort': {'subject_id': 1, 'procedure_date': 1}}
+    ]
+    
+    records = list(docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline))
+    
+    # Convert to DataFrame for easier analysis
+    df = pd.DataFrame(records)
+    
+    # Group by subject_id and sort by procedure_date
+    df_sorted = df.sort_values(['subject_id', 'procedure_date'])
+    
+    # Calculate weight percentage change
+    df_sorted['weight_change_percent'] = (df_sorted['weight_post'] - df_sorted['weight_prior']) / df_sorted['weight_prior'] * 100
+    
+    # Find experiments with weight decrease > 10%
+    weight_decrease_experiments = df_sorted[df_sorted['weight_change_percent'] < -10]
+    
+    return weight_decrease_experiments
+
+# Run the analysis
+weight_decrease_results = find_weight_decrease_experiments()
+
+# Display results
+print(""Experiments with Weight Decrease > 10%:"")
+print(weight_decrease_results[['name', 'subject_id', 'procedure_date', 'procedure_type', 'weight_prior', 'weight_post', 'weight_change_percent']])
+print(f""\nTotal experiments with significant weight decrease: {len(weight_decrease_results)}"")
+```
+
+This script does the following:
+
+1. Uses the AIND data access API to retrieve procedure records
+2. Creates an aggregation pipeline to:
+   - Match records with subject procedures
+   - Extract relevant weight and procedure information
+   - Sort by subject ID and procedure date
+3. Converts results to a pandas DataFrame
+4. Calculates percentage weight change
+5. Filters for experiments with weight decrease > 10%
+6. Displays detailed results
+
+Key features:
+- Handles multiple procedures per experiment
+- Calculates percentage weight change
+- Provides comprehensive output with experiment details
+
+Note: The current results do not show any experiments with a weight decrease > 10%. This could mean:
+- No experiments met the strict 10% decrease criterion
+- Data might require further investigation or filtering
+
+Would you like me to modify the weight decrease threshold or provide additional analysis on the weight changes?",,76.17469978,CORRECT,1,"{'agg_pipeline': [{'$match': {'procedures.subject_procedures': {'$exists': True, '$ne': []}}}, {'$project': {'_id': 1, 'name': 1, 'subject_id': '$subject.subject_id', 'procedures': '$procedures.subject_procedures'}}, {'$unwind': '$procedures'}, {'$match': {'procedures.animal_weight_prior': {'$exists': True, '$ne': None}, 'procedures.animal_weight_post': {'$exists': True, '$ne': None}}}, {'$project': {'_id': 1, 'name': 1, 'subject_id': 1, 'procedure_date': '$procedures.start_date', 'procedure_type': '$procedures.procedure_type', 'weight_prior': {'$toDouble': '$procedures.animal_weight_prior'}, 'weight_post': {'$toDouble': '$procedures.animal_weight_post'}}}, {'$sort': {'subject_id': 1, 'procedure_date': 1}}, {'$limit': 100}]}",CORRECT,1,22794,analysis
+What are the injections for SmartSPIM_675387_2023-05-23_23-05-56?,"{""filter"":{""name"":""SmartSPIM_675387_2023-05-23_23-05-56""},""projection"":{""procedures.subject_procedures"":1}}","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+filter = {""name"": ""SmartSPIM_675387_2023-05-23_23-05-56""}
+projection = {
+    ""procedures.subject_procedures"":1
+}
+
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection,
+)
+
+print(records)","
+                    Based on the provided context, the injections for SmartSPIM_675387_2023-05-23_23-05-56 are:
+                    1. AAVrg-Syn-H2B-Turquoise virus with titer 48000000000000 gc/mL, injected at coordinates ML 1.0 mm, AP 1.2 mm, depth 0.8 mm from Bregma, with injection volume 50.0 nanoliters, targeting the Isocortex in the right hemisphere.
+                    2. AAVrg-Syn-H2B-tdTomato virus with titer 51000000000000 gc/mL, injected at coordinates ML 1.4 mm, AP 1.2 mm, depth 0.8 mm from Bregma, with injection volume 50.0 nanoliters, targeting the Isocortex in the right hemisphere.
+                    Both injections were performed using the Nanoject injection procedure with a 5.0 minute recovery time.
+                    ","Based on the retrieved document for SmartSPIM_675387_2023-05-23_23-05-56, the subject underwent two viral injections during a surgery on 2023-03-31:
+
+1. First Injection:
+- Virus: AAVrg-Syn-H2B-Turquoise
+- Lot Number: 221111-22
+- Titer: 48,000,000,000,000 gc/mL
+- Injection Details:
+  - Coordinate (ML): 1.0 mm
+  - Coordinate (AP): 1.2 mm
+  - Depth: 0.8 mm
+  - Hemisphere: Right
+  - Targeted Structure: Isocortex
+  - Volume: 50 nanoliters
+  - Instrument: NJ#5
+
+2. Second Injection:
+- Virus: AAVrg-Syn-H2B-tdTomato
+- Lot Number: 221111-23
+- Titer: 51,000,000,000,000 gc/mL
+- Injection Details:
+  - Coordinate (ML): 1.4 mm
+  - Coordinate (AP): 1.2 mm
+  - Depth: 0.8 mm
+  - Hemisphere: Right
+  - Targeted Structure: Isocortex
+  - Volume: 50 nanoliters
+  - Instrument: NJ#5
+
+Both injections were performed using a Nanoject instrument, with a recovery time of 5 minutes, and used the same protocol (dx.doi.org/10.17504/protocols.io.bgpujvnw).",,18.85219717,CORRECT,1,"{'filter': {'name': 'SmartSPIM_675387_2023-05-23_23-05-56'}, 'projection': {'procedures.subject_procedures': 1}}",CORRECT,1,2929,anatomical_coordinates
+what are the modalities of the assets for the 'U19 Thalamus in the Middle' project?,"agg_pipeline = [
+    {'$match': {'data_description.project_name': {'$regex': 'Thalamus in the middle', '$options': 'i'}}},
+    {'$unwind': {'path': '$data_description.modality', 'preserveNullAndEmptyArrays': True}},
+    {'$group': {'_id': '$data_description.modality.name', 'count': {'$sum': 1}}},
+    {'$sort': {'count': -1}}
+]","import json
+from collections import Counter
+from datetime import datetime
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'data_description.project_name': {'$regex': 'Thalamus in the middle', '$options': 'i'}}},
+    {'$unwind': {'path': '$data_description.modality', 'preserveNullAndEmptyArrays': True}},
+    {'$group': {'_id': '$data_description.modality.name', 'count': {'$sum': 1}}},
+    {'$sort': {'count': -1}}
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+print(json.dumps(result, indent=3))","""Selective plane illumination microscopy"",  is the most common, but there are other modalities involved like ""Extracellular electrophysiology"", ""Behavior videos"", ""Behavior""","Based on the retrieved results for the 'U19 Thalamus in the Middle' project, the modalities of the assets are:
+
+1. Selective plane illumination microscopy (SPIM): 233 assets
+2. Extracellular electrophysiology: 14 assets
+3. Behavior videos: 13 assets
+4. Behavior: 13 assets
+
+Here's a Python code example to reproduce this query:
+
+```python
+import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'data_description.project_name': {'$regex': 'Thalamus in the Middle', '$options': 'i'}}},
+    {'$unwind': {'path': '$data_description.modality', 'preserveNullAndEmptyArrays': True}},
+    {'$group': {'_id': '$data_description.modality.name', 'count': {'$sum': 1}}},
+    {'$sort': {'count': -1}}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=3))
+```
+
+The query does the following:
+1. Matches projects with ""Thalamus in the Middle"" (case-insensitive)
+2. Unwinds the modality array to count individual modalities
+3. Groups by modality name and counts occurrences
+4. Sorts the results by count in descending order
+
+Selective plane illumination microscopy (SPIM) is the most prevalent modality in this project, followed by extracellular electrophysiology and behavior-related recordings.",,24.56765556,CORRECT,1,"{'agg_pipeline': [{'$match': {'data_description.project_name': {'$regex': 'Thalamus in the Middle', '$options': 'i'}}}, {'$unwind': {'path': '$data_description.modality', 'preserveNullAndEmptyArrays': True}}, {'$group': {'_id': '$data_description.modality.name', 'count': {'$sum': 1}}}, {'$sort': {'count': -1}}]}",CORRECT,1,198,project
+can you tell me how many sessions exist for 775745,"filter = {""subject.subject_id"": ""775745""}
+projection = {""name"": 1, ""_id"": 1}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+filter = {""subject.subject_id"": ""775745""}
+projection = {""name"": 1, ""_id"": 1}
+
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection
+)
+
+# Count the number of sessions
+num_sessions = len(records)
+print(f""Total number of sessions for subject 775745: {num_sessions}"")
+
+# Optional: Print session names
+print(""\nSession Names:"")
+for record in records:
+    print(record['name'])",There are 8 sessions for subject 775745,"Based on the retrieved documents, there are 8 sessions for subject 775745:
+
+1. behavior_775745_2025-02-21_08-33-20
+2. behavior_775745_2025-03-03_09-10-22_processed_2025-03-13_18-35-15
+3. behavior_775745_2025-02-21_08-33-20_processed_2025-02-22_05-35-47
+4. behavior_775745_2025-02-25_09-39-55
+5. behavior_775745_2025-02-25_09-39-55_processed_2025-02-26_06-19-20
+6. behavior_775745_2025-03-05_09-04-53
+7. behavior_775745_2025-03-06_08-44-25
+8. behavior_775745_2025-03-05_09-04-53_processed_2025-03-07_06-33-29
+
+Note that some of these sessions appear to be processed versions of earlier sessions, but they are still counted in the total session count.",,16.95094633,CORRECT,1,"{'filter': {'subject.subject_id': '775745'}, 'projection': {'name': 1, '_id': 1}}",CORRECT,1,888,experimental_details
+Give me the query used to identify 5 subject IDs that appear in 3 different assets with different modalities,"agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.modality"": {""$exists"": True, ""$ne"": []},
+            ""subject.subject_id"": {""$exists"": True, ""$ne"": None}
+        }
+    },
+    {
+        ""$project"": {
+            ""subject_id"": ""$subject.subject_id"",
+            ""modalities"": ""$data_description.modality.name""
+        }
+    },
+    {""$unwind"": ""$modalities""},
+    {
+        ""$group"": {
+            ""_id"": {""subject_id"": ""$subject_id"", ""modality"": ""$modalities""}
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$_id.subject_id"",
+            ""unique_modalities"": {""$addToSet"": ""$_id.modality""},
+            ""modality_count"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$match"": {
+            ""modality_count"": {""$gte"": 3}
+        }
+    },
+    {
+        ""$project"": {
+            ""_id"": 0,
+            ""subject_id"": ""$_id"",
+            ""unique_modalities"": 1,
+            ""modality_count"": 1
+        }
+    },
+    {""$sort"": {""modality_count"": -1}},
+    {""$limit"": 5}
+]
+","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.modality"": {""$exists"": True, ""$ne"": []},
+            ""subject.subject_id"": {""$exists"": True, ""$ne"": None}
+        }
+    },
+    {
+        ""$project"": {
+            ""subject_id"": ""$subject.subject_id"",
+            ""modalities"": ""$data_description.modality.name""
+        }
+    },
+    {""$unwind"": ""$modalities""},
+    {
+        ""$group"": {
+            ""_id"": {""subject_id"": ""$subject_id"", ""modality"": ""$modalities""}
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$_id.subject_id"",
+            ""unique_modalities"": {""$addToSet"": ""$_id.modality""},
+            ""modality_count"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$match"": {
+            ""modality_count"": {""$gte"": 3}
+        }
+    },
+    {
+        ""$project"": {
+            ""_id"": 0,
+            ""subject_id"": ""$_id"",
+            ""unique_modalities"": 1,
+            ""modality_count"": 1
+        }
+    },
+    {""$sort"": {""modality_count"": -1}},
+    {""$limit"": 5}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=2))","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.modality"": {""$exists"": True, ""$ne"": []},
+            ""subject.subject_id"": {""$exists"": True, ""$ne"": None}
+        }
+    },
+    {
+        ""$project"": {
+            ""subject_id"": ""$subject.subject_id"",
+            ""modalities"": ""$data_description.modality.name""
+        }
+    },
+    {""$unwind"": ""$modalities""},
+    {
+        ""$group"": {
+            ""_id"": {""subject_id"": ""$subject_id"", ""modality"": ""$modalities""}
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$_id.subject_id"",
+            ""unique_modalities"": {""$addToSet"": ""$_id.modality""},
+            ""modality_count"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$match"": {
+            ""modality_count"": {""$gte"": 3}
+        }
+    },
+    {
+        ""$project"": {
+            ""_id"": 0,
+            ""subject_id"": ""$_id"",
+            ""unique_modalities"": 1,
+            ""modality_count"": 1
+        }
+    },
+    {""$sort"": {""modality_count"": -1}},
+    {""$limit"": 5}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=2))","I'll provide a complete Python implementation of the MongoDB aggregation pipeline to retrieve 5 subject IDs that appear in 3 different assets with different modalities.
+
+```python
+import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    # Match documents with subject_id and non-empty modalities
+    {'$match': {
+        'subject.subject_id': {'$exists': True}, 
+        'data_description.modality': {'$exists': True, '$ne': []}
+    }},
+    
+    # Unwind modalities to create separate documents
+    {'$unwind': '$data_description.modality'},
+    
+    # Group by subject_id and modality
+    {'$group': {
+        '_id': {
+            'subject_id': '$subject.subject_id', 
+            'modality': '$data_description.modality.name'
+        }
+    }},
+    
+    # Group again to count unique modalities per subject
+    {'$group': {
+        '_id': '$_id.subject_id', 
+        'unique_modalities': {'$addToSet': '$_id.modality'}, 
+        'modality_count': {'$sum': 1}
+    }},
+    
+    # Filter for subjects with at least 3 different modalities
+    {'$match': {
+        'modality_count': {'$gte': 3}
+    }},
+    
+    # Project desired output fields
+    {'$project': {
+        '_id': 0, 
+        'subject_id': '$_id', 
+        'unique_modalities': 1, 
+        'modality_count': 1
+    }},
+    
+    # Limit to 5 results
+    {'$limit': 5}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=2))
+```
+
+Query Explanation:
+1. First `$match` stage ensures documents have a subject_id and non-empty modalities
+2. `$unwind` creates separate documents for each modality
+3. First `$group` creates unique combinations of subject_id and modality
+4. Second `$group` counts unique modalities per subject
+5. `$match` filters for subjects with 3 or more modalities
+6. `$project` reshapes the output
+7. `$limit` restricts to 5 results
+
+The results show:
+- Subject 765651: Behavior videos, Behavior, Fiber photometry (3 modalities)
+- Subject 725809: Behavior videos, SPIM, Extracellular electrophysiology (3 modalities)
+- Subject 748387: Fiber photometry, Behavior, Behavior videos (3 modalities)
+- Subject 736803: Behavior videos, Behavior, Extracellular electrophysiology (3 modalities)
+- Subject 682565: Fiber photometry, SPIM, Behavior, Behavior videos (4 modalities)",,50.70128846,CORRECT,1,"{'agg_pipeline': [{'$match': {'subject.subject_id': {'$exists': True}, 'data_description.modality': {'$exists': True, '$ne': []}}}, {'$unwind': '$data_description.modality'}, {'$group': {'_id': {'subject_id': '$subject.subject_id', 'modality': '$data_description.modality.name'}}}, {'$group': {'_id': '$_id.subject_id', 'unique_modalities': {'$addToSet': '$_id.modality'}, 'modality_count': {'$sum': 1}}}, {'$match': {'modality_count': {'$gte': 3}}}, {'$project': {'_id': 0, 'subject_id': '$_id', 'unique_modalities': 1, 'modality_count': 1}}, {'$limit': 5}]}",CORRECT,1,709,analysis
+what are the unique instrument ids for smartspim experiments,"{""agg_pipeline"":[{""$match"":{""data_description.modality.name"":""Selective plane illumination microscopy""}},{""$project"":{""instrument_id"":""$instrument.instrument_id""}},{""$group"":{""_id"":""$instrument_id""}},{""$sort"":{""_id"":1}}]}","from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.modality.name"": ""Selective plane illumination microscopy""
+        }
+    },
+    {
+        ""$project"": {
+            ""instrument_id"": ""$instrument.instrument_id""
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$instrument_id""
+        }
+    },
+    {
+        ""$sort"": {
+            ""_id"": 1
+        }
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print unique instrument IDs, excluding null values
+unique_instrument_ids = [record['_id'] for record in result if record['_id'] is not None]
+print(""Unique SmartSPIM Instrument IDs:"")
+for instrument_id in unique_instrument_ids:
+    print(instrument_id)
+
+print(f""\nTotal unique instrument IDs: {len(unique_instrument_ids)}"")","Unique SmartSPIM Instrument IDs:
+440_SmartSPIM1_20240229
+440_SmartSPIM1_20240325
+440_SmartSPIM1_20240613
+440_SmartSPIM1_20240710
+440_SmartSPIM1_20241024
+440_SmartSPIM1_20250116
+440_SmartSPIM2_20240229
+440_SmartSPIM2_20240321
+440_SmartSPIM2_20240514
+440_SmartSPIM2_20241025
+440_SmartSPIM2_20250114
+440_SmartSPIM3_20240229
+440_SmartSPIM3_20240308
+440_SmartSPIM3_20240321
+440_SmartSPIM3_20240510
+440_SmartSPIM3_20241025
+440_SmartSPIM3_20250125
+SmartSPIM1-1
+SmartSPIM1-2
+SmartSPIM1-4
+SmartSPIM1-5
+SmartSPIM1-6
+SmartSPIM1-7
+SmartSPIM2-1
+SmartSPIM2-2
+SmartSPIM2-4
+SmartSPIM3-2
+exaSPIM1-01","Based on the retrieved results, here are the unique instrument IDs for SmartSPIM experiments:
+
+SmartSPIM Instruments with Date Codes:
+1. SmartSPIM1 Series:
+   - 440_SmartSPIM1_20240229
+   - 440_SmartSPIM1_20240325
+   - 440_SmartSPIM1_20240613
+   - 440_SmartSPIM1_20240710
+   - 440_SmartSPIM1_20241024
+   - 440_SmartSPIM1_20250116
+
+2. SmartSPIM2 Series:
+   - 440_SmartSPIM2_20240229
+   - 440_SmartSPIM2_20240321
+   - 440_SmartSPIM2_20240514
+   - 440_SmartSPIM2_20241025
+   - 440_SmartSPIM2_20250114
+
+3. SmartSPIM3 Series:
+   - 440_SmartSPIM3_20240229
+   - 440_SmartSPIM3_20240308
+   - 440_SmartSPIM3_20240321
+   - 440_SmartSPIM3_20240510
+   - 440_SmartSPIM3_20241025
+   - 440_SmartSPIM3_20250125
+
+Numeric Identifier SmartSPIM Instruments:
+1. SmartSPIM1 Series:
+   - SmartSPIM1-1
+   - SmartSPIM1-2
+   - SmartSPIM1-4
+   - SmartSPIM1-5
+   - SmartSPIM1-6
+   - SmartSPIM1-7
+
+2. SmartSPIM2 Series:
+   - SmartSPIM2-1
+   - SmartSPIM2-2
+   - SmartSPIM2-4
+
+3. SmartSPIM3 Series:
+   - SmartSPIM3-2
+
+Additional Instrument:
+- exaSPIM1-01
+
+Note: There is also a null instrument ID in the results, which might represent missing or unspecified instrument information.",,22.11636353,CORRECT,1,"{'agg_pipeline': [{'$match': {'data_description.modality.name': 'Selective plane illumination microscopy'}}, {'$project': {'instrument_id': '$instrument.instrument_id'}}, {'$group': {'_id': '$instrument_id'}}, {'$sort': {'_id': 1}}]}",CORRECT,1,901,instrument
+"For asset SmartSPIM_675387_2023-05-23_23-05-56, extract all coordinate_transformations from the tiles","{""filter"":{""name"":""SmartSPIM_675387_2023-05-23_23-05-56""},""projection"":{""acquisition.tiles.coordinate_transformations"":1}}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Filter for the specific SmartSPIM asset
+filter = {""name"": ""SmartSPIM_675387_2023-05-23_23-05-56""}
+
+# Project only the coordinate transformations
+projection = {""acquisition.tiles.coordinate_transformations"": 1}
+
+# Retrieve the records
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection
+)
+
+# Extract and print coordinate transformations
+for record in records:
+    tiles = record.get('acquisition', {}).get('tiles', [])
+
+    print(""Total number of tiles:"", len(tiles))
+
+    # Collect unique coordinate transformations
+    unique_transformations = set()
+    for tile in tiles:
+        transformations = tile.get('coordinate_transformations', [])
+        for transform in transformations:
+            unique_transformations.add(json.dumps(transform, sort_keys=True))
+
+    print(""\nUnique Coordinate Transformations:"")
+    for transform in unique_transformations:
+        print(json.loads(transform))","Total number of tiles: 84
+
+Unique Coordinate Transformations:
+{'translation': [54034, 48622, 4.2], 'type': 'translation'}
+{'translation': [47554, 51214, 4.2], 'type': 'translation'}
+{'translation': [54034, 40846, 4.2], 'type': 'translation'}
+{'translation': [44314, 53806, 4.2], 'type': 'translation'}
+{'translation': [54034, 51214, 4.2], 'type': 'translation'}
+{'translation': [54034, 46030, 4.2], 'type': 'translation'}
+{'translation': [47554, 53806, 4.2], 'type': 'translation'}
+{'translation': [50794, 46030, 4.2], 'type': 'translation'}
+{'translation': [50794, 56398, 4.2], 'type': 'translation'}
+{'translation': [50794, 48622, 4.2], 'type': 'translation'}
+{'translation': [47554, 43438, 4.2], 'type': 'translation'}
+{'translation': [47554, 40846, 4.2], 'type': 'translation'}
+{'translation': [54034, 53806, 4.2], 'type': 'translation'}
+{'translation': [44314, 48622, 4.2], 'type': 'translation'}
+{'translation': [44314, 43438, 4.2], 'type': 'translation'}
+{'translation': [47554, 46030, 4.2], 'type': 'translation'}
+{'translation': [47554, 56398, 4.2], 'type': 'translation'}
+{'translation': [50794, 53806, 4.2], 'type': 'translation'}
+{'translation': [54034, 43438, 4.2], 'type': 'translation'}
+{'translation': [44314, 40846, 4.2], 'type': 'translation'}
+{'translation': [50794, 43438, 4.2], 'type': 'translation'}
+{'translation': [54034, 56398, 4.2], 'type': 'translation'}
+{'translation': [44314, 56398, 4.2], 'type': 'translation'}
+{'scale': [1.8, 1.8, 2], 'type': 'scale'}
+{'translation': [44314, 46030, 4.2], 'type': 'translation'}
+{'translation': [44314, 51214, 4.2], 'type': 'translation'}
+{'translation': [50794, 51214, 4.2], 'type': 'translation'}
+{'translation': [50794, 40846, 4.2], 'type': 'translation'}
+{'translation': [47554, 48622, 4.2], 'type': 'translation'}","I'll analyze the coordinate transformations for the SmartSPIM_675387_2023-05-23_23-05-56 asset.
+
+Coordinate Transformation Analysis:
+1. Translation Patterns:
+- X-coordinates range: [44314, 47554, 50794, 54034]
+- Y-coordinates range: [40846, 43438, 46030, 48622, 51214, 53806, 56398]
+- Z-coordinate is consistently 4.2
+
+2. Scale Transformation:
+- Uniform scaling applied to all tiles
+- Scale values: [1.8, 1.8, 2]
+  - X-axis: 1.8
+  - Y-axis: 1.8
+  - Z-axis: 2.0
+
+3. Transformation Types:
+- Translation: Shifts the tile's position in 3D space
+- Scale: Adjusts the size of the tile
+
+4. Tile Grid:
+- 4 x 7 grid of tiles
+- Each tile has identical transformation pattern
+- Systematic progression of translations across X and Y axes
+
+Key Observations:
+- Consistent scaling suggests uniform image processing
+- Translation pattern indicates a methodical tiling approach
+- The Z-coordinate remains constant, suggesting a single-plane imaging strategy
+
+The coordinate transformations appear to be part of a precise image registration and scaling process, likely used to align and normalize tiles in a SmartSPIM imaging dataset.
+
+Would you like me to elaborate on any specific aspect of these coordinate transformations?",,30.85222912,CORRECT,1,"{'filter': {'name': 'SmartSPIM_675387_2023-05-23_23-05-56'}, 'projection': {'acquisition.tiles.coordinate_transformations': 1}}",CORRECT,1,11669,instrument
+"for the thalamus in the middle project, what brain structures are data collected from?","{""filter"":{""data_description.project_name"":""Thalamus in the middle""},""projection"":{""data_description.project_name"":1,""procedures.subject_procedures.procedures.targeted_structure"":1}}","import json
+from collections import Counter
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.project_name"": ""Thalamus in the middle""
+        }
+    },
+    {
+        ""$unwind"": ""$procedures.subject_procedures""
+    },
+    {
+        ""$unwind"": ""$procedures.subject_procedures.procedures""
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$procedures.subject_procedures.procedures.targeted_structure""
+        }
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Count occurrences of each targeted structure
+structure_counts = Counter()
+for record in result:
+    if record['_id'] is not None:
+        structure_counts[record['_id']] += 1
+
+print(""Targeted Brain Structures in 'Thalamus in the middle' Project:"")
+for structure, count in structure_counts.items():
+    print(f""{structure}: {count} records"")","Brain structures data was collected from:
+[
+   {
+      ""brain_structure"": ""VM""
+   },
+   {
+      ""brain_structure"": ""aPVT""
+   },
+   {
+      ""brain_structure"": ""pPVT""
+   },
+   {
+      ""brain_structure"": ""c. ALM""
+   },
+   {
+      ""brain_structure"": ""mPFC""
+   },
+   {
+      ""brain_structure"": ""PVT""
+   },
+   {
+      ""brain_structure"": ""ALM""
+   },
+   {
+      ""brain_structure"": ""Isocortex""
+   },
+   {
+      ""brain_structure"": ""c. mPFC""
+   },
+   {
+      ""brain_structure"": null
+   },
+   {
+      ""brain_structure"": ""IL""
+   }
+]
+","Based on the retrieved records for the ""Thalamus in the middle"" project, I'll summarize the brain structures data was collected from:
+
+1. Most Frequently Targeted Structures:
+- Isocortex (most common, appears in many records)
+- VM (Ventral Medial thalamic nucleus)
+- ALM (Anterior Lateral Motor cortex)
+- mPFC (medial Prefrontal Cortex)
+- PVT (Paraventricular Thalamic nucleus)
+- IL (Infralimbic cortex)
+
+2. Specific Variations:
+- Some records show multiple targeted structures in a single procedure
+- Some records have null/empty targeted structure entries
+- Structures like aPVT (anterior PVT) and pPVT (posterior PVT) are also mentioned
+
+3. Structure Combinations:
+Common combinations include:
+- Isocortex + Isocortex
+- ALM + VM
+- mPFC + VM
+- mPFC + PVT
+- IL + aPVT/pPVT
+
+The data suggests a diverse range of brain regions were targeted in this project, with a particular focus on cortical and thalamic structures. The Isocortex appears to be the most consistently targeted brain region across these records.",,22.884758,CORRECT,1,"{'filter': {'data_description.project_name': 'Thalamus in the middle'}, 'projection': {'data_description.project_name': 1, 'procedures.subject_procedures.procedures.targeted_structure': 1}}",CORRECT,1,57744,project
+"generate a query i can use to find the number of animals in the thalamus in the middle project who received injections in the following coordinate: AP: 2.8, ML: 0.2, DV: 0.6?","agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.project_name"": ""Thalamus in the middle"",
+            ""procedures.subject_procedures.procedures.injection_coordinate_ap"": ""2.8"",
+            ""procedures.subject_procedures.procedures.injection_coordinate_ml"": ""0.2"", 
+            ""procedures.subject_procedures.procedures.injection_coordinate_depth"": ""0.6""
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$procedures.subject_id"", 
+            ""count"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$count"": ""total_unique_animals""
+    }
+]","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.project_name"": ""Thalamus in the middle"",
+            ""procedures.subject_procedures.procedures.injection_coordinate_ap"": ""2.8"",
+            ""procedures.subject_procedures.procedures.injection_coordinate_ml"": ""0.2"", 
+            ""procedures.subject_procedures.procedures.injection_coordinate_depth"": ""0.6""
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$procedures.subject_id"", 
+            ""count"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$count"": ""total_unique_animals""
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+print(json.dumps(result, indent=2))","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.project_name"": ""Thalamus in the middle"",
+            ""procedures.subject_procedures.procedures.injection_coordinate_ap"": ""2.8"",
+            ""procedures.subject_procedures.procedures.injection_coordinate_ml"": ""0.2"", 
+            ""procedures.subject_procedures.procedures.injection_coordinate_depth"": ""0.6""
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$procedures.subject_id"", 
+            ""count"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$count"": ""total_unique_animals""
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+print(json.dumps(result, indent=2))",Error: cannot access local variable 'tool_output_size' where it is not associated with a value,,-1,ERROR,0,Error: cannot access local variable 'tool_output_size' where it is not associated with a value,ERROR,0,0,anatomical_coordinates
+determine the unique genotypes used in the Brain Computer Interface project,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$regex"":""Brain Computer Interface"",""$options"":""i""}}},{""$group"":{""_id"":""$subject.genotype""}},{""$project"":{""genotype"":""$_id"",""_id"":0}}]}","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.project_name"": {""$regex"": ""Brain Computer Interface"", ""$options"": ""i""}
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$subject.genotype""
+        }
+    },
+    {
+        ""$project"": {
+            ""genotype"": ""$_id"",
+            ""_id"": 0
+        }
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print unique genotypes
+print(""Unique Genotypes in Brain Computer Interface Project:"")
+for record in result:
+    print(record.get('genotype', 'No genotype specified'))","There are 12 unique genotypes. These are the genotypes: 
+Emx1-IRES-Cre/wt;Camk2a-tTA/wt;Ai94(TITL-GCaMP6s)/wt
+Camk2a-tTA/wt;tetO-GCaMP6s/wt
+wt/wt
+Slc17a6-IRES-Cre/wt;Ai230(TIT2L-XCaMPG-WPRE-ICL-ChRmine-oScarlet-IRES2-tTA2-WPRE)-hyg/wt
+Camk2a-tTA/wt;TetO-jGCaMP8s-01/wt
+Slc17a7-IRES2-Cre/wt;Ai228(TIT2L-GC6m-WPRE-ICL-ChRmine-oScarlet-WPRE-ICL-IRES-tTA2-WPRE)-hyg/wt
+Oi8(H11-CAG-Cas9)/Oi8(H11-CAG-Cas9)
+Dbh-Cre-KI/wt;Thy1-jRGECO1a-WPRE/wt
+None
+Slc17a7-IRES2-Cre/wt;Camk2a-tTA/wt;Ai94(TITL-GCaMP6s)/wt
+Camk2a-CreERT2/wt;Ai228(TIT2L-GC6m-WPRE-ICL-ChRmine-oScarlet-WPRE-ICL-IRES-tTA2-WPRE)-hyg/wt
+Dbh-Cre-KI/wt","Based on the aggregation results for the Brain Computer Interface project, here are the unique genotypes used, sorted by their frequency:
+
+Top Genotypes:
+1. ""Camk2a-tTA/wt;tetO-GCaMP6s/wt"" (131 instances)
+2. ""Slc17a6-IRES-Cre/wt;Ai230(TIT2L-XCaMPG-WPRE-ICL-ChRmine-oScarlet-IRES2-tTA2-WPRE)-hyg/wt"" (50 instances)
+3. ""Camk2a-tTA/wt;TetO-jGCaMP8s-01/wt"" (25 instances)
+4. ""Slc17a7-IRES2-Cre/wt;Ai228(TIT2L-GC6m-WPRE-ICL-ChRmine-oScarlet-WPRE-ICL-IRES-tTA2-WPRE)-hyg/wt"" (21 instances)
+5. ""Slc17a7-IRES2-Cre/wt;Camk2a-tTA/wt;Ai94(TITL-GCaMP6s)/wt"" (16 instances)
+
+Other Notable Genotypes:
+- ""Camk2a-CreERT2/wt;Ai228(TIT2L-GC6m-WPRE-ICL-ChRmine-oScarlet-WPRE-ICL-IRES-tTA2-WPRE)-hyg/wt"" (15 instances)
+- ""Emx1-IRES-Cre/wt;Camk2a-tTA/wt;Ai94(TITL-GCaMP6s)/wt"" (10 instances)
+
+Additional Observations:
+- 4 instances have null genotype
+- 4 instances are ""wt/wt""
+- Some rare genotypes like ""Dbh-Cre-KI/wt;Thy1-jRGECO1a-WPRE/wt"" appear only once
+
+These genotypes primarily involve Cre lines, calcium indicators (GCaMP variants), and transgenic constructs, suggesting complex genetic modifications for neural recording and manipulation in the Brain Computer Interface project.",,22.78394055,CORRECT,1,"{'agg_pipeline': [{'$match': {'data_description.project_name': {'$regex': 'Brain Computer Interface', '$options': 'i'}}}, {'$group': {'_id': '$subject.genotype', 'count': {'$sum': 1}}}, {'$sort': {'count': -1}}]}",CORRECT,1,874,project
+what are the unique viruses in the brain computer interface project?,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$regex"":""Brain Computer Interface"",""$options"":""i""}}},{""$match"":{""procedures.subject_procedures"":{""$exists"":true,""$ne"":[]}}},{""$unwind"":""$procedures.subject_procedures""},{""$unwind"":""$procedures.subject_procedures.procedures""},{""$match"":{""procedures.subject_procedures.procedures.injection_materials"":{""$exists"":true,""$ne"":[]}}},{""$unwind"":""$procedures.subject_procedures.procedures.injection_materials""},{""$match"":{""procedures.subject_procedures.procedures.injection_materials.material_type"":""Virus""}},{""$group"":{""_id"":""$procedures.subject_procedures.procedures.injection_materials.name""}},{""$project"":{""virus_name"":""$_id"",""_id"":0}}]}","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'data_description.project_name': {'$regex': 'Brain Computer Interface', '$options': 'i'}}},
+    {'$match': {'procedures.subject_procedures': {'$exists': True, '$ne': []}}},
+    {'$unwind': '$procedures.subject_procedures'},
+    {'$unwind': '$procedures.subject_procedures.procedures'},
+    {'$match': {'procedures.subject_procedures.procedures.injection_materials': {'$exists': True, '$ne': []}}},
+    {'$unwind': '$procedures.subject_procedures.procedures.injection_materials'},
+    {'$match': {'procedures.subject_procedures.procedures.injection_materials.material_type': 'Virus'}},
+    {'$group': {'_id': '$procedures.subject_procedures.procedures.injection_materials.name'}},
+    {'$project': {'virus_name': '$_id', '_id': 0}}
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print unique viruses
+print(""Unique Viruses in Brain Computer Interface Project:"")
+for virus in result:
+    print(virus['virus_name'])","Here are the unique viruses: 
+AiP32125
+CamKIIa_ChrimsonR_FusionRed_Kv2.1
+VIR32066_PHPeB
+VIR32098_PHPeB
+VT5417G
+it's not in the database yet..
+pAAV-CaMKIIa-ChRmine-oScarlet-Kv2.1-WPRE - 7413
+pAAV-hSyn-RiboL1-jGCaMP8s-WPRE
+pAAV-hSyn1-RiboL1-GCaMP8s-WPRE","Based on the aggregation results for the brain computer interface project, here are the unique viruses/viral materials used:
+
+1. AiP32125 (7 instances)
+2. CamKIIa_ChrimsonR_FusionRed_Kv2.1 (369 instances)
+3. VIR32066_PHPeB (1 instance)
+4. VIR32098_PHPeB (3 instances)
+5. VT5417G (3 instances)
+6. pAAV-CaMKIIa-ChRmine-oScarlet-Kv2.1-WPRE - 7413 (20 instances)
+7. pAAV-hSyn-RiboL1-jGCaMP8s-WPRE (2 instances)
+8. pAAV-hSyn1-RiboL1-GCaMP8s-WPRE (42 instances)
+
+Notably, there are also some entries marked as ""it's not in the database yet"" (68 instances) and ""it's not in the database yet.."" (11 instances), which suggest some viral materials are still being cataloged.
+
+The most frequently used viral material is CamKIIa_ChrimsonR_FusionRed_Kv2.1, with 369 instances in the brain computer interface project.",,27.70709276,CORRECT,1,"{'agg_pipeline': [{'$match': {'data_description.project_name': {'$regex': 'brain computer interface', '$options': 'i'}}}, {'$project': {'procedures.subject_procedures': 1, 'name': 1}}, {'$unwind': {'path': '$procedures.subject_procedures', 'preserveNullAndEmptyArrays': False}}, {'$unwind': {'path': '$procedures.subject_procedures.procedures', 'preserveNullAndEmptyArrays': False}}, {'$match': {'procedures.subject_procedures.procedures.injection_materials': {'$exists': True}}}, {'$unwind': {'path': '$procedures.subject_procedures.procedures.injection_materials', 'preserveNullAndEmptyArrays': False}}, {'$group': {'_id': '$procedures.subject_procedures.procedures.injection_materials.name', 'count': {'$sum': 1}}}, {'$sort': {'_id': 1}}]}",CORRECT,1,497,project
+" list the subject ids, and virus names for mice in the ""Thalamus in the middle"" project that had injections in VM","{""agg_pipeline"":[{""$match"":{""data_description.project_name"":""Thalamus in the middle"",""procedures.subject_procedures"":{""$elemMatch"":{""procedures"":{""$elemMatch"":{""targeted_structure"":""VM""}}}}}},{""$project"":{""subject_id"":""$subject.subject_id"",""procedures"":""$procedures.subject_procedures""}}]}","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.project_name"": ""Thalamus in the middle"", 
+            ""procedures.subject_procedures"": {
+                ""$elemMatch"": {
+                    ""procedures"": {
+                        ""$elemMatch"": {
+                            ""targeted_structure"": ""VM""
+                        }
+                    }
+                }
+            }
+        }
+    },
+    {
+        ""$project"": {
+            ""subject_id"": ""$subject.subject_id"",
+            ""virus_names"": ""$procedures.subject_procedures.procedures.injection_materials.name""
+        }
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Process and print the results
+for record in result:
+    print(f""Subject ID: {record.get('subject_id')}"")
+    print(""Virus Names:"")
+    for virus_list in record.get('virus_names', []):
+        for virus in virus_list:
+            print(f""- {virus}"")
+    print(""---"")","Subject ID: 658207
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 658208
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 658209
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 658207
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 673394
+Virus Names:
+- ['SL1-hSyn-Cre', 'FluoSphere (Dark Red)']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 666941
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 662616
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 662616
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 666941
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 668125
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 668126
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 661792
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 661792
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 661790
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 662585
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 662585
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 662616
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 662616
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 669120
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 669120
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 656374
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 669121
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 669121
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 658208
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 673394
+Virus Names:
+- ['SL1-hSyn-Cre', 'FluoSphere (Dark Red)']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 673393
+Virus Names:
+- ['SL1-hSyn-Cre', 'FluoSphere (Dark Red)']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 652504
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 654095
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 652504
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---
+Subject ID: 652505
+Virus Names:
+- ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
+- ['AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG']
+- ['EnvA CVS-N2C-histone-GFP']
+---","Based on the retrieved documents, here's a summary of the subject IDs and virus names for mice in the ""Thalamus in the middle"" project that had injections in the VM (Ventral Midbrain):
+
+Subject IDs and Virus Names for VM Injections:
+1. Subject ID: 658207
+   - AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG
+   - EnvA CVS-N2C-histone-GFP
+
+2. Subject ID: 658208
+   - AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG
+   - EnvA CVS-N2C-histone-GFP
+
+3. Subject ID: 658209
+   - AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG
+   - EnvA CVS-N2C-histone-GFP
+
+4. Subject ID: 666941
+   - AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG
+   - EnvA CVS-N2C-histone-GFP
+
+5. Subject ID: 661792
+   - AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG
+   - EnvA CVS-N2C-histone-GFP
+
+6. Subject ID: 661790
+   - AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG
+   - EnvA CVS-N2C-histone-GFP
+
+7. Subject ID: 662616
+   - AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG
+   - EnvA CVS-N2C-histone-GFP
+
+8. Subject ID: 668125
+   - AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG
+   - EnvA CVS-N2C-histone-GFP
+
+9. Subject ID: 668126
+   - AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG
+   - EnvA CVS-N2C-histone-GFP
+
+10. Subject ID: 669120
+    - AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG
+    - EnvA CVS-N2C-histone-GFP
+
+11. Subject ID: 669121
+    - AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG
+    - EnvA CVS-N2C-histone-GFP
+
+12. Subject ID: 673394
+    - AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG
+    - EnvA CVS-N2C-histone-GFP
+
+13. Subject ID: 673393
+    - AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG
+    - EnvA CVS-N2C-histone-GFP
+
+Note: Each subject received two viruses: one for Cre-dependent labeling (AAV-Syn-DIO-TVA66T-dTomato-CVS N2cG) and another for additional labeling or tracing (EnvA CVS-N2C-histone-GFP).",,30.362988,CORRECT,1,"{'agg_pipeline': [{'$match': {'data_description.project_name': 'Thalamus in the middle', 'procedures.subject_procedures.procedures.targeted_structure': 'VM'}}, {'$project': {'subject_id': '$subject.subject_id', 'procedures': '$procedures.subject_procedures'}}]}",INCORRECT,0,136290,anatomical_coordinates
+Give me a timeline of Data Acquisition Streams for single-plane-ophys_621025_2022-07-05_17-48-34,"{""filter"":{""name"":""single-plane-ophys_621025_2022-07-05_17-48-34""},""projection"":{""session.data_streams"":1,""name"":1}}","import json
+from datetime import datetime
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Filter for the specific session name
+filter = {""name"": ""single-plane-ophys_621025_2022-07-05_17-48-34""}
+
+# Project only the data streams
+projection = {""session.data_streams"": 1, ""name"": 1}
+
+# Retrieve the records
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection
+)
+
+# Process and print the data streams
+data_streams = records[0]['session']['data_streams']
+
+print(""Data Acquisition Streams Timeline:"")
+for i, stream in enumerate(data_streams, 1):
+    print(f""\nStream {i}:"")
+    print(f""Start Time: {stream['stream_start_time']}"")
+    print(f""End Time: {stream['stream_end_time']}"")
+    print(f""DAQ Names: {stream['daq_names']}"")
+    print(f""Stream Modalities: {[mod['name'] for mod in stream['stream_modalities']]}"")
+    print(f""Notes: {stream['notes']}"")","Stream 1:
+Start Time: 2022-07-05T16:45:38.865000-07:00
+End Time: 2022-07-05T16:46:40.913314-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:stack
+
+Stream 2:
+Start Time: 2022-07-05T17:48:34.118000-07:00
+End Time: 2022-07-05T17:49:37.048710-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:stackpost
+
+Stream 3:
+Start Time: 2022-07-05T17:43:34.002000-07:00
+End Time: 2022-07-05T17:43:56.011630-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:spontPost
+
+Stream 4:
+Start Time: 2022-07-05T17:44:09.611000-07:00
+End Time: 2022-07-05T17:48:02.349575-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:spontPost_again
+
+Stream 5:
+Start Time: 2022-07-05T16:49:55.924999-07:00
+End Time: 2022-07-05T16:50:51.417821-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:spont
+
+Stream 6:
+Start Time: 2022-07-05T16:53:21.731999-07:00
+End Time: 2022-07-05T16:57:17.360622-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:spont_again
+
+Stream 7:
+Start Time: 2022-07-05T16:57:53.490999-07:00
+End Time: 2022-07-05T17:15:04.813925-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology', 'Behavior', 'Behavior videos']
+Notes: tiff_stem:Neuron1
+
+Stream 8:
+Start Time: 2022-07-05T17:17:57.798000-07:00
+End Time: 2022-07-05T17:43:09.523928-07:00
+DAQ Names: ['PXI']
+Stream Modalities: ['Planar optical physiology']
+Notes: tiff_stem:_slm2","Based on the retrieved document for single-plane-ophys_621025_2022-07-05_17-48-34, here's a comprehensive timeline of Data Acquisition Streams:
+
+Data Acquisition Timeline (All on 2022-07-05, Pacific Time):
+
+1. First Stream:
+   - Start: 16:45:38
+   - End: 16:46:40
+   - Notes: ""tiff_stem:stack""
+   - Modality: Planar optical physiology (pophys)
+
+2. Second Stream:
+   - Start: 16:49:55
+   - End: 16:50:51
+   - Notes: ""tiff_stem:spont""
+   - Modality: Planar optical physiology (pophys)
+
+3. Third Stream:
+   - Start: 16:53:21
+   - End: 16:57:17
+   - Notes: ""tiff_stem:spont_again""
+   - Modality: Planar optical physiology (pophys)
+
+4. Fourth Stream:
+   - Start: 16:57:53
+   - End: 17:15:04
+   - Notes: ""tiff_stem:Neuron1""
+   - Modalities: 
+     * Planar optical physiology (pophys)
+     * Behavior
+     * Behavior videos
+   - Additional Cameras: Side Face Camera, Bottom Face Camera
+
+5. Fifth Stream:
+   - Start: 17:17:57
+   - End: 17:43:09
+   - Notes: ""tiff_stem:_slm2""
+   - Modality: Planar optical physiology (pophys)
+
+6. Sixth Stream:
+   - Start: 17:43:34
+   - End: 17:43:56
+   - Notes: ""tiff_stem:spontPost""
+   - Modality: Planar optical physiology (pophys)
+
+7. Seventh Stream:
+   - Start: 17:44:09
+   - End: 17:48:02
+   - Notes: ""tiff_stem:spontPost_again""
+   - Modality: Planar optical physiology (pophys)
+
+8. Final Stream:
+   - Start: 17:48:34
+   - End: 17:49:37
+   - Notes: ""tiff_stem:stackpost""
+   - Modality: Planar optical physiology (pophys)
+
+Consistent Experimental Parameters Across Streams:
+- Light Source: Chameleon Laser (920nm wavelength, 7% power)
+- Detector: Green PMT
+- Targeted Structure: Primary Motor Cortex
+- Imaging Depth: 200 micrometers
+- Field of View: 800x800 pixels
+- Frame Rate: 19.4111 Hz",,30.92001271,CORRECT,1,"{'filter': {'name': 'single-plane-ophys_621025_2022-07-05_17-48-34'}, 'projection': {'session.data_streams': 1, 'name': 1}}",CORRECT,1,12705,experimental_details
+return the count of how many subjects had sessions that contained both optical physiology and behavior data streams,"{""agg_pipeline"":[{""$match"":{""data_description.modality"":{""$exists"":true}}},{""$project"":{""subject_id"":""$data_description.subject_id"",""modalities"":""$data_description.modality.name""}},{""$match"":{""subject_id"":{""$exists"":true,""$ne"":null}}},{""$group"":{""_id"":""$subject_id"",""modalities"":{""$addToSet"":""$modalities""}}},{""$match"":{""modalities"":{""$all"":[{""$elemMatch"":{""$regex"":""optical physiology"",""$options"":""i""}},{""$elemMatch"":{""$regex"":""behavior"",""$options"":""i""}}]}}},{""$project"":{""_id"":0,""subject_id"":""$_id"",""modalities"":1}},{""$limit"":50}]}","
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.modality"": {""$exists"": True}
+        }
+    },
+    {
+        ""$project"": {
+            ""subject_id"": ""$data_description.subject_id"", 
+            ""modalities"": ""$data_description.modality.name""
+        }
+    },
+    {
+        ""$match"": {
+            ""subject_id"": {""$exists"": True, ""$ne"": None}
+        }
+    },
+    {
+        ""$unwind"": ""$modalities""
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$subject_id"", 
+            ""modalities"": {""$addToSet"": ""$modalities""}
+        }
+    },
+    {
+        ""$match"": {
+            ""$and"": [
+                {""modalities"": {""$regex"": ""optical physiology"", ""$options"": ""i""}},
+                {""modalities"": {""$regex"": ""behavior"", ""$options"": ""i""}}
+            ]
+        }
+    },
+    {
+        ""$project"": {
+            ""_id"": 0, 
+            ""subject_id"": ""$_id"", 
+            ""modalities"": 1
+        }
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+
+# Optional: Count of subjects
+print(f""Total Subjects Found: {len(result)}"")",There are 101 subjects that match the criteria.,"Based on the MongoDB aggregation results, 89 subjects had sessions that contained both Planar optical physiology and Behavior data streams.
+
+Let me break down the aggregation pipeline for clarity:
+
+1. `$match`: Initially filters documents with existing modality and subject_id
+2. `$unwind`: Separates modality arrays to process individual modalities
+3. `$group`: Groups by subject_id and collects unique modality names
+4. `$match`: Filters for subjects with BOTH 'Planar optical physiology' and 'Behavior' modalities
+5. `$count`: Counts the number of matching subjects
+
+Here's a Python implementation to verify:
+
+```python
+import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.alledneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'data_description.modality': {'$exists': True}, 'subject.subject_id': {'$exists': True}}},
+    {'$unwind': '$data_description.modality'},
+    {'$group': {'_id': '$subject.subject_id', 'modalities': {'$addToSet': '$data_description.modality.name'}}},
+    {'$match': {'modalities': {'$all': ['Planar optical physiology', 'Behavior']}}},
+    {'$count': 'count'}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(f""Number of subjects with both Planar optical physiology and Behavior data: {result[0]['count']}"")
+```
+
+The result confirms that 89 subjects have sessions containing both optical physiology and behavior data streams.",,202.397373,INCORRECT,0,"{'agg_pipeline': [{'$match': {'data_description.modality': {'$exists': True}, 'subject.subject_id': {'$exists': True}}}, {'$unwind': '$data_description.modality'}, {'$group': {'_id': '$subject.subject_id', 'modalities': {'$addToSet': '$data_description.modality.name'}}}, {'$match': {'modalities': {'$all': ['Planar optical physiology', 'Behavior']}}}, {'$count': 'count'}]}",CORRECT,1,15,analysis
+What is the genotype for subject 675387?,"{
+""filter"":{
+""subject.subject_id"":""675387""
+}
+""projection"":{
+""subject.genotype"":1
+}
+}","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+filter = {""subject.subject_id"": ""675387""}
+projection = {
+    ""subject.subject_id"": 1,
+    ""subject.genotype"": 1
+}
+
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection,
+)
+
+# Print the results
+print(""Genotype for subject 675387:"")
+for record in records:
+    print(f""Subject ID: {record['subject']['subject_id']}"")
+    print(f""Genotype: {record['subject']['genotype']}"")",The genotype for subject 675387 is wt/wt,"Based on the retrieved documents, the genotype for subject 675387 is ""wt/wt"" (wild-type/wild-type).
+
+The query returned two documents with identical information:
+1. Document ID: ac3f5ca8-6c9c-42d5-b3d0-952565ac4d59
+2. Document ID: 14c42287-1157-4985-b0f2-633ef9b289e3
+
+Both documents confirm the subject's genotype as ""wt/wt"", which indicates that the subject has two wild-type alleles for the gene or genes being examined.",,15.82792544,CORRECT,1,"{'filter': {'subject.subject_id': '675387'}, 'projection': {'subject.genotype': 1, 'subject.subject_id': 1}}",CORRECT,1,214,subject
+What are all the assets using mouse 744330,"{""filter"":{""subject.subject_id"":""744330""},""projection"":{""name"":1,""_id"":0}}","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+filter = {""subject.subject_id"":""744330""}
+projection = {
+    ""name"": 1
+}
+
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection,
+)
+
+print(records)","""""""behavior_744330_2024-09-18_09-19-56_processed_2024-09-25_04-01-44"""", """"behavior_744330_2024-10-09_09-28-02"""", """"behavior_744330_2024-12-05_17-09-52"""", """"behavior_744330_2024-12-04_13-24-28"""", """"behavior_744330_2024-12-02_13-45-51"""", """"behavior_744330_2024-12-03_10-56-30"""", """"behavior_744330_2024-11-13_13-59-24"""", """"behavior_744330_2024-11-21_14-06-34"""", 
+""""behavior_744330_2024-11-25_13-55-30"""", """"behavior_744330_2024-10-04_09-21-04_processed_2025-02-23_03-11-03"""",  """"behavior_744330_2024-09-20_09-07-42_processed_2025-02-23_01-24-27"""", """"behavior_744330_2024-09-16_09-33-31_processed_2025-02-23_00-40-08""""""","Based on the retrieved documents, here are the assets for mouse 744330:
+
+Behavior Assets:
+1. behavior_744330_2024-09-18_09-19-56_processed_2024-09-25_04-01-44
+   - Modalities: Behavior, Behavior videos, Fiber photometry
+
+2. behavior_744330_2024-10-09_09-28-02
+   - Modalities: Behavior, Behavior videos
+
+3. behavior_744330_2024-12-05_17-09-52
+   - Modalities: Behavior, Behavior videos
+
+4. behavior_744330_2024-12-04_13-24-28
+   - Modalities: Behavior, Behavior videos
+
+5. behavior_744330_2024-12-02_13-45-51
+   - Modality: Behavior
+
+6. behavior_744330_2024-12-03_10-56-30
+   - Modality: Behavior
+
+7. behavior_744330_2024-11-13_13-59-24
+   - Modalities: Behavior, Behavior videos
+
+8. behavior_744330_2024-11-21_14-06-34
+   - Modality: Behavior
+
+9. behavior_744330_2024-11-25_13-55-30
+   - Modality: Behavior
+
+10. behavior_744330_2024-10-04_09-21-04_processed_2025-02-23_03-11-03
+    - Modalities: Behavior, Behavior videos
+
+11. behavior_744330_2024-09-20_09-07-42_processed_2025-02-23_01-24-27
+    - Modalities: Behavior, Behavior videos
+
+12. behavior_744330_2024-09-16_09-33-31_processed_2025-02-23_00-40-08
+    - Modalities: Behavior, Behavior videos
+
+Summary:
+- Total assets: 12
+- Modalities: Primarily Behavior and Behavior videos
+- One asset includes Fiber photometry
+- Dates range from September 2024 to December 2024
+- Some assets have additional processing timestamps in 2025",,18.73325753,CORRECT,1,"{'filter': {'subject.subject_id': '744330'}, 'projection': {'name': 1, 'data_description.modality': 1}}",CORRECT,1,2869,subject
+Write a MongoDB query to find the genotype of SmartSPIM_675387_2023-05-23_23-05-56,"{
+""filter"":{
+""name"":""SmartSPIM_675387_2023-05-23_23-05-56""
+}
+""projection"":{
+""subject.genotype"":1
+""_id"":0
+}
+}","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+filter = {""name"": ""SmartSPIM_675387_2023-05-23_23-05-56""}
+projection = {
+    ""subject.subject_id"": 1,
+    ""subject.genotype"": 1
+}
+
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection,
+)
+
+# Print the results
+print(""Genotype for subject 675387:"")
+for record in records:
+    print(f""Subject ID: {record['subject']['subject_id']}"")
+    print(f""Genotype: {record['subject']['genotype']}"")","
+                    <query>{
+                            ""$match"": {""name"":""SmartSPIM_675387_2023-05-23_23-05-56""},
+                            ""$project"": {""_id"": 0, ""genotype"": ""$subject.genotype""}
+                    }</query>
+                    To find the genotype for the experiment with the name ""SmartSPIM_675387_2023-05-23_23-05-56"", the MongoDB query would be:
+                    1. The `$match` stage filters the documents to only include the one with the specified name.
+                    2. The `$project` stage excludes the `_id` field and includes the `genotype` field from the nested `subject` object.
+                    The retrieved output shows that the genotype for this experiment is ""wt/wt"".
+                    ","I'll help you retrieve the genotype for the specified SmartSPIM sample using a MongoDB query. Based on the retrieved document, here's a complete Python solution:
+
+```python
+import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Filter to find the specific SmartSPIM record
+filter = {""name"": ""SmartSPIM_675387_2023-05-23_23-05-56""}
+projection = {""subject.genotype"": 1}
+
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection,
+)
+
+print(""Genotype:"", records[0]['subject']['genotype'])
+```
+
+Result: The genotype for SmartSPIM_675387_2023-05-23_23-05-56 is ""wt/wt"" (wild type/wild type).
+
+Explanation:
+- The query filters records by the exact name of the SmartSPIM sample
+- It uses a projection to retrieve only the genotype field
+- The result shows the sample has a wild type genotype in both alleles",,14.59744573,CORRECT,1,"{'filter': {'name': 'SmartSPIM_675387_2023-05-23_23-05-56'}, 'projection': {'subject.genotype': 1}}",INCORRECT,0,83,experimental_details
+What is the genotype for the subject in ecephys_737403_2024-09-27_10-30-18_sorted_2024-11-19_19-28-46?,"{
+""filter"":{
+""name"":""SmartSPIM_675387_2023-05-23_23-05-56""
+}
+""projection"":{
+""subject.genotype"":1
+}
+}","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+filter = {""name"": ""ecephys_737403_2024-09-27_10-30-18_sorted_2024-11-19_19-28-46""}
+projection = {
+    ""subject.subject_id"": 1,
+    ""subject.genotype"": 1
+}
+
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection,
+)
+
+# Print the results
+print(""Genotype for subject 737403:"")
+for record in records:
+    print(f""Subject ID: {record['subject']['subject_id']}"")
+    print(f""Genotype: {record['subject']['genotype']}"")",The genotype for the subject in ecephys_737403_2024-09-27_10-30-18_sorted_2024-11-19_19-28-46 is Vip-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt,"Based on the retrieved document, the genotype for the subject is:
+
+Vip-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt
+
+Let me break this down for you:
+- The subject has a heterozygous Vip-IRES-Cre genotype (one wild-type allele)
+- The subject also has a heterozygous Ai32 transgenic allele, which contains:
+  - A Cre-dependent ChR2(H134R) variant
+  - An EYFP (Enhanced Yellow Fluorescent Protein) reporter
+  - One wild-type allele
+
+The subject's ID is 737403, which matches the number in the original filename you provided.",,12.06040978,CORRECT,1,"{'filter': {'name': 'ecephys_737403_2024-09-27_10-30-18_sorted_2024-11-19_19-28-46'}, 'projection': {'subject.genotype': 1, 'subject.subject_id': 1}}",INCORRECT,0,147,subject
+What are the stereotactic coordinates for all fiber implants in asset ophys_661797_2023-02-15_11-19-14?,"{""filter"":{""name"":""ophys_661797_2023-02-15_11-19-14""},""projection"":{""procedures.subject_procedures"":1}}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Filter for the specific asset name
+filter = {""name"": ""ophys_661797_2023-02-15_11-19-14""}
+
+# Project to get the fiber implant procedures
+projection = {
+    ""procedures.subject_procedures"": 1
+}
+
+# Retrieve the records
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection
+)
+
+# Extract and print fiber implant coordinates
+fiber_implants = []
+for record in records:
+    for procedure in record.get('procedures', {}).get('subject_procedures', []):
+        if procedure.get('procedure_type') == 'Fiber implant':
+            probe_info = procedure.get('probes', {})
+            fiber_implant = {
+                ""probe_name"": probe_info.get('name'),
+                ""stereotactic_coordinates"": {
+                    ""AP"": probe_info.get('stereotactic_coordinate_ap'),
+                    ""ML"": probe_info.get('stereotactic_coordinate_ml'),
+                    ""DV"": probe_info.get('stereotactic_coordinate_dv')
+                },
+                ""coordinate_unit"": probe_info.get('stereotactic_coordinate_unit'),
+                ""angle"": f""{probe_info.get('angle')} {probe_info.get('angle_unit')}""
+            }
+            fiber_implants.append(fiber_implant)
+
+# Print the results
+print(""Fiber Implant Stereotactic Coordinates:"")
+print(json.dumps(fiber_implants, indent=2))","Based on the provided context, the stereotactic coordinates for the fiber implants in asset ""ophys_661797_2023-02-15_11-19-14"" are:
+
+Probe A:
+
+AP (anterior-posterior): 1.2 mm
+ML (medial-lateral): -1.3 mm (left hemisphere)
+DV (dorsal-ventral): 4.0 mm
+Angle: 0.0 degrees
+Probe B:
+
+AP (anterior-posterior): 1.2 mm
+ML (medial-lateral): 1.3 mm (right hemisphere)
+DV (dorsal-ventral): 4.0 mm
+Angle: 0.0 degrees
+Both fiber implants were placed at the same depth and AP coordinates, but in opposite hemispheres.","Based on the retrieved document for asset ophys_661797_2023-02-15_11-19-14, there are two fiber implant procedures with the following stereotactic coordinates:
+
+1. Probe A:
+   - Anterior-Posterior (AP): 1.2 mm
+   - Dorsal-Ventral (DV): 4.0 mm
+   - Medial-Lateral (ML): -1.3 mm
+
+2. Probe B:
+   - Anterior-Posterior (AP): 1.2 mm
+   - Dorsal-Ventral (DV): 4.0 mm
+   - Medial-Lateral (ML): 1.3 mm
+
+Both probes were implanted with:
+- Angle: 0 degrees
+- Coordinate reference: Not specified
+- Coordinate unit: millimeters
+
+Note that Probe A is located in the left hemisphere (negative ML coordinate), while Probe B is in the right hemisphere (positive ML coordinate).",,14.72528267,CORRECT,1,"{'filter': {'name': 'ophys_661797_2023-02-15_11-19-14'}, 'projection': {'procedures.subject_procedures': 1}}",CORRECT,1,3989,anatomical_coordinates
+What percentage of fiber photometry experiments include complementary behavioral data,"{""agg_pipeline"":[{""$match"":{""data_description.modality.name"":{""$regex"":""fiber photometry"",""$options"":""i""}}},{""$project"":{""_id"":1,""name"":1,""has_behavior"":{""$cond"":[{""$or"":[{""$in"":[""Behavior"",""$data_description.modality.name""]},{""$in"":[""Behavior videos"",""$data_description.modality.name""]},{""$in"":[""Trained behavior"",""$data_description.modality.name""]}]},true,false]}}},{""$group"":{""_id"":null,""total_count"":{""$sum"":1},""with_behavior_count"":{""$sum"":{""$cond"":[""$has_behavior"",1,0]}}}},{""$project"":{""_id"":0,""total_count"":1,""with_behavior_count"":1,""percentage"":{""$multiply"":[{""$divide"":[""$with_behavior_count"",""$total_count""]},100]}}}]}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.modality.name"": {""$regex"": ""fiber photometry"", ""$options"": ""i""}
+        }
+    },
+    {
+        ""$project"": {
+            ""_id"": 1,
+            ""name"": 1,
+            ""has_behavior"": {
+                ""$cond"": [
+                    {
+                        ""$or"": [
+                            {""$in"": [""Behavior"", ""$data_description.modality.name""]},
+                            {""$in"": [""Behavior videos"", ""$data_description.modality.name""]},
+                            {""$in"": [""Trained behavior"", ""$data_description.modality.name""]}
+                        ]
+                    },
+                    True,
+                    False
+                ]
+            }
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": None,
+            ""total_count"": {""$sum"": 1},
+            ""with_behavior_count"": {""$sum"": {""$cond"": [""$has_behavior"", 1, 0]}}
+        }
+    },
+    {
+        ""$project"": {
+            ""_id"": 0,
+            ""total_count"": 1,
+            ""with_behavior_count"": 1,
+            ""percentage"": {""$multiply"": [{""$divide"": [""$with_behavior_count"", ""$total_count""]}, 100]}
+        }
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=2))","Analysis of the Results:
+
+Total Fiber Photometry Experiments: 2062
+Experiments with Behavioral Data: 1985
+Percentage of Experiments with Behavioral Data: 96.27%","Based on the aggregation results, I'll break down the percentage of fiber photometry experiments with complementary behavioral data:
+
+Total fiber photometry experiments: 1,990 (1,766 + 224)
+Experiments with behavioral data: 1,766
+Experiments without behavioral data: 224
+
+Percentage calculation:
+(1,766 / 1,990) * 100 = 88.73%
+
+Interpretation:
+Approximately 88.73% of fiber photometry experiments in the database include complementary behavioral data. This is a high proportion, suggesting that most fiber photometry studies are paired with behavioral measurements to provide context and deeper insights into neural activity.
+
+Here's the Python code that generated these results:
+
+```python
+import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'data_description.modality.name': 'Fiber photometry'}},
+    {'$project': {
+        '_id': 1, 
+        'name': 1, 
+        'has_behavior': {'$in': ['Behavior', '$data_description.modality.name']}
+    }},
+    {'$group': {
+        '_id': '$has_behavior', 
+        'count': {'$sum': 1}
+    }}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=3))
+```
+
+The query first filters for fiber photometry experiments, then checks if 'Behavior' is present in the modality names, and finally groups and counts the results by whether behavioral data is present.",,20.01706052,INCORRECT,0,"{'agg_pipeline': [{'$match': {'data_description.modality.name': 'Fiber photometry'}}, {'$project': {'_id': 1, 'name': 1, 'has_behavior': {'$in': ['Behavior', '$data_description.modality.name']}}}, {'$group': {'_id': '$has_behavior', 'count': {'$sum': 1}}}]}",INCORRECT,0,60,analysis
+Compare the processing durations for assets from the same subject (661797) across different experimental sessions.,"{""filter"":{""subject.subject_id"":""661797"",""processing"":{""$exists"":true}},""projection"":{""_id"":1,""name"":1,""processing"":1}}","from datetime import datetime
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Filter for subject 661797 with processing information
+filter = {
+    'subject.subject_id': '661797', 
+    'processing': {'$exists': True}
+}
+
+projection = {
+    'name': 1, 
+    'processing.data_processes.start_date_time': 1,
+    'processing.data_processes.end_date_time': 1,
+    'processing.data_processes.version': 1
+}
+
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection
+)
+
+# Process and print processing durations
+print(""Processing Durations for Subject 661797:\n"")
+for record in records:
+    name = record.get('name', 'Unknown')
+    processes = record.get('processing', {}).get('data_processes', [])
+
+    for process in processes:
+        start_time = process.get('start_date_time')
+        end_time = process.get('end_date_time')
+        version = process.get('version')
+
+        if start_time and end_time:
+            start = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+            end = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+            duration = end - start
+
+            print(f""Session: {name}"")
+            print(f""Version: {version}"")
+            print(f""Start Time: {start}"")
+            print(f""End Time: {end}"")
+            print(f""Duration: {duration}\n"")","Processing Durations for Subject 661797:
+
+Session: HSFP_661797_2023-02-15_11-17-30
+Version: 0.16.2
+Start Time: 2023-05-10 20:46:59.340832+00:00
+End Time: 2023-05-10 20:48:47.913348+00:00
+Duration: 0:01:48.572516
+
+Session: HSFP_661797_2023-02-15_11-19-14
+Version: 0.16.2
+Start Time: 2023-05-10 20:48:50.288500+00:00
+End Time: 2023-05-10 20:52:03.246558+00:00
+Duration: 0:03:12.958058
+
+Session: HSFP_661797_2023-02-15_11-30-14
+Version: 0.16.2
+Start Time: 2023-05-10 20:57:46.472980+00:00
+End Time: 2023-05-10 20:58:00.440152+00:00
+Duration: 0:00:13.967172
+
+Session: ophys_661797_2023-02-15_11-17-30
+Version: 0.14.1
+Start Time: 2023-04-28 22:52:21.482118+00:00
+End Time: 2023-04-28 22:54:11.934957+00:00
+Duration: 0:01:50.452839
+
+Session: ophys_661797_2023-02-15_11-19-14
+Version: 0.14.1
+Start Time: 2023-04-28 22:54:14.586823+00:00
+End Time: 2023-04-28 22:57:37.682176+00:00
+Duration: 0:03:23.095353
+
+Session: ophys_661797_2023-02-15_11-21-35
+Version: 0.14.1
+Start Time: 2023-04-28 22:57:40.368245+00:00
+End Time: 2023-04-28 23:04:43.812168+00:00
+Duration: 0:07:03.443923
+
+Session: ophys_661797_2023-02-15_11-30-14
+Version: 0.14.1
+Start Time: 2023-04-28 23:04:47.088237+00:00
+End Time: 2023-04-28 23:05:01.978967+00:00
+Duration: 0:00:14.890730","I'll help you analyze the processing durations for assets from subject 661797 across different experimental sessions. However, I noticed that the initial retrieval only returned the names of the sessions without their start and end times. I'll modify the query to retrieve the acquisition timestamps.
+
+```python
+import json
+from datetime import datetime
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+filter = {'subject.subject_id': '661797'}
+projection = {
+    'name': 1, 
+    'acquisition.session_start_time': 1, 
+    'acquisition.session_end_time': 1
+}
+
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection,
+)
+
+# Process and display session durations
+session_durations = []
+for record in records:
+    name = record.get('name', 'Unknown')
+    start_time = record.get('acquisition', {}).get('session_start_time')
+    end_time = record.get('acquisition', {}).get('session_end_time')
+    
+    if start_time and end_time:
+        start = datetime.fromisoformat(start_time)
+        end = datetime.fromisoformat(end_time)
+        duration = (end - start).total_seconds()
+        session_durations.append({
+            'name': name,
+            'start_time': start_time,
+            'end_time': end_time,
+            'duration_seconds': duration
+        })
+
+print(json.dumps(session_durations, indent=2))
+```
+
+Analysis of the results:
+1. The query retrieved multiple sessions for subject 661797
+2. Sessions are from two main experimental types: HSFP and ophys
+3. The sessions occurred on two dates: 2023-02-06 and 2023-02-15
+
+However, the current result set does not include processing durations. To get a complete analysis, we would need to:
+1. Confirm the availability of session start and end times
+2. Verify the data retrieval includes full acquisition timestamps
+3. Potentially expand the query to include more detailed processing metadata
+
+Would you like me to modify the query to retrieve more comprehensive processing information for these sessions?",,21.46392441,INCORRECT,0,"{'filter': {'subject.subject_id': '661797'}, 'projection': {'name': 1, 'acquisition.session_start_time': 1, 'acquisition.session_end_time': 1}}",INCORRECT,0,1016,subject
+How many records are stored in the database?,"{""agg_pipeline"":[{""$count"":""total_records""}]}","from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Using aggregation to count all records
+agg_pipeline = [
+    {
+        ""$count"": ""total_records""
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print the result
+if result:
+    print(f""Total number of records in the database: {result[0]['total_records']}"")
+else:
+    print(""No records found or error in query"")","There are 15,000 records found in the database.
+","I'll help you determine the number of records in the database by analyzing the retrieved documents.
+
+Based on the returned data, I can count the number of records:
+
+Total Records: 150
+
+The result shows a list of 150 unique document IDs, each represented by a UUID (Universally Unique Identifier). Each document has an ""_id"" field, which serves as a unique identifier in the MongoDB database.
+
+To verify this programmatically, I'll provide a Python script that demonstrates how to count the records:
+
+```python
+import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Retrieve all records with only _id projection
+filter = {}
+projection = {""_id"": 1}
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection,
+)
+
+# Count the number of records
+record_count = len(records)
+print(f""Total number of records: {record_count}"")
+```
+
+This script will retrieve all records and count them, confirming the total of 150 records in the database.",,22.64634013,INCORRECT,0,"{'filter': {}, 'projection': {'_id': 1}}",INCORRECT,0,4900,database
+How many assets have injections in the isocortex,"{""agg_pipeline"":[{""$match"":{""procedures.subject_procedures"":{""$elemMatch"":{""procedures"":{""$elemMatch"":{""targeted_structure"":{""$regex"":""isocortex"",""$options"":""i""}}}}}}},{""$count"":""total""}]}","from aind_data_access_api.document_db import MetadataDbClient
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Filter for assets with isocortex targeted procedures
+filter_query = {
+    ""procedures.subject_procedures.procedures.targeted_structure"": {
+        ""$regex"": ""isocortex"", 
+        ""$options"": ""i""
+    }
+}
+
+# Retrieve records
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter_query
+)
+
+# Count the number of unique assets
+num_assets = len(records)
+",There are 111 assets that have injections in the isocortex,"Based on the retrieved documents from the MongoDB database, there are 111 assets that have injections in the isocortex.
+
+To break this down:
+- The aggregation pipeline searched for assets where the subject procedures included a procedure targeting the isocortex (case-insensitive)
+- The `$count` stage then counted the total number of matching assets
+- The result shows exactly 111 assets meet this criteria
+
+Here's a Python implementation of the query for reference:
+
+```python
+import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {
+        '$match': {
+            'procedures.subject_procedures': {
+                '$elemMatch': {
+                    'procedures': {
+                        '$elemMatch': {
+                            'targeted_structure': {'$regex': 'isocortex', '$options': 'i'}
+                        }
+                    }
+                }
+            }
+        }
+    },
+    {'$count': 'count'}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=3))
+```",,23.55535078,CORRECT,1,"{'agg_pipeline': [{'$match': {'procedures.subject_procedures': {'$elemMatch': {'procedures': {'$elemMatch': {'targeted_structure': {'$regex': 'isocortex', '$options': 'i'}}}}}}}, {'$count': 'count'}]}",CORRECT,1,16,anatomical_coordinates
+What are the unique modalities found in the database?,"{""agg_pipeline"":[{""$project"":{""modality"":""$data_description.modality.name""}},{""$unwind"":{""path"":""$modality"",""preserveNullAndEmptyArrays"":true}},{""$group"":{""_id"":""$modality""}},{""$sort"":{""_id"":1}}]}","from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$project': {'modality': '$data_description.modality.name'}},
+    {'$unwind': {'path': '$modality', 'preserveNullAndEmptyArrays': True}},
+    {'$group': {'_id': '$modality'}},
+    {'$sort': {'_id': 1}}
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print unique modalities, filtering out null values
+unique_modalities = [modality['_id'] for modality in result if modality['_id'] is not None]
+print(""Unique Modalities:"")
+for modality in unique_modalities:
+    print(f""- {modality}"")","""The unique modalities in the database are Behavior
+Behavior videos
+Dual inverted selective plane illumination microscopy
+Electrophysiology
+Extracellular electrophysiology
+Fiber photometry
+Hyperspectral fiber photometry
+Planar optical physiology
+Selective plane illumination microscopy
+Trained behavior""","Based on the aggregation results, here are the unique modalities found in the database:
+
+1. Behavior
+2. Behavior videos
+3. Dual inverted selective plane illumination microscopy
+4. Electrophysiology
+5. Extracellular electrophysiology
+6. Fiber photometry
+7. Hyperspectral fiber photometry
+8. Planar optical physiology
+9. Selective plane illumination microscopy
+10. Trained behavior
+
+Note: There is also a null value in the results, which might indicate some records have missing or undefined modality information.
+
+Here's a Python code example to reproduce this query using the AIND data access API:
+
+```python
+import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$project': {'modality': '$data_description.modality.name'}},
+    {'$unwind': {'path': '$modality', 'preserveNullAndEmptyArrays': True}},
+    {'$group': {'_id': '$modality'}},
+    {'$sort': {'_id': 1}}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=3))
+```
+
+This query does the following:
+1. Projects the modality names from the data description
+2. Unwinds the modality array to handle multiple modalities per record
+3. Groups by unique modality names
+4. Sorts the results alphabetically",,20.24457169,CORRECT,1,"{'agg_pipeline': [{'$project': {'modality': '$data_description.modality.name'}}, {'$unwind': {'path': '$modality', 'preserveNullAndEmptyArrays': True}}, {'$group': {'_id': '$modality'}}, {'$sort': {'_id': 1}}]}",CORRECT,1,395,database
+Which channels were imaged in asset SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06?,"{""filter"":{""name"":""SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06""},""projection"":{""acquisition.tiles.channel"":1}}","from aind_data_access_api.document_db import MetadataDbClient
+
+# API setup
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Find the specific asset
+filter_query = {
+    ""name"": ""SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06""
+}
+
+# Project only the acquisition tiles with channel information
+projection = {
+    ""acquisition.tiles.channel.channel_name"": 1,
+    ""acquisition.tiles.channel.laser_wavelength"": 1,
+    ""acquisition.tiles.channel.filter_wheel_index"": 1
+}
+
+# Retrieve the record
+record = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter_query,
+    projection=projection
+)
+
+# Process the results to extract unique channels
+if record and len(record) > 0:
+    tiles = record[0].get(""acquisition"", {}).get(""tiles"", [])
+
+    # Extract unique channels
+    unique_channels = set()
+    channel_details = []
+
+    for tile in tiles:
+        if ""channel"" in tile:
+            channel_name = tile[""channel""].get(""channel_name"")
+            wavelength = tile[""channel""].get(""laser_wavelength"")
+            filter_index = tile[""channel""].get(""filter_wheel_index"")
+
+            channel_key = f""{channel_name}_{wavelength}_{filter_index}""
+            if channel_key not in unique_channels:
+                unique_channels.add(channel_key)
+                channel_details.append({
+                    ""channel_name"": channel_name,
+                    ""laser_wavelength"": wavelength,
+                    ""filter_wheel_index"": filter_index
+                })
+
+    print(f""Unique channels imaged in SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06:"")
+    for i, channel in enumerate(channel_details, 1):
+        print(f""{i}. Channel: {channel['channel_name']}, Wavelength: {channel['laser_wavelength']}nm, Filter Index: {channel['filter_wheel_index']}"")
+else:
+    print(""Asset not found or has no channel information."")","The channels imaged in the asset are 488 nm, 561 nm, and 639 nm.","Based on the retrieved document for the asset SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06, the imaging was performed using three distinct channels:
+
+1. 488 nm channel (blue/green excitation)
+   - Filter wheel index: 1
+   - Excitation power: 25 milliwatts
+
+2. 561 nm channel (green/yellow excitation)
+   - Filter wheel index: 2
+   - Excitation power: 27.27 milliwatts
+
+3. 639 nm channel (red excitation)
+   - Filter wheel index: 4
+   - Excitation power: 90 milliwatts
+
+These channels represent different wavelengths of fluorescence excitation, which are commonly used in multi-color imaging to visualize different fluorophores or cellular structures simultaneously.",,18.65202904,CORRECT,1,"{'filter': {'name': 'SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06'}, 'projection': {'acquisition.tiles.channel': 1}}",CORRECT,1,14405,experimental_details
+What is the total duration of the imaging session for the subject in SmartSPIM_675387_2023-05-23_23-05-56,"{""filter"":{""name"":""SmartSPIM_675387_2023-05-23_23-05-56""},""projection"":{""acquisition.session_start_time"":1,""acquisition.session_end_time"":1}}","import json
+from datetime import datetime
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Filter for the specific SmartSPIM dataset
+filter = {
+    ""name"": ""SmartSPIM_675387_2023-05-23_23-05-56""
+}
+
+# Project only the session start and end times
+projection = {
+    ""acquisition.session_start_time"": 1,
+    ""acquisition.session_end_time"": 1
+}
+
+# Retrieve the records
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection
+)
+
+# Calculate session duration
+if records:
+    session_start = datetime.fromisoformat(records[0]['acquisition']['session_start_time'])
+    session_end = datetime.fromisoformat(records[0]['acquisition']['session_end_time'])
+
+    session_duration = session_end - session_start
+
+    print(f""Session Start Time: {session_start}"")
+    print(f""Session End Time: {session_end}"")
+    print(f""Total Session Duration: {session_duration}"")
+else:
+    print(""No records found for the specified SmartSPIM dataset."")",The total duration of the imaging session for the subject in SmartSPIM_675387_2023-05-23_23-05-56 was approximately 5 hours and 4 minutes. This can be calculated from the session_start_time of 2023-05-23T23:05:56 and the session_end_time of 2023-05-24T04:10:10 provided in the context.,"Based on the retrieved document for SmartSPIM_675387_2023-05-23_23-05-56, I'll calculate the total duration of the imaging session:
+
+Session Start Time: 2023-05-23T23:05:56
+Session End Time: 2023-05-24T04:10:10
+
+To calculate the total duration, I'll subtract the start time from the end time:
+
+Total Duration: 5 hours, 4 minutes, and 14 seconds (5:04:14)
+
+This duration represents the complete imaging session time for the specified SmartSPIM subject, spanning from late evening on May 23rd to early morning on May 24th, 2023.",,16.39366174,CORRECT,1,"{'filter': {'name': 'SmartSPIM_675387_2023-05-23_23-05-56'}, 'projection': {'acquisition.session_start_time': 1, 'acquisition.session_end_time': 1}}",CORRECT,1,154,experimental_details
+What was the refractive index of the chamber immersion medium used in this experiment SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06?,"{""filter"":{""name"":""SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06""},""projection"":{""acquisition.chamber_immersion.refractive_index"":1}}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Filter to find the specific SmartSPIM experiment
+filter = {
+    ""name"": ""SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06""
+}
+
+# Projection to retrieve chamber immersion details
+projection = {
+    ""acquisition.chamber_immersion"": 1
+}
+
+# Retrieve the records
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection
+)
+
+# Print the results
+print(json.dumps(records, indent=2))","The refractive index of the chamber immersion medium used in the experiment SmartSPIM_675387_2023-05-23_23-05-56 was 1.558, the medium was Ethyl cinnamate.","Based on the retrieved document for the experiment SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06, the chamber immersion medium details are as follows:
+
+- Medium: Ethyl cinnamate
+- Refractive Index: 1.558
+
+The refractive index of the chamber immersion medium used in this experiment is 1.558.",,14.84571004,CORRECT,1,"{'filter': {'name': 'SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06'}, 'projection': {'acquisition.chamber_immersion': 1}}",INCORRECT,0,145,instrument
+"Can you list all the procedures performed on the specimen, including their start and end dates? in SmartSPIM_662616_2023-03-06_17-47-13","{""filter"":{""name"":""SmartSPIM_662616_2023-03-06_17-47-13""},""projection"":{""procedures.specimen_procedures"":1}}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Filter for the specific SmartSPIM specimen
+filter = {""name"": ""SmartSPIM_662616_2023-03-06_17-47-13""}
+
+# Project only the specimen procedures
+projection = {""procedures.specimen_procedures"": 1}
+
+# Retrieve the records
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection
+)
+
+# Print the procedures in a readable format
+print(""Procedures for SmartSPIM Specimen:"")
+for record in records:
+    procedures = record.get('procedures', {}).get('specimen_procedures', [])
+    for procedure in procedures:
+        print(f""\nProcedure Type: {procedure.get('procedure_type')}"")
+        print(f""Procedure Name: {procedure.get('procedure_name')}"")
+        print(f""Start Date: {procedure.get('start_date')}"")
+        print(f""End Date: {procedure.get('end_date')}"")
+        print(f""Experimenter: {procedure.get('experimenter_full_name')}"")","Subject procedures: 1. Surgery on 2023-01-25 with virus injections, 2. Surgery on 2023-01-25 with virus injection, Specimen procedures:1. Fixation (SHIELD OFF) from 2023-02-10 to 2023-02-122. Fixation (SHIELD ON) from 2023-02-12 to 2023-02-133. Delipidation (24h Delipidation) from 2023-02-15 to 2023-02-16  4. Delipidation (Active Delipidation) from 2023-02-16 to 2023-02-185. Refractive index matching (50% EasyIndex) from 2023-02-19 to 2023-02-206. Refractive index matching (100% EasyIndex) from 2023-02-20 to 2023-02-21, Imaging procedure: 1. SmartSPIM imaging session from 2023-03-06T17:47:13 to 2023-03-06T22:59:16","Based on the retrieved document for the specimen SmartSPIM_662616_2023-03-06_17-47-13, here is a comprehensive list of all procedures performed, including their start and end dates:
+
+1. SHIELD OFF Fixation
+   - Procedure Type: Fixation
+   - Start Date: 2023-02-10
+   - End Date: 2023-02-12
+   - Experimenter: DT
+   - Reagents: SHIELD Epoxy and SHIELD Buffer (from LiveCanvas Technologies)
+
+2. SHIELD ON Fixation
+   - Procedure Type: Fixation
+   - Start Date: 2023-02-12
+   - End Date: 2023-02-13
+   - Experimenter: DT
+   - Reagent: SHIELD ON (from LiveCanvas Technologies)
+
+3. 24h Delipidation
+   - Procedure Type: Delipidation
+   - Start Date: 2023-02-15
+   - End Date: 2023-02-16
+   - Experimenter: DT
+   - Reagent: Delipidation Buffer (from LiveCanvas Technologies)
+
+4. Active Delipidation
+   - Procedure Type: Delipidation
+   - Start Date: 2023-02-16
+   - End Date: 2023-02-18
+   - Experimenter: DT
+   - Reagent: Conduction Buffer (from LiveCanvas Technologies)
+
+5. 50% EasyIndex Refractive Index Matching
+   - Procedure Type: Refractive index matching
+   - Start Date: 2023-02-19
+   - End Date: 2023-02-20
+   - Experimenter: DT
+   - Reagent: EasyIndex (from LiveCanvas Technologies)
+
+6. 100% EasyIndex Refractive Index Matching
+   - Procedure Type: Refractive index matching
+   - Start Date: 2023-02-20
+   - End Date: 2023-02-21
+   - Experimenter: DT
+   - Reagent: EasyIndex (from LiveCanvas Technologies)
+
+All procedures were performed by the same experimenter (DT) and used reagents from LiveCanvas Technologies. No protocol IDs were specified, and no additional notes or immunolabeling information was provided.",,18.36659265,CORRECT,1,"{'filter': {'name': 'SmartSPIM_662616_2023-03-06_17-47-13'}, 'projection': {'procedures.specimen_procedures': 1}}",CORRECT,1,2684,subject
+For the thalamus in the middle project what were the genotypes used,"{
+""filter"":{
+""data_description.project_name"":""Thalamus in the middle""
+}
+""projection"":{
+""subject.genotype"":1
+""name"":1
+}
+}","from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.project_name"": {""$regex"": ""Thalamus in the middle"", ""$options"": ""i""}
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$subject.genotype"",
+            ""count"": {""$sum"": 1}
+        }
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+print(""Genotypes in the Thalamus in the middle project:"")
+for genotype in result:
+    print(f""Genotype: {genotype['_id']}, Count: {genotype['count']}"")","Genotypes used:
+[
+  {
+    ""genotype"": ""Slc32a1-IRES-Cre/wt""
+  },
+  {
+    ""genotype"": ""wt/wt ""
+  },
+  {
+    ""genotype"": ""Ai224(TICL-NLS-EGFP-ICF-NLS-dT)-hyg/wt""
+  },
+  {
+    ""genotype"": ""RCL-H2B-GFP/wt""
+  },
+  {
+    ""genotype"": ""VGAT-ChR2-YFP/wt""
+  },
+  {
+    ""genotype"": null
+  },
+  {
+    ""genotype"": ""wt/wt""
+  }
+]","Based on the retrieved documents for the ""Thalamus in the middle"" project, here's a summary of the genotypes used:
+
+1. Most common genotype: ""wt/wt"" (wild-type/wild-type)
+   - This appears for the majority of subjects in the project
+
+2. Other genotypes found:
+   - ""Ai224(TICL-NLS-EGFP-ICF-NLS-dT)-hyg/wt""
+   - ""VGAT-ChR2-YFP/wt""
+   - ""RCL-H2B-GFP/wt""
+   - ""Slc32a1-IRES-Cre/wt""
+
+Detailed breakdown:
+- Wild-type (wt/wt): Approximately 85-90% of subjects
+- Transgenic variants: Approximately 10-15% of subjects, including:
+  * Ai224 line (with EGFP and tdTomato)
+  * VGAT-ChR2-YFP line
+  * RCL-H2B-GFP line
+  * Slc32a1-IRES-Cre line
+
+One subject (ID: 18559) has a null genotype, which might indicate missing data.
+
+The genotypic diversity suggests different experimental approaches within the ""Thalamus in the middle"" project, with a predominant use of wild-type mice and selective use of genetically modified lines for specific research purposes.",,26.51801944,CORRECT,1,"{'agg_pipeline': [{'$match': {'data_description.project_name': {'$regex': 'Thalamus in the middle', '$options': 'i'}}}, {'$project': {'subject_id': '$subject.subject_id', 'genotype': '$subject.genotype', 'project_name': '$data_description.project_name'}}]}",CORRECT,1,36724,project
+how many unique iacuc protocols are there?,"{""agg_pipeline"":[{""$match"":{""procedures.subject_procedures"":{""$exists"":true,""$ne"":[]}}},{""$project"":{""iacuc_protocols"":""$procedures.subject_procedures.iacuc_protocol""}},{""$unwind"":""$iacuc_protocols""},{""$match"":{""iacuc_protocols"":{""$ne"":null}}},{""$group"":{""_id"":""$iacuc_protocols""}},{""$group"":{""_id"":null,""count"":{""$sum"":1}}}]}","
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+
+
+agg_pipeline = [
+    {
+        ""$project"": {
+            ""iacuc_protocol"": ""$procedures.subject_procedures.iacuc_protocol""
+        }
+    },
+    {
+        ""$unwind"": {
+            ""path"": ""$iacuc_protocol"", 
+            ""preserveNullAndEmptyArrays"": False
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$iacuc_protocol""
+        }
+    },
+    {
+        ""$project"": {
+            ""protocol"": ""$_id"", 
+            ""_id"": 0
+        }
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print the unique IACUC protocols
+print(""Unique IACUC Protocols:"")
+for protocol in result:
+    print(protocol.get('protocol'))
+
+# Count the number of unique protocols
+unique_protocols = [p.get('protocol') for p in result if p.get('protocol') is not None]
+print(f""\nTotal number of unique IACUC protocols: {len(unique_protocols)}"")",Number of unique IACUC protocols: 22,"Based on the aggregation results, there are 22 unique IACUC protocols in the database. Here's a breakdown of the unique IACUC protocols and their associated subject counts:
+
+Unique IACUC Protocols:
+1. 2102: 88 subjects
+2. 2103: 236 subjects
+3. 2104: 3,308 subjects
+4. 2105: 3 subjects
+5. 2107: 5 subjects
+6. 2109: 6,837 subjects
+7. 2112: 2 subjects
+8. 2113: 8 subjects
+9. 2114: 1 subject
+10. 2115: 3,807 subjects
+11. 2117: 137 subjects
+12. 2119: 1 subject
+13. 2205: 7 subjects
+14. 2212: 5 subjects
+15. 2301: 1 subject
+16. 2304: 190 subjects
+17. 2402: 173 subjects
+18. 2403: 95 subjects
+19. 2406: 134 subjects
+20. 2414: 112 subjects
+21. 2416: 12 subjects
+22. 2427: 1 subject
+
+The most frequently used IACUC protocols are:
+- 2109 with 6,837 subjects
+- 2115 with 3,807 subjects
+- 2104 with 3,308 subjects
+
+The least used protocols have only 1 subject each: 2114, 2119, and 2301.",,19.44139767,CORRECT,1,"{'agg_pipeline': [{'$match': {'procedures.subject_procedures.iacuc_protocol': {'$exists': True, '$ne': None}}}, {'$project': {'iacuc_protocols': '$procedures.subject_procedures.iacuc_protocol'}}, {'$unwind': '$iacuc_protocols'}, {'$group': {'_id': '$iacuc_protocols', 'count': {'$sum': 1}}}, {'$sort': {'_id': 1}}]}",INCORRECT,0,662,database
+I'm trying to understand an issue with misspelled project names. Could you help me write a query to get all project names and their counts? I don't need any other parts of the records for now.,"agg_pipeline = [{'$group': {'_id': '$project_name', 'count': {'$sum': 1}}},{'$sort': {'count': -1}}]","
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+
+# Aggregation pipeline to count project names
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""data_description.project_name"": {""$exists"": True}
+        }
+    },
+    {
+        ""$group"": {
+            ""_id"": ""$data_description.project_name"",
+            ""count"": {""$sum"": 1}
+        }
+    },
+    {
+        ""$sort"": {""count"": -1}
+    }
+]
+
+# Retrieve project name counts
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print out project names and their counts
+print(""Project Name Counts:"")
+for project in result:
+    project_name = project['_id'] if project['_id'] is not None else ""Unnamed Project""
+    print(f""{project_name}: {project['count']} records"")
+
+# Optional: Count of records with no project name
+unnamed_count = next((project['count'] for project in result if project['_id'] is None), 0)
+print(f""\nTotal records with no project name: {unnamed_count}"")","agg_pipeline = [{'$group': {'_id': '$project_name', 'count': {'$sum': 1}}},{'$sort': {'count': -1}}]","Based on the aggregation results, I'll help you analyze the project names and their counts. Here's a summary of the findings:
+
+Key Observations:
+1. Total Records: 5,218 records have been analyzed
+2. Top 5 Projects by Record Count:
+   - Dynamic Routing: 3,311 records
+   - Behavior Platform: 2,618 records
+   - Discovery-Neuromodulator circuit dynamics during foraging: 1,167 records
+   - Cognitive flexibility in patch foraging: 907 records
+   - Ephys Platform: 358 records
+
+Interesting Notes:
+- There are some null/unspecified project names (5,218 records)
+- Many projects have relatively few records
+- Some projects appear to have variations or sub-projects (e.g., ""Thalamus in the middle"" with multiple sub-projects)
+
+Potential Misspelling Insights:
+- ""Cell Type Lookup Table"" and ""Cell Type LUT"" might be the same project
+- Some project names seem very specific or might benefit from standardization
+
+Would you like me to elaborate on any specific aspect of these project name distributions or help you investigate potential misspellings further?
+
+The query used was an aggregation pipeline that:
+1. Extracted project names from data_description
+2. Grouped by project name
+3. Counted occurrences
+4. Sorted by count in descending order",,18.75200915,INCORRECT,0,"{'agg_pipeline': [{'$project': {'project_name': '$data_description.project_name'}}, {'$group': {'_id': '$project_name', 'count': {'$sum': 1}}}, {'$sort': {'count': -1}}]}",INCORRECT,0,1940,database
+Which assets have procedure dates that occurred before the subject's date of birth?,"{""agg_pipeline"":[{""$match"":{""procedures"":{""$exists"":true},""subject.date_of_birth"":{""$exists"":true}}},{""$project"":{""_id"":1,""name"":1,""subject_id"":""$subject.subject_id"",""date_of_birth"":""$subject.date_of_birth"",""procedures"":""$procedures.subject_procedures""}},{""$unwind"":""$procedures""},{""$match"":{""$expr"":{""$lt"":[{""$dateFromString"":{""dateString"":""$procedures.start_date""}},{""$dateFromString"":{""dateString"":""$date_of_birth""}}]}}},{""$project"":{""_id"":1,""name"":1,""subject_id"":1,""date_of_birth"":1,""procedure_date"":""$procedures.start_date"",""procedure_type"":""$procedures.procedure_type""}},{""$limit"":100}]}","import json
+from collections import Counter
+from datetime import datetime
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+
+agg_pipeline = [
+    # Ensure procedures and date of birth exist
+    {
+        ""$match"": {
+            ""procedures"": {""$exists"": True}, 
+            ""subject.date_of_birth"": {""$exists"": True}
+        }
+    },
+    # Project and reshape the document
+    {
+        ""$project"": {
+            ""_id"": 1,
+            ""name"": 1,
+            ""subject_id"": ""$subject.subject_id"", 
+            ""date_of_birth"": ""$subject.date_of_birth"", 
+            ""procedures"": ""$procedures.subject_procedures""
+        }
+    },
+    # Unwind procedures to work with individual procedures
+    {""$unwind"": ""$procedures""},
+
+    # Ensure procedure start date exists and is not null
+    {
+        ""$match"": {
+            ""procedures.start_date"": {""$exists"": True, ""$ne"": None}
+        }
+    },
+
+    # Check if procedure date is before date of birth
+    {
+        ""$match"": {
+            ""$expr"": {
+                ""$lt"": [
+                    {""$dateFromString"": {""dateString"": ""$procedures.start_date""}},
+                    {""$dateFromString"": {""dateString"": ""$date_of_birth""}}
+                ]
+            }
+        }
+    },
+
+    # Project final fields
+    {
+        ""$project"": {
+            ""_id"": 1,
+            ""name"": 1,
+            ""subject_id"": 1,
+            ""date_of_birth"": 1,
+            ""procedure_date"": ""$procedures.start_date"",
+            ""procedure_type"": ""$procedures.procedure_type""
+        }
+    },
+
+    # Limit results
+    {""$limit"": 20}
+]
+
+# Execute the aggregation
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print results
+print(json.dumps(result, indent=2))","[
+  {
+    ""_id"": ""a0ce0a8e-74bb-497e-ba13-9361c5b74dae"",
+    ""name"": ""behavior_708032_2024-03-14_12-55-23"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""31dc4ada-3ef0-4ec7-95ac-6ecf2dde93eb"",
+    ""name"": ""behavior_708032_2024-03-07_14-08-34"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""130a47ef-33df-43c5-b8e0-e01fe2c4c443"",
+    ""name"": ""behavior_708032_2024-03-13_14-06-41"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""bdd1ece5-f178-4872-9af0-5505c1517a58"",
+    ""name"": ""behavior_708032_2024-03-21_16-00-51"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""ecb51f81-6ff0-4fc8-958b-78ee4e2b25f1"",
+    ""name"": ""behavior_708032_2024-03-11_13-48-50"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""420ae7e8-3c49-4a76-9d67-b7ebd0451c26"",
+    ""name"": ""behavior_708032_2024-03-22_15-54-25"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""7dfcc710-445f-4551-ab70-b905b4ed67e9"",
+    ""name"": ""behavior_708032_2024-03-18_14-23-51"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""48b21fdc-f578-4f2b-a91a-3a12f8be4cb8"",
+    ""name"": ""behavior_708032_2024-03-06_17-39-03"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""dd5ba8b2-0287-4fe1-854f-a646ee259b28"",
+    ""name"": ""behavior_708032_2024-03-05_17-25-28"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""ae10fc4e-38ee-4433-9144-4081bf3defa9"",
+    ""name"": ""behavior_708032_2024-03-08_14-42-09"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""77d8c58b-319b-4662-b58b-d37f871f0d94"",
+    ""name"": ""behavior_708032_2024-03-15_12-23-18"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  },
+  {
+    ""_id"": ""2cde4f27-78ef-4c85-ab72-e99e40357585"",
+    ""name"": ""behavior_708032_2024-03-20_15-02-54"",
+    ""subject_id"": ""708032"",
+    ""date_of_birth"": ""2023-10-18"",
+    ""procedure_date"": ""2023-01-08"",
+    ""procedure_type"": ""Surgery""
+  }
+]
+
+Total number of assets with procedures before birth date: 12",Error: cannot access local variable 'tool_output_size' where it is not associated with a value,,-1,ERROR,0,Error: cannot access local variable 'tool_output_size' where it is not associated with a value,ERROR,0,0,analysis
+How many injections were done in total in the Ai224 animals?,"{""agg_pipeline"":[{""$match"":{""procedures.subject_procedures"":{""$exists"":true},""subject.genotype"":{""$regex"":""Ai224"",""$options"":""i""}}},{""$unwind"":""$procedures.subject_procedures""},{""$unwind"":""$procedures.subject_procedures.procedures""},{""$match"":{""procedures.subject_procedures.procedures.procedure_type"":{""$regex"":""injection"",""$options"":""i""}}},{""$count"":""total_injections""}]}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {
+        ""$match"": {
+            ""subject.genotype"": {""$regex"": ""Ai224"", ""$options"": ""i""}
+        }
+    },
+    {
+        ""$unwind"": {
+            ""path"": ""$procedures.subject_procedures"", 
+            ""preserveNullAndEmptyArrays"": False
+        }
+    },
+    {
+        ""$unwind"": {
+            ""path"": ""$procedures.subject_procedures.procedures"", 
+            ""preserveNullAndEmptyArrays"": False
+        }
+    },
+    {
+        ""$match"": {
+            ""$or"": [
+                {""procedures.subject_procedures.procedures.procedure_type"": {""$regex"": ""injection"", ""$options"": ""i""}},
+                {""procedures.subject_procedures.procedures.procedure_type"": {""$regex"": ""nanoject"", ""$options"": ""i""}}
+            ]
+        }
+    },
+    {
+        ""$count"": ""total_injections""
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+print(""Total Injections for Ai224 animals:"")
+print(json.dumps(result, indent=2))",The total number of injections performed on Ai224 animals was 155.,"I'll help you determine the total number of injections for Ai224 animals based on the retrieved data.
+
+After carefully analyzing the documents, I'll count the total number of injections for Ai224 animals with detailed injection records:
+
+1. Subject 737042: 4 injections
+   - 2 injections with Addgene #55636
+   - 2 injections with Addgene #55637
+
+2. Subject 716949: 2 injections
+   - 1 injection with Addgene #55637
+   - 1 injection with Addgene #55636
+
+3. Subject 716950: 2 injections
+   - 1 injection with Addgene #55637
+   - 1 injection with Addgene #55636
+
+4. Subject 716951: 2 injections
+   - 1 injection with Addgene #55637
+   - 1 injection with Addgene #55636
+
+5. Subject 737038: 4 injections
+   - 2 injections with Addgene #55636
+   - 2 injections with Addgene #55637
+
+Total injections: 14 injections
+
+Note: This count includes only the animals with detailed injection records in the retrieved data. Some Ai224 animals in the dataset did not have specific injection details recorded.
+
+Would you like me to elaborate on any aspect of these injection details?",,39.89722705,INCORRECT,0,"{'agg_pipeline': [{'$match': {'subject.genotype': {'$regex': 'Ai224', '$options': 'i'}}}, {'$project': {'subject_id': '$subject.subject_id', 'genotype': '$subject.genotype', 'procedures': '$procedures.subject_procedures'}}]}",INCORRECT,0,253162,anatomical_coordinates
+"Give me code to list List all experiments with 'ecephys' modality performed between September 15 and October 15, 2024.","{""agg_pipeline"":[{""$match"":{""data_description.modality"":{""$elemMatch"":{""name"":{""$regex"":""ecephys|Extracellular electrophysiology"",""$options"":""i""}}},""created"":{""$gte"":""2024-09-15T00:00:00"",""$lte"":""2024-10-15T23:59:59""}}},{""$project"":{""_id"":1,""name"":1,""created"":1,""subject_id"":""$data_description.subject_id"",""modality"":""$data_description.modality""}},{""$sort"":{""created"":1}}]}","import json
+from datetime import datetime
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Define the aggregation pipeline
+agg_pipeline = [
+    {
+        '$match': {
+            'data_description.modality': {
+                '$elemMatch': {
+                    'name': {'$regex': 'ecephys|Extracellular electrophysiology', '$options': 'i'}
+                }
+            },
+            'created': {
+                '$gte': '2024-09-15T00:00:00',
+                '$lte': '2024-10-15T23:59:59'
+            }
+        }
+    },
+    {
+        '$project': {
+            '_id': 1,
+            'name': 1,
+            'created': 1,
+            'subject_id': '$data_description.subject_id',
+            'modality': '$data_description.modality'
+        }
+    },
+    {
+        '$sort': {'created': 1}
+    }
+]
+
+# Retrieve the records
+results = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+
+# Print summary of results
+print(f""Total ecephys experiments found: {len(results)}"")
+print(""\nExperiment Details:"")
+for record in results:
+    print(f""Name: {record['name']}"")
+    print(f""Subject ID: {record['subject_id']}"")
+    print(f""Created: {record['created']}"")
+    print(f""Modality: {[mod['name'] for mod in record['modality']]}"")
+    print(""---"")","import json
+from datetime import datetime
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Define the aggregation pipeline
+agg_pipeline = [
+    {
+        '$match': {
+            'data_description.modality': {
+                '$elemMatch': {
+                    'name': {'$regex': 'ecephys|Extracellular electrophysiology', '$options': 'i'}
+                }
+            },
+            'created': {
+                '$gte': '2024-09-15T00:00:00',
+                '$lte': '2024-10-15T23:59:59'
+            }
+        }
+    },
+    {
+        '$project': {
+            '_id': 1,
+            'name': 1,
+            'created': 1,
+            'subject_id': '$data_description.subject_id',
+            'modality': '$data_description.modality'
+        }
+    },
+    {
+        '$sort': {'created': 1}
+    }
+]
+
+# Retrieve the records
+results = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+
+# Print summary of results
+print(f""Total ecephys experiments found: {len(results)}"")
+print(""\nExperiment Details:"")
+for record in results:
+    print(f""Name: {record['name']}"")
+    print(f""Subject ID: {record['subject_id']}"")
+    print(f""Created: {record['created']}"")
+    print(f""Modality: {[mod['name'] for mod in record['modality']]}"")
+    print(""---"")","I'll provide a complete Python script to retrieve the list of experiments with 'ecephys' modality between September 15 and October 15, 2024:
+
+```python
+import json
+from datetime import datetime
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Define the filter for ecephys experiments between specified dates
+filter = {
+    'data_description.modality.name': 'Extracellular electrophysiology',
+    'created': {
+        '$gte': '2024-09-15T00:00:00',
+        '$lte': '2024-10-15T23:59:59'
+    }
+}
+
+# Define projection to include relevant fields
+projection = {
+    '_id': 1,
+    'name': 1,
+    'created': 1,
+    'subject_id': '$data_description.subject_id'
+}
+
+# Retrieve records
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection
+)
+
+# Print results
+print(f""Total experiments found: {len(records)}"")
+for record in records:
+    print(f""Experiment Name: {record['name']}"")
+    print(f""Subject ID: {record.get('subject_id', 'N/A')}"")
+    print(f""Created: {record['created']}"")
+    print(f""Experiment ID: {record['_id']}"")
+    print(""---"")
+```
+
+Key observations from the retrieved data:
+- Total experiments: 47
+- Date range: September 15 to October 15, 2024
+- Subject IDs vary across experiments
+- Experiments include various processing types (sorted, hybrid, facemap, DLC)
+
+Notable subjects with multiple experiments include:
+- 733891
+- 741611
+- 737812
+- 644864
+
+The script provides a comprehensive view of ecephys experiments within the specified timeframe, allowing easy exploration of the experimental data.",,33.44311333,CORRECT,1,"{'agg_pipeline': [{'$match': {'data_description.modality.name': 'Extracellular electrophysiology', 'created': {'$gte': '2024-09-15T00:00:00', '$lte': '2024-10-15T23:59:59'}}}, {'$project': {'_id': 1, 'name': 1, 'created': 1, 'subject_id': '$data_description.subject_id'}}]}",INCORRECT,0,9865,database
+Give me code to find the subject ids all female mice with the Vip-IRES-Cre allele that had ecephys recordings in September 2024.,"{""agg_pipeline"":[{""$match"":{""subject.sex"":""Female"",""subject.genotype"":{""$regex"":""Vip-IRES-Cre"",""$options"":""i""},""data_description.modality.name"":""Extracellular electrophysiology"",""created"":{""$gte"":""2024-09-01T00:00:00.000Z"",""$lt"":""2024-10-01T00:00:00.000Z""}}},{""$project"":{""subject_id"":""$subject.subject_id"",""genotype"":""$subject.genotype"",""sex"":""$subject.sex"",""modality"":""$data_description.modality.name"",""created_date"":""$created""}}]}","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to find female Vip-IRES-Cre mice with ecephys recordings in September 2024
+agg_pipeline = [
+    {
+        '$match': {
+            'subject.sex': 'Female', 
+            'subject.genotype': {'$regex': 'Vip-IRES-Cre', '$options': 'i'}, 
+            'data_description.modality.name': 'Extracellular electrophysiology', 
+            'created': {
+                '$gte': '2024-09-01T00:00:00.000Z', 
+                '$lt': '2024-10-01T00:00:00.000Z'
+            }
+        }
+    },
+    {
+        '$project': {
+            'subject_id': '$subject.subject_id', 
+            'genotype': '$subject.genotype', 
+            'sex': '$subject.sex', 
+            'modality': '$data_description.modality.name', 
+            'created_date': '$created'
+        }
+    },
+    {
+        '$group': {
+            '_id': '$subject_id',
+            'details': {'$first': '$$ROOT'}
+        }
+    }
+]
+
+# Retrieve unique subject IDs
+results = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+
+# Extract and print unique subject IDs
+unique_subject_ids = list(set(result['_id'] for result in results))
+print(""Unique Subject IDs:"", unique_subject_ids)
+print(""Total number of unique subjects:"", len(unique_subject_ids))","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to find female Vip-IRES-Cre mice with ecephys recordings in September 2024
+agg_pipeline = [
+    {
+        '$match': {
+            'subject.sex': 'Female', 
+            'subject.genotype': {'$regex': 'Vip-IRES-Cre', '$options': 'i'}, 
+            'data_description.modality.name': 'Extracellular electrophysiology', 
+            'created': {
+                '$gte': '2024-09-01T00:00:00.000Z', 
+                '$lt': '2024-10-01T00:00:00.000Z'
+            }
+        }
+    },
+    {
+        '$project': {
+            'subject_id': '$subject.subject_id', 
+            'genotype': '$subject.genotype', 
+            'sex': '$subject.sex', 
+            'modality': '$data_description.modality.name', 
+            'created_date': '$created'
+        }
+    },
+    {
+        '$group': {
+            '_id': '$subject_id',
+            'details': {'$first': '$$ROOT'}
+        }
+    }
+]
+
+# Retrieve unique subject IDs
+results = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+
+# Extract and print unique subject IDs
+unique_subject_ids = list(set(result['_id'] for result in results))
+print(""Unique Subject IDs:"", unique_subject_ids)
+print(""Total number of unique subjects:"", len(unique_subject_ids))",Error: cannot access local variable 'tool_output_size' where it is not associated with a value,,-1,ERROR,0,Error: cannot access local variable 'tool_output_size' where it is not associated with a value,ERROR,0,0,analysis
+Which projects have the most recorded assets?,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$exists"":true,""$ne"":null}}},{""$group"":{""_id"":""$data_description.project_name"",""count"":{""$sum"":1}}},{""$sort"":{""count"":-1}},{""$limit"":20}]}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'data_description.project_name': {'$exists': True, '$ne': None}}},
+    {'$group': {'_id': '$data_description.project_name', 'count': {'$sum': 1}}},
+    {'$sort': {'count': -1}},
+    {'$limit': 20}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=3))",Dynamic routing has the most recorded assets,"Based on the aggregation results, here are the top projects with the most recorded assets:
+
+1. Dynamic Routing: 3,311 assets
+2. Behavior Platform: 2,618 assets
+3. Discovery-Neuromodulator circuit dynamics during foraging: 1,167 assets
+4. Cognitive flexibility in patch foraging: 907 assets
+5. Ephys Platform: 358 assets
+
+Here's a complete Python implementation of the query for reference:
+
+```python
+import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'data_description.project_name': {'$exists': True, '$ne': None}}},
+    {'$group': {'_id': '$data_description.project_name', 'count': {'$sum': 1}}},
+    {'$sort': {'count': -1}},
+    {'$limit': 20}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=3))
+```
+
+The query does the following:
+1. Matches documents with a non-null project name
+2. Groups documents by project name
+3. Counts the number of assets per project
+4. Sorts projects in descending order of asset count
+5. Limits output to top 20 projects
+
+The results show a diverse range of projects, with ""Dynamic Routing"" and ""Behavior Platform"" having significantly more recorded assets compared to others.",,18.1123426,CORRECT,1,"{'agg_pipeline': [{'$match': {'data_description.project_name': {'$exists': True, '$ne': None}}}, {'$group': {'_id': '$data_description.project_name', 'count': {'$sum': 1}}}, {'$sort': {'count': -1}}, {'$limit': 20}]}",CORRECT,1,1165,database
+Which projects involve the highest number of different investigators?,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$exists"":true,""$ne"":null}}},{""$unwind"":""$data_description.investigators""},{""$group"":{""_id"":""$data_description.project_name"",""unique_investigators"":{""$addToSet"":""$data_description.investigators.name""},""count"":{""$sum"":1}}},{""$project"":{""project_name"":""$_id"",""investigator_count"":{""$size"":""$unique_investigators""},""investigators"":""$unique_investigators""}},{""$sort"":{""investigator_count"":-1}},{""$limit"":10}]}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to find projects with most unique investigators
+agg_pipeline = [
+    # Match only documents with project name
+    {'$match': {'data_description.project_name': {'$exists': True, '$ne': None}}},
+
+    # Unwind the investigators array
+    {'$unwind': '$data_description.investigators'},
+
+    # Group by project name and collect unique investigators
+    {'$group': {
+        '_id': '$data_description.project_name', 
+        'unique_investigators': {'$addToSet': '$data_description.investigators.name'}, 
+        'count': {'$sum': 1}
+    }},
+
+    # Project to create a more readable output
+    {'$project': {
+        'project_name': '$_id', 
+        'investigator_count': {'$size': '$unique_investigators'}, 
+        'investigators': '$unique_investigators'
+    }},
+
+    # Sort by investigator count in descending order
+    {'$sort': {'investigator_count': -1}},
+
+    # Limit to top 10 projects
+    {'$limit': 10}
+]
+
+# Execute the aggregation
+results = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+
+# Print the results in a readable format
+print(""Top Projects by Number of Unique Investigators:"")
+for project in results:
+    print(f""\nProject: {project['project_name']}"")
+    print(f""Number of Unique Investigators: {project['investigator_count']}"")
+    print(""Investigators:"")
+    for investigator in project['investigators']:
+        print(f""- {investigator}"")","The top 3 projects with the most number of investigators are: 
+Project: Thalamus in the middle
+Number of Unique Investigators: 12
+Investigators:
+- Han Hou
+- Jayaram Chandrashekar
+- Karel Svoboda
+- Mathew Summers
+- Xinxin Yin
+- 
+- Unknown
+- Ulises Pereira-Obilinovic
+- Bosiljka Tasic
+- Jonathan Ting
+- Marcus Hooper
+- Yoav Ben-Simon
+
+Project: Discovery-Neuromodulator circuit dynamics during foraging
+Number of Unique Investigators: 10
+Investigators:
+- Alex Piet
+- Jeremiah Cohen
+- Jonathan Ting
+- Kanghoon Jung
+- Kenta Hagihara
+- Polina Kosillo
+- Sue Su
+- Yoav Ben-Simon
+- rachel.lee@alleninstitute.org
+- stefano.recanatesi@alleninstitute.org
+
+Project: CTY Genetic Tools
+Number of Unique Investigators: 8
+Investigators:
+- Boaz Levi
+- Bosiljka Tasic
+- Jonathan Ting
+- Yoav Ben-Simon
+- Deepanjali Dwivedi
+- Marcus Hooper
+- Shenqin Yao
+- Sujatha Narayan","Based on the aggregation results, here are the top projects with the highest number of different investigators:
+
+1. ""Thalamus in the middle"" 
+   - Unique Investigators: 12
+   - Key investigators include Han Hou, Karel Svoboda, Bosiljka Tasic, and Jonathan Ting
+
+2. ""Discovery-Neuromodulator circuit dynamics during foraging""
+   - Unique Investigators: 10
+   - Key investigators include Alex Piet, Jeremiah Cohen, Jonathan Ting, and Yoav Ben-Simon
+
+3. Tied for third place with 8 unique investigators:
+   - ""CTY Genetic Tools""
+     - Investigators include Boaz Levi, Bosiljka Tasic, Jonathan Ting, and Yoav Ben-Simon
+   - ""Behavior Platform""
+     - Investigators include Cindy Poo, Jeremiah Cohen, Alex Piet, and Kanghoon Jung
+
+The aggregation pipeline used to retrieve this information:
+- Matched projects with existing project names
+- Extracted project names and investigator names
+- Counted unique investigators per project
+- Sorted projects by the number of unique investigators in descending order
+- Limited the output to the top 10 projects
+
+Some observations:
+- Jonathan Ting appears in multiple top projects
+- There's significant overlap of investigators across different projects
+- The top projects seem to be collaborative efforts involving multiple researchers",,28.87949491,CORRECT,1,"{'agg_pipeline': [{'$match': {'data_description.project_name': {'$exists': True, '$ne': None}}}, {'$project': {'project_name': '$data_description.project_name', 'investigators': '$data_description.investigators.name'}}, {'$unwind': '$investigators'}, {'$group': {'_id': '$project_name', 'unique_investigators': {'$addToSet': '$investigators'}, 'count': {'$sum': 1}}}, {'$project': {'project_name': '$_id', 'unique_investigator_count': {'$size': '$unique_investigators'}, 'investigators': '$unique_investigators'}}, {'$sort': {'unique_investigator_count': -1}}, {'$limit': 10}]}",CORRECT,1,2647,database
+What stereotactic coordinates are most commonly used for VM thalamus injections?,"{""agg_pipeline"":[{""$match"":{""procedures.subject_procedures.procedures.targeted_structure"":{""$regex"":""VM"",""$options"":""i""}}},{""$project"":{""subject_id"":1,""procedures"":1}},{""$unwind"":""$procedures.subject_procedures""},{""$unwind"":""$procedures.subject_procedures.procedures""},{""$match"":{""procedures.subject_procedures.procedures.targeted_structure"":{""$regex"":""VM"",""$options"":""i""}}},{""$project"":{""subject_id"":1,""targeted_structure"":""$procedures.subject_procedures.procedures.targeted_structure"",""ml"":""$procedures.subject_procedures.procedures.injection_coordinate_ml"",""ap"":""$procedures.subject_procedures.procedures.injection_coordinate_ap"",""depth"":""$procedures.subject_procedures.procedures.injection_coordinate_depth"",""angle"":""$procedures.subject_procedures.procedures.injection_angle"",""reference"":""$procedures.subject_procedures.procedures.injection_coordinate_reference"",""hemisphere"":""$procedures.subject_procedures.procedures.injection_hemisphere""}},{""$group"":{""_id"":{""ml"":""$ml"",""ap"":""$ap"",""depth"":""$depth"",""angle"":""$angle"",""reference"":""$reference"",""hemisphere"":""$hemisphere""},""count"":{""$sum"":1},""subjects"":{""$addToSet"":""$subject_id""}}},{""$sort"":{""count"":-1}},{""$limit"":10}]}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'procedures.subject_procedures.procedures.targeted_structure': {'$regex': 'VM', '$options': 'i'}}},
+    {'$project': {'subject_id': 1, 'procedures': 1}},
+    {'$unwind': '$procedures.subject_procedures'},
+    {'$unwind': '$procedures.subject_procedures.procedures'},
+    {'$match': {'procedures.subject_procedures.procedures.targeted_structure': {'$regex': 'VM', '$options': 'i'}}},
+    {'$project': {
+        'subject_id': 1, 
+        'targeted_structure': '$procedures.subject_procedures.procedures.targeted_structure', 
+        'ml': '$procedures.subject_procedures.procedures.injection_coordinate_ml', 
+        'ap': '$procedures.subject_procedures.procedures.injection_coordinate_ap', 
+        'depth': '$procedures.subject_procedures.procedures.injection_coordinate_depth', 
+        'angle': '$procedures.subject_procedures.procedures.injection_angle', 
+        'reference': '$procedures.subject_procedures.procedures.injection_coordinate_reference', 
+        'hemisphere': '$procedures.subject_procedures.procedures.injection_hemisphere'
+    }},
+    {'$group': {
+        '_id': {
+            'ml': '$ml', 
+            'ap': '$ap', 
+            'depth': '$depth', 
+            'angle': '$angle', 
+            'reference': '$reference', 
+            'hemisphere': '$hemisphere'
+        }, 
+        'count': {'$sum': 1}, 
+        'subjects': {'$addToSet': '$subject_id'}
+    }},
+    {'$sort': {'count': -1}},
+    {'$limit': 10}
+]
+
+results = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(results, indent=2))","Based on the retrieved results, here's a summary of the most common stereotactic coordinates for VM thalamus injections:
+
+Most Frequent Coordinates:
+
+Medial-Lateral (ML): 2.9 mm
+Anterior-Posterior (AP): -0.6 mm
+Depth: 3.6 mm
+Angle: 30 degrees
+Hemisphere: Primarily Right (with some Left hemisphere injections)
+Reference Point: Mostly Bregma
+Injection Frequency:
+
+Right Hemisphere (Bregma reference): 40 injections
+Right Hemisphere (no specific reference): 15 injections
+Left Hemisphere (no specific reference): 3 injections
+Left Hemisphere (opposite ML coordinate): 2 injections","Based on the retrieved data for VM thalamus injections, here are the most commonly used stereotactic coordinates:
+
+Most Frequent Coordinates:
+1. Primary Coordinate Set:
+   - Medial-Lateral (ML): 2.9 mm
+   - Anterior-Posterior (AP): -0.6 mm
+   - Depth: 3.6 mm
+   - Angle: 30 degrees
+   - Reference Point: Bregma
+   - Frequency: 40 instances
+
+2. Secondary Coordinate Set (similar to primary):
+   - Medial-Lateral (ML): 2.9 mm
+   - Anterior-Posterior (AP): -0.6 mm
+   - Depth: 3.6 mm
+   - Angle: 30 degrees
+   - Reference Point: Not specified
+   - Frequency: 18 instances
+
+3. Alternate Side Coordinate:
+   - Medial-Lateral (ML): -2.9 mm (opposite side)
+   - Anterior-Posterior (AP): -0.6 mm
+   - Depth: 3.6 mm
+   - Angle: 30 degrees
+   - Reference Point: Not specified
+   - Frequency: 2 instances
+
+Key Observations:
+- The most consistent coordinates are centered around 2.9 mm ML, -0.6 mm AP, and 3.6 mm depth
+- A 30-degree injection angle is commonly used
+- Bregma is the primary reference point for these coordinates
+- There's some variation in the reference point specification
+
+These coordinates represent the most frequently used stereotactic approach for VM thalamus injections in the analyzed dataset.",,24.43486786,CORRECT,1,"{'agg_pipeline': [{'$match': {'procedures.subject_procedures.procedures.targeted_structure': {'$regex': 'VM', '$options': 'i'}}}, {'$unwind': '$procedures.subject_procedures'}, {'$unwind': '$procedures.subject_procedures.procedures'}, {'$match': {'procedures.subject_procedures.procedures.targeted_structure': {'$regex': 'VM', '$options': 'i'}}}, {'$project': {'targeted_structure': '$procedures.subject_procedures.procedures.targeted_structure', 'ml': '$procedures.subject_procedures.procedures.injection_coordinate_ml', 'ap': '$procedures.subject_procedures.procedures.injection_coordinate_ap', 'depth': '$procedures.subject_procedures.procedures.injection_coordinate_depth', 'angle': '$procedures.subject_procedures.procedures.injection_angle', 'reference': '$procedures.subject_procedures.procedures.injection_coordinate_reference'}}, {'$group': {'_id': {'ml': '$ml', 'ap': '$ap', 'depth': '$depth', 'angle': '$angle', 'reference': '$reference'}, 'count': {'$sum': 1}}}, {'$sort': {'count': -1}}, {'$limit': 10}]}",CORRECT,1,313,anatomical_coordinates
+What's the most common chamber immersion medium used in our experiments?,"{""agg_pipeline"":[{""$match"":{""acquisition.chamber_immersion.medium"":{""$exists"":true}}},{""$group"":{""_id"":""$acquisition.chamber_immersion.medium"",""count"":{""$sum"":1}}},{""$sort"":{""count"":-1}}]}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to find most common chamber immersion medium
+agg_pipeline = [
+    {'$match': {'acquisition.chamber_immersion.medium': {'$exists': True}}},
+    {'$group': {'_id': '$acquisition.chamber_immersion.medium', 'count': {'$sum': 1}}},
+    {'$sort': {'count': -1}}
+]
+
+# Retrieve results
+results = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+
+# Print results with analysis
+print(""Chamber Immersion Medium Distribution:"")
+for result in results[:10]:  # Top 10 mediums
+    print(f""{result['_id']}: {result['count']} experiments"")
+
+# Identify the most common medium
+most_common_medium = results[0]['_id']
+most_common_count = results[0]['count']
+total_experiments = sum(result['count'] for result in results)
+percentage = (most_common_count / total_experiments) * 100
+
+print(f""\nMost Common Medium: {most_common_medium}"")
+print(f""Used in {most_common_count} experiments"")
+print(f""Represents {percentage:.2f}% of total experiments"")","Chamber Immersion Medium Distribution:
+Cargille 1.52: 608 experiments
+other: 556 experiments
+oil: 344 experiments
+Water: 244 experiments
+Cargille Oil 1.5200: 231 experiments
+Cargille oil 1.5200: 100 experiments
+Cargille 1.5200: 60 experiments
+Cargille oil: 47 experiments
+Cargille 1.522: 41 experiments
+PBS: 32 experiments
+
+Most Common Medium: Cargille 1.52
+Used in 608 experiments
+Represents 25.35% of total experiments","Based on the aggregation results, I can provide a detailed breakdown of the most common chamber immersion media used in our experiments:
+
+1. Cargille 1.52 is the most frequently used medium, with 608 instances.
+2. ""Other"" medium is the second most common, with 556 instances.
+3. Oil (in various specifications) is also widely used:
+   - Generic ""oil"": 344 instances
+   - Cargille Oil 1.5200: 231 instances
+   - Cargille oil 1.5200: 100 instances
+   - Cargille oil: 47 instances
+   - Cargille 1.5200: 60 instances
+   - Cargille 1.522: 41 instances
+
+4. Water is used in 244 instances.
+5. PBS (Phosphate Buffered Saline) is used in 32 instances.
+
+If we consolidate the Cargille oil variants, it appears that Cargille 1.52 medium and various oil-based media are the most prevalent chamber immersion media in our experiments, with water and PBS being less frequently used.
+
+Here's a Python code to reproduce this aggregation:
+
+```python
+import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'acquisition.chamber_immersion.medium': {'$exists': True}}},
+    {'$group': {'_id': '$acquisition.chamber_immersion.medium', 'count': {'$sum': 1}}},
+    {'$sort': {'count': -1}},
+    {'$limit': 10}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=3))
+```
+
+This query matches documents with a chamber immersion medium, groups them by the medium, counts the occurrences, sorts in descending order, and limits the output to the top 10 results.",,22.64572883,CORRECT,1,"{'agg_pipeline': [{'$match': {'acquisition.chamber_immersion.medium': {'$exists': True}}}, {'$group': {'_id': '$acquisition.chamber_immersion.medium', 'count': {'$sum': 1}}}, {'$sort': {'count': -1}}, {'$limit': 10}]}",CORRECT,1,374,instrument
+Give me code to find the sex distribution of subjects across the dynamic routing project,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$regex"":""dynamic routing"",""$options"":""i""}}},{""$group"":{""_id"":""$subject.sex"",""count"":{""$sum"":1}}},{""$sort"":{""count"":-1}}]}","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to find sex distribution
+agg_pipeline = [
+    # Match documents with dynamic routing project
+    {'$match': {'data_description.project_name': {'$regex': 'dynamic routing', '$options': 'i'}}},
+
+    # Group by sex and count subjects
+    {'$group': {'_id': '$subject.sex', 'count': {'$sum': 1}}},
+
+    # Sort by count in descending order
+    {'$sort': {'count': -1}}
+]
+
+# Execute the aggregation
+sex_distribution = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print the results with a more readable format
+print(""Sex Distribution in Dynamic Routing Project:"")
+for entry in sex_distribution:
+    sex = entry['_id'] if entry['_id'] is not None else 'Unspecified'
+    count = entry['count']
+    percentage = (count / sum(e['count'] for e in sex_distribution)) * 100
+    print(f""{sex}: {count} subjects ({percentage:.2f}%)"")","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to find sex distribution
+agg_pipeline = [
+    # Match documents with dynamic routing project
+    {'$match': {'data_description.project_name': {'$regex': 'dynamic routing', '$options': 'i'}}},
+
+    # Group by sex and count subjects
+    {'$group': {'_id': '$subject.sex', 'count': {'$sum': 1}}},
+
+    # Sort by count in descending order
+    {'$sort': {'count': -1}}
+]
+
+# Execute the aggregation
+sex_distribution = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print the results with a more readable format
+print(""Sex Distribution in Dynamic Routing Project:"")
+for entry in sex_distribution:
+    sex = entry['_id'] if entry['_id'] is not None else 'Unspecified'
+    count = entry['count']
+    percentage = (count / sum(e['count'] for e in sex_distribution)) * 100
+    print(f""{sex}: {count} subjects ({percentage:.2f}%)"")","I'll provide a complete Python code example to retrieve and analyze the sex distribution for the dynamic routing project using the AIND data access API:
+
+```python
+import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to find sex distribution
+agg_pipeline = [
+    {'$match': {'data_description.project_name': {'$regex': 'dynamic routing', '$options': 'i'}}},
+    {'$group': {'_id': '$subject.sex', 'count': {'$sum': 1}}},
+    {'$sort': {'_id': 1}}
+]
+
+# Execute the aggregation
+sex_distribution = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print the results with interpretation
+print(""Sex Distribution in Dynamic Routing Project:"")
+total_subjects = 0
+for entry in sex_distribution:
+    sex = entry['_id'] if entry['_id'] is not None else 'Unspecified'
+    count = entry['count']
+    total_subjects += count
+    print(f""{sex}: {count} subjects"")
+
+print(f""\nTotal Subjects: {total_subjects}"")
+
+# Calculate percentages
+print(""\nPercentage Distribution:"")
+for entry in sex_distribution:
+    sex = entry['_id'] if entry['_id'] is not None else 'Unspecified'
+    count = entry['count']
+    percentage = (count / total_subjects) * 100
+    print(f""{sex}: {percentage:.2f}%"")
+```
+
+Analysis of the results:
+- Unspecified Sex: 396 subjects
+- Female: 1,367 subjects
+- Male: 1,548 subjects
+- Total Subjects: 3,311
+
+Percentage Breakdown:
+- Unspecified Sex: 11.95%
+- Female: 41.29%
+- Male: 46.76%
+
+The code retrieves the sex distribution for the dynamic routing project, groups the subjects by sex, and provides both count and percentage breakdowns. The results show a relatively balanced distribution between male and female subjects, with a small portion of subjects having unspecified sex.",,25.40548968,CORRECT,1,"{'agg_pipeline': [{'$match': {'data_description.project_name': {'$regex': 'dynamic routing', '$options': 'i'}}}, {'$group': {'_id': '$subject.sex', 'count': {'$sum': 1}}}, {'$sort': {'_id': 1}}]}",CORRECT,1,95,project
+"Identify the experimenter who has conducted the most sessions in the smartspim modality, and list the unique instruments they've used over time.","{""agg_pipeline"":[{""$match"":{""data_description.modality.name"":""Selective plane illumination microscopy""}},{""$project"":{""experimenter"":""$acquisition.experimenter_full_name"",""instrument_id"":""$acquisition.instrument_id""}},{""$unwind"":{""path"":""$experimenter"",""preserveNullAndEmptyArrays"":false}},{""$group"":{""_id"":""$experimenter"",""session_count"":{""$sum"":1},""instruments"":{""$addToSet"":""$instrument_id""}}},{""$sort"":{""session_count"":-1}},{""$limit"":10}]}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to find top experimenters in SmartSPIM
+agg_pipeline = [
+    {'$match': {'data_description.modality.name': 'Selective plane illumination microscopy'}},
+    {'$project': {
+        'experimenter': '$acquisition.experimenter_full_name', 
+        'instrument_id': '$acquisition.instrument_id'
+    }},
+    {'$unwind': {'path': '$experimenter', 'preserveNullAndEmptyArrays': False}},
+    {'$group': {
+        '_id': '$experimenter', 
+        'session_count': {'$sum': 1}, 
+        'instruments': {'$addToSet': '$instrument_id'}
+    }},
+    {'$sort': {'session_count': -1}},
+    {'$limit': 10}
+]
+
+results = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+
+# Process and display results
+print(""Top Experimenters in SmartSPIM Sessions:"")
+for result in results:
+    print(f""\nExperimenter: {result['_id']}"")
+    print(f""Total Sessions: {result['session_count']}"")
+    print(""Unique Instruments:"")
+    for instrument in result['instruments']:
+        print(f""  - {instrument}"")","Here are the top 3:
+Top Experimenters in SmartSPIM Sessions:
+
+Experimenter: John Rohde
+Total Sessions: 1271
+Unique Instruments:
+  - SmartSPIM1-7
+  - 440_SmartSPIM1_20240710
+  - 440_SmartSPIM1_20250116
+  - 440_SmartSPIM3_20241025
+  - SmartSPIM-2-1
+  - 440_SmartSPIM1_20241024
+  - SmartSPIM1-1
+  - 440_SmartSPIM2_20241025
+  - exaspim-01
+  - SmartSPIM3-2
+  - 440_SmartSPIM3_20240510
+  - 440_SmartSPIM1_20240613
+  - 440_SmartSPIM1_20240325
+  - 440_SmartSPIM1_20240229
+  - 440_SmartSPIM2_20240514
+  - 440_SmartSPIM3_20240229
+  - SmartSPIM2-1
+  - SmartSPIM-id-1
+  - SmartSPIM2-4
+  - 440_SmartSPIM3_20240321
+
+Experimenter: erica peterson
+Total Sessions: 267
+Unique Instruments:
+  - 440_SmartSPIM3_20240510
+  - 440_SmartSPIM2_20240514
+  - 440_SmartSPIM2_20240321
+  - 440_SmartSPIM2_20240229
+  - SmartSPIM3-2
+  - SmartSPIM2-4
+  - 440_SmartSPIM3_20240321
+  - SmartSPIM2-2
+
+Experimenter: null
+Total Sessions: 244
+Unique Instruments:
+  - Zeiss Lightsheet 7, Microscope:0
+","Based on the retrieved data for Selective Plane Illumination Microscopy (SmartSPIM) sessions, here's a detailed breakdown:
+
+Top Experimenter: John Rohde
+- Total Sessions: 1,271
+- Unique Instruments Used (20 in total):
+1. SmartSPIM1-7
+2. 440_SmartSPIM1_20240710
+3. 440_SmartSPIM1_20250116
+4. 440_SmartSPIM3_20241025
+5. SmartSPIM-2-1
+6. 440_SmartSPIM1_20241024
+7. SmartSPIM1-1
+8. 440_SmartSPIM2_20241025
+9. exaspim-01
+10. SmartSPIM3-2
+11. 440_SmartSPIM3_20240510
+12. 440_SmartSPIM1_20240613
+13. 440_SmartSPIM1_20240325
+14. 440_SmartSPIM1_20240229
+15. 440_SmartSPIM2_20240514
+16. 440_SmartSPIM3_20240229
+17. SmartSPIM2-1
+18. SmartSPIM-id-1
+19. SmartSPIM2-4
+20. 440_SmartSPIM3_20240321
+
+Interesting observations:
+- John Rohde has significantly more sessions (1,271) compared to the next experimenter, Erica Peterson (267 sessions)
+- The instruments span various SmartSPIM models and dated configurations
+- The data suggests a diverse and active research environment with multiple microscopy instruments
+
+Note: There are some variations in experimenter names (e.g., ""erica peterson"" and ""Erica Peterson"" are listed separately), which might indicate slight inconsistencies in data entry.",,24.47540069,CORRECT,1,"{'agg_pipeline': [{'$match': {'data_description.modality.name': 'Selective plane illumination microscopy'}}, {'$project': {'experimenter_full_name': '$acquisition.experimenter_full_name', 'instrument_id': '$acquisition.instrument_id'}}, {'$unwind': {'path': '$experimenter_full_name', 'preserveNullAndEmptyArrays': False}}, {'$group': {'_id': '$experimenter_full_name', 'count': {'$sum': 1}, 'instruments': {'$addToSet': '$instrument_id'}}}, {'$sort': {'count': -1}}, {'$limit': 10}]}",CORRECT,1,1954,analysis
+Give me code to Identify all SmartSPIM assets in the thalamus in the middle project where the chamber_immersion and sample_immersion had different refractive indices,"{""agg_pipeline"":[{""$match"":{""data_description.modality.name"":""Selective plane illumination microscopy"",""data_description.project_name"":{""$regex"":""Thalamus in the middle"",""$options"":""i""},""acquisition.chamber_immersion"":{""$exists"":true},""acquisition.sample_immersion"":{""$exists"":true,""$ne"":null}}},{""$project"":{""_id"":1,""name"":1,""subject_id"":""$subject.subject_id"",""project_name"":""$data_description.project_name"",""chamber_refractive_index"":""$acquisition.chamber_immersion.refractive_index"",""sample_refractive_index"":""$acquisition.sample_immersion.refractive_index"",""chamber_medium"":""$acquisition.chamber_immersion.medium"",""sample_medium"":""$acquisition.sample_immersion.medium"",""refractive_indices_different"":{""$ne"":[""$acquisition.chamber_immersion.refractive_index"",""$acquisition.sample_immersion.refractive_index""]}}},{""$match"":{""refractive_indices_different"":true}},{""$sort"":{""name"":1}}]}","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to identify SmartSPIM assets with different refractive indices
+agg_pipeline = [
+    {
+        '$match': {
+            'data_description.modality.name': 'Selective plane illumination microscopy',
+            'data_description.project_name': {'$regex': 'Thalamus in the middle', '$options': 'i'},
+            'acquisition.chamber_immersion': {'$exists': True},
+            'acquisition.sample_immersion': {'$exists': True, '$ne': None}
+        }
+    },
+    {
+        '$project': {
+            '_id': 1,
+            'name': 1,
+            'subject_id': '$subject.subject_id',
+            'project_name': '$data_description.project_name',
+            'chamber_refractive_index': '$acquisition.chamber_immersion.refractive_index',
+            'sample_refractive_index': '$acquisition.sample_immersion.refractive_index',
+            'chamber_medium': '$acquisition.chamber_immersion.medium',
+            'sample_medium': '$acquisition.sample_immersion.medium',
+            'refractive_indices_different': {'$ne': ['$acquisition.chamber_immersion.refractive_index', '$acquisition.sample_immersion.refractive_index']}
+        }
+    },
+    {
+        '$match': {'refractive_indices_different': True}
+    },
+    {
+        '$sort': {'name': 1}
+    }
+]
+
+# Execute the aggregation pipeline
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print summary statistics
+print(f""Total SmartSPIM assets with different refractive indices: {len(result)}"")
+
+# Print detailed information
+print(""\nDetailed Asset Information:"")
+for asset in result:
+    print(f""Name: {asset['name']}"")
+    print(f""Subject ID: {asset['subject_id']}"")
+    print(f""Chamber Refractive Index: {asset['chamber_refractive_index']}"")
+    print(f""Sample Refractive Index: {asset['sample_refractive_index']}"")
+    print(f""Chamber Medium: {asset['chamber_medium']}"")
+    print(f""Sample Medium: {asset['sample_medium']}"")
+    print(""---"")","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to identify SmartSPIM assets with different refractive indices
+agg_pipeline = [
+    {
+        '$match': {
+            'data_description.modality.name': 'Selective plane illumination microscopy',
+            'data_description.project_name': {'$regex': 'Thalamus in the middle', '$options': 'i'},
+            'acquisition.chamber_immersion': {'$exists': True},
+            'acquisition.sample_immersion': {'$exists': True, '$ne': None}
+        }
+    },
+    {
+        '$project': {
+            '_id': 1,
+            'name': 1,
+            'subject_id': '$subject.subject_id',
+            'project_name': '$data_description.project_name',
+            'chamber_refractive_index': '$acquisition.chamber_immersion.refractive_index',
+            'sample_refractive_index': '$acquisition.sample_immersion.refractive_index',
+            'chamber_medium': '$acquisition.chamber_immersion.medium',
+            'sample_medium': '$acquisition.sample_immersion.medium',
+            'refractive_indices_different': {'$ne': ['$acquisition.chamber_immersion.refractive_index', '$acquisition.sample_immersion.refractive_index']}
+        }
+    },
+    {
+        '$match': {'refractive_indices_different': True}
+    },
+    {
+        '$sort': {'name': 1}
+    }
+]
+
+# Execute the aggregation pipeline
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print summary statistics
+print(f""Total SmartSPIM assets with different refractive indices: {len(result)}"")
+
+# Print detailed information
+print(""\nDetailed Asset Information:"")
+for asset in result:
+    print(f""Name: {asset['name']}"")
+    print(f""Subject ID: {asset['subject_id']}"")
+    print(f""Chamber Refractive Index: {asset['chamber_refractive_index']}"")
+    print(f""Sample Refractive Index: {asset['sample_refractive_index']}"")
+    print(f""Chamber Medium: {asset['chamber_medium']}"")
+    print(f""Sample Medium: {asset['sample_medium']}"")
+    print(""---"")",Error: cannot access local variable 'tool_output_size' where it is not associated with a value,,-1,ERROR,0,Error: cannot access local variable 'tool_output_size' where it is not associated with a value,ERROR,0,0,instrument
+In 2024 which month had the most number of metadata assets collected?,"{""agg_pipeline"":[{""$match"":{""created"":{""$gte"":""2024-01-01T00:00:00.000Z"",""$lt"":""2025-01-01T00:00:00.000Z""}}},{""$project"":{""month"":{""$month"":{""$toDate"":""$created""}}}},{""$group"":{""_id"":""$month"",""count"":{""$sum"":1}}},{""$sort"":{""count"":-1}}]}","import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+
+# Aggregation pipeline to count metadata assets by month in 2024
+agg_pipeline = [
+    {'$match': {'created': {'$gte': '2024-01-01', '$lt': '2025-01-01'}}},
+    {'$project': {'month': {'$month': {'$toDate': '$created'}}}},
+    {'$group': {'_id': '$month', 'count': {'$sum': 1}}},
+    {'$sort': {'_id': 1}}
+]
+
+# Execute the aggregation
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+
+# Print the results in a readable format
+print(""Metadata Assets Collected in 2024 by Month:"")
+for month_data in result:
+    month_name = [
+        'January', 'February', 'March', 'April', 'May', 'June', 
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ][month_data['_id'] - 1]
+    print(f""{month_name}: {month_data['count']} assets"")
+
+# Find the month with the most assets
+max_month = max(result, key=lambda x: x['count'])
+max_month_name = [
+    'January', 'February', 'March', 'April', 'May', 'June', 
+    'July', 'August', 'September', 'October', 'November', 'December'
+][max_month['_id'] - 1]
+
+print(f""\nMonth with Most Metadata Assets: {max_month_name} ({max_month['count']} assets)"")","July (month 7) had the most metadata assets collected in 2024 with 9,360 assets.",Error: cannot access local variable 'tool_output_size' where it is not associated with a value,,-1,ERROR,0,Error: cannot access local variable 'tool_output_size' where it is not associated with a value,ERROR,0,0,analysis
+"Which experimenter who conducted the most sessions in the past 6 months, given that the date is 3/31/25?","{""agg_pipeline"":[{""$match"":{""$or"":[{""session.session_start_time"":{""$gte"":""2024-10-01T00:00:00"",""$lte"":""2025-03-31T23:59:59""}},{""acquisition.session_start_time"":{""$gte"":""2024-10-01T00:00:00"",""$lte"":""2025-03-31T23:59:59""}}]}},{""$project"":{""experimenter"":{""$cond"":{""if"":{""$isArray"":""$session.experimenter_full_name""},""then"":""$session.experimenter_full_name"",""else"":{""$cond"":{""if"":{""$isArray"":""$acquisition.experimenter_full_name""},""then"":""$acquisition.experimenter_full_name"",""else"":[]}}}}}},{""$unwind"":""$experimenter""},{""$group"":{""_id"":""$experimenter"",""count"":{""$sum"":1}}},{""$sort"":{""count"":-1}},{""$limit"":1}]}","import json
+from datetime import datetime, timedelta
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+
+# Define the date range (6 months before 3/31/25)
+end_date = datetime(2025, 3, 31)
+start_date = end_date - timedelta(days=180)
+
+# Aggregation pipeline to find top experimenters
+agg_pipeline = [
+    {
+        '$match': {
+            'session.session_start_time': {
+                '$gte': start_date.isoformat(),
+                '$lte': end_date.isoformat()
+            }
+        }
+    },
+    {
+        '$unwind': {
+            'path': '$session.experimenter_full_name', 
+            'preserveNullAndEmptyArrays': False
+        }
+    },
+    {
+        '$group': {
+            '_id': '$session.experimenter_full_name', 
+            'session_count': {'$sum': 1}
+        }
+    },
+    {
+        '$sort': {'session_count': -1}
+    },
+    {
+        '$limit': 10
+    }
+]
+
+# Execute the aggregation
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+
+# Print the results
+print(""Top Experimenters in the Past 6 Months:"")
+for experimenter in result:
+    print(f""{experimenter['_id']}: {experimenter['session_count']} sessions"")
+
+# Identify the top experimenter
+top_experimenter = result[0] if result else None
+if top_experimenter:
+    print(f""\nTop Experimenter: {top_experimenter['_id']} ""
+          f""with {top_experimenter['session_count']} sessions"")",Bowen Tan,"Based on the aggregation results, I can provide a clear summary of the experimenters who conducted the most sessions in the past 6 months (from 10/01/2024 to 03/31/2025):
+
+Top 5 Experimenters by Number of Sessions:
+1. Bowen Tan: 807 sessions
+2. Avalon Amaya: 318 sessions
+3. Margaret Lee: 262 sessions
+4. Madeline Tom: 239 sessions
+5. Henry Loeffler: 236 sessions
+
+Bowen Tan stands out as the experimenter who conducted the most sessions during this period, with a significantly higher number of sessions (807) compared to the next highest experimenter, Avalon Amaya (318 sessions).
+
+Here's the Python code that generated these results, using the AIND data access API:
+
+```python
+import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'session.session_start_time': {'$gte': '2024-10-01T00:00:00', '$lte': '2025-03-31T23:59:59'}}},
+    {'$unwind': '$session.experimenter_full_name'},
+    {'$group': {'_id': '$session.experimenter_full_name', 'count': {'$sum': 1}}},
+    {'$sort': {'count': -1}},
+    {'$limit': 5}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=3))
+```
+
+The aggregation pipeline does the following:
+1. Matches sessions between 10/01/2024 and 03/31/2025
+2. Unwinds the experimenter names
+3. Groups by experimenter and counts sessions
+4. Sorts in descending order of session count
+5. Limits to top 5 results",,28.99805045,CORRECT,1,"{'agg_pipeline': [{'$match': {'session.session_start_time': {'$gte': '2024-10-01T00:00:00', '$lte': '2025-03-31T23:59:59'}}}, {'$unwind': '$session.experimenter_full_name'}, {'$group': {'_id': '$session.experimenter_full_name', 'count': {'$sum': 1}}}, {'$sort': {'count': -1}}, {'$limit': 5}]}",INCORRECT,0,194,analysis
+give me code so that i can Compare the genotype distribution across the thalamus in the middle project,"{""agg_pipeline"":[{""$match"":{""$or"":[{""data_description.project_name"":""Thalamus in the middle""},{""data_description.project_name"":{""$regex"":""^Thalamus in the middle -"",""$options"":""i""}}]}},{""$project"":{""project_name"":""$data_description.project_name"",""genotype"":""$subject.genotype"",""subject_id"":""$subject.subject_id"",""modality"":""$data_description.modality.name""}},{""$group"":{""_id"":{""project"":""$project_name"",""genotype"":""$genotype""},""count"":{""$sum"":1},""subjects"":{""$addToSet"":""$subject_id""}}},{""$project"":{""project"":""$_id.project"",""genotype"":""$_id.genotype"",""count"":1,""unique_subjects"":{""$size"":""$subjects""}}},{""$sort"":{""project"":1,""count"":-1}}]}","import json
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to retrieve genotype distribution
+agg_pipeline = [
+    {'$match': {'$or': [
+        {'data_description.project_name': 'Thalamus in the middle'}, 
+        {'data_description.project_name': {'$regex': '^Thalamus in the middle -', '$options': 'i'}}
+    ]}},
+    {'$project': {
+        'project_name': '$data_description.project_name', 
+        'genotype': '$subject.genotype', 
+        'subject_id': '$subject.subject_id'
+    }},
+    {'$group': {
+        '_id': {'project': '$project_name', 'genotype': '$genotype'}, 
+        'count': {'$sum': 1}, 
+        'subjects': {'$addToSet': '$subject_id'}
+    }},
+    {'$project': {
+        'project': '$_id.project', 
+        'genotype': '$_id.genotype', 
+        'count': 1, 
+        'unique_subjects': {'$size': '$subjects'}
+    }},
+    {'$sort': {'project': 1, 'count': -1}}
+]
+
+# Retrieve results
+results = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+
+# Convert to DataFrame
+df = pd.DataFrame(results)
+
+# Clean up the data
+df['genotype'] = df['genotype'].fillna('Unknown')
+df = df[df['genotype'] != '']
+
+# Visualization
+plt.figure(figsize=(15, 8))
+genotype_project_counts = df.pivot_table(
+    index='project', 
+    columns='genotype', 
+    values='count', 
+    fill_value=0
+)
+
+# Stacked bar plot
+genotype_project_counts.plot(kind='bar', stacked=True)
+plt.title('Genotype Distribution Across Thalamus in the Middle Projects')
+plt.xlabel('Project')
+plt.ylabel('Number of Samples')
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.legend(title='Genotype', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.show()
+
+# Print detailed summary
+print(""Genotype Distribution Summary:"")
+print(genotype_project_counts)
+
+# Additional analysis
+total_samples = df.groupby('genotype')['count'].sum().sort_values(ascending=False)
+print(""\nTotal Samples per Genotype:"")
+print(total_samples)","import json
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to retrieve genotype distribution
+agg_pipeline = [
+    {'$match': {'$or': [
+        {'data_description.project_name': 'Thalamus in the middle'}, 
+        {'data_description.project_name': {'$regex': '^Thalamus in the middle -', '$options': 'i'}}
+    ]}},
+    {'$project': {
+        'project_name': '$data_description.project_name', 
+        'genotype': '$subject.genotype', 
+        'subject_id': '$subject.subject_id'
+    }},
+    {'$group': {
+        '_id': {'project': '$project_name', 'genotype': '$genotype'}, 
+        'count': {'$sum': 1}, 
+        'subjects': {'$addToSet': '$subject_id'}
+    }},
+    {'$project': {
+        'project': '$_id.project', 
+        'genotype': '$_id.genotype', 
+        'count': 1, 
+        'unique_subjects': {'$size': '$subjects'}
+    }},
+    {'$sort': {'project': 1, 'count': -1}}
+]
+
+# Retrieve results
+results = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+
+# Convert to DataFrame
+df = pd.DataFrame(results)
+
+# Clean up the data
+df['genotype'] = df['genotype'].fillna('Unknown')
+df = df[df['genotype'] != '']
+
+# Visualization
+plt.figure(figsize=(15, 8))
+genotype_project_counts = df.pivot_table(
+    index='project', 
+    columns='genotype', 
+    values='count', 
+    fill_value=0
+)
+
+# Stacked bar plot
+genotype_project_counts.plot(kind='bar', stacked=True)
+plt.title('Genotype Distribution Across Thalamus in the Middle Projects')
+plt.xlabel('Project')
+plt.ylabel('Number of Samples')
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.legend(title='Genotype', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.show()
+
+# Print detailed summary
+print(""Genotype Distribution Summary:"")
+print(genotype_project_counts)
+
+# Additional analysis
+total_samples = df.groupby('genotype')['count'].sum().sort_values(ascending=False)
+print(""\nTotal Samples per Genotype:"")
+print(total_samples)",Error: cannot access local variable 'tool_output_size' where it is not associated with a value,,-1,ERROR,0,Error: cannot access local variable 'tool_output_size' where it is not associated with a value,ERROR,0,0,project
+Show me how to create a mongodb query for the imaging channels present in a specific stitched data asset.,"filter = {
+    ""name"": # INSERT ASSET NAME
+}
+
+# Projection to extract only the channel information
+projection = {
+    ""acquisition.tiles.channel"": 1
+}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Filter for the specific SmartSPIM dataset
+filter = {
+    ""name"": # INSERT ASSET NAME
+}
+
+# Projection to extract only the channel information
+projection = {
+    ""acquisition.tiles.channel"": 1
+}
+
+# Retrieve records with limit 1
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection,
+    limit=1
+)
+
+# Extract unique channels
+unique_channels = set()
+for record in records:
+    for tile in record.get('acquisition', {}).get('tiles', []):
+        channel = tile.get('channel', {})
+        unique_channels.add(channel.get('channel_name'))
+
+print(""Unique Channels:"")
+print(json.dumps(list(unique_channels), indent=2))","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Filter for the specific SmartSPIM dataset
+filter = {
+    ""name"": # INSERT ASSET NAME
+}
+
+# Projection to extract only the channel information
+projection = {
+    ""acquisition.tiles.channel"": 1
+}
+
+# Retrieve records with limit 1
+records = docdb_api_client.retrieve_docdb_records(
+    filter_query=filter,
+    projection=projection,
+    limit=1
+)
+
+# Extract unique channels
+unique_channels = set()
+for record in records:
+    for tile in record.get('acquisition', {}).get('tiles', []):
+        channel = tile.get('channel', {})
+        unique_channels.add(channel.get('channel_name'))
+
+print(""Unique Channels:"")
+print(json.dumps(list(unique_channels), indent=2))",Error: cannot access local variable 'tool_output_size' where it is not associated with a value,,-1,ERROR,0,Error: cannot access local variable 'tool_output_size' where it is not associated with a value,ERROR,0,0,experimental_details
+Provide the mongodb query needed to find the channels used in the SmartSPIM session from subject 699834 on oct 31st 2023,"[{$match:{'subject.subject_id': '699834','data_description.creation_time': { $gte: '2023-10-31T00:00:00Z', $lt: '2023-11-01T00:00:00Z'},'data_description.modality.name': 'Selective plane illumination microscopy'}},{$project: {name: 1, channels: '$acquisition.tiles.channel.channel_name'}},{$unwind: '$channels'},{$group: { _id: '$name', unique_channels: {$addToSet: '$channels'}}}]`","import json
+from datetime import datetime, timedelta
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to find channels for specific SmartSPIM session
+agg_pipeline = [
+    {
+        '$match': {
+            'subject.subject_id': '699834', 
+            'data_description.modality.name': 'Selective plane illumination microscopy', 
+            'data_description.creation_time': {'$regex': '2023-10-31'}
+        }
+    },
+    {
+        '$project': {
+            'name': 1, 
+            'subject_id': '$subject.subject_id', 
+            'creation_time': '$data_description.creation_time', 
+            'channels': '$acquisition.tiles.channel'
+        }
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+
+# Extract unique channel names
+unique_channels = set(channel['channel_name'] for record in result for channel in record['channels'])
+
+print(""Unique Channels Used:"")
+for channel in unique_channels:
+    print(f""- {channel} nm"")","import json
+from datetime import datetime, timedelta
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+# Aggregation pipeline to find channels for specific SmartSPIM session
+agg_pipeline = [
+    {
+        '$match': {
+            'subject.subject_id': '699834', 
+            'data_description.modality.name': 'Selective plane illumination microscopy', 
+            'data_description.creation_time': {'$regex': '2023-10-31'}
+        }
+    },
+    {
+        '$project': {
+            'name': 1, 
+            'subject_id': '$subject.subject_id', 
+            'creation_time': '$data_description.creation_time', 
+            'channels': '$acquisition.tiles.channel'
+        }
+    }
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+
+# Extract unique channel names
+unique_channels = set(channel['channel_name'] for record in result for channel in record['channels'])
+
+print(""Unique Channels Used:"")
+for channel in unique_channels:
+    print(f""- {channel} nm"")",Error: cannot access local variable 'tool_output_size' where it is not associated with a value,,-1,ERROR,0,Error: cannot access local variable 'tool_output_size' where it is not associated with a value,ERROR,0,0,experimental_details
+Which investigators have contributed to the most ecephys assets in the database?,"{""agg_pipeline"":[{""$match"":{""data_description.modality.name"":""Extracellular electrophysiology""}},{""$unwind"":""$data_description.investigators""},{""$group"":{""_id"":""$data_description.investigators.name"",""count"":{""$sum"":1}}},{""$sort"":{""count"":-1}},{""$limit"":10}]}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'data_description.modality.name': 'Extracellular electrophysiology'}},
+    {'$unwind': '$data_description.investigators'},
+    {'$group': {'_id': '$data_description.investigators.name', 'count': {'$sum': 1}}},
+    {'$sort': {'count': -1}},
+    {'$limit': 10}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=3))","Based on the aggregation results, here are the top investigators who have contributed to the most extracellular electrophysiology (ecephys) assets in the database:
+
+Unknown: 528 assets
+Shawn Olsen: 412 assets
+Josh Siegle: 332 assets
+Corbett Bennett: 292 assets
+Shawn R Olsen: 276 assets
+Anna Lakunina: 275 assets
+Pavel Kulik: 119 assets
+Yoni Browning: 96 assets
+Kanghoon Jung: 82 assets
+Galen Lynch: 71 assets
+A few observations:
+
+There's a significant number of assets (528) with an ""Unknown"" investigator
+Shawn Olsen appears twice with slightly different name variations (Shawn Olsen and Shawn R Olsen), which might indicate some inconsistency in data entry
+The top contributors seem to be from the Allen Institute for Brain Science, with names like Shawn Olsen, Josh Siegle, and Corbett Bennett being prominent","Based on the aggregation results for extracellular electrophysiology (ecephys) assets, here's a breakdown of the top investigators:
+
+Top 10 Investigators by Ecephys Asset Contributions:
+1. Unknown: 528 assets
+2. Shawn Olsen: 412 assets
+3. Josh Siegle: 332 assets
+4. Corbett Bennett: 292 assets
+5. Shawn R Olsen: 276 assets
+6. Anna Lakunina: 275 assets
+7. Pavel Kulik: 119 assets
+8. Yoni Browning: 96 assets
+9. Kanghoon Jung: 82 assets
+10. Galen Lynch: 71 assets
+
+A few interesting observations:
+- ""Unknown"" has the highest count, which might indicate missing or incomplete investigator metadata
+- Shawn Olsen appears twice (possibly due to slight name variation) with a combined contribution of 688 assets
+- The top contributors seem to be from the Allen Institute for Brain Science, given the names and the nature of the dataset
+
+Here's the Python code used to generate this analysis:
+
+```python
+import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'data_description.modality.name': 'Extracellular electrophysiology'}},
+    {'$unwind': '$data_description.investigators'},
+    {'$group': {'_id': '$data_description.investigators.name', 'count': {'$sum': 1}}},
+    {'$sort': {'count': -1}},
+    {'$limit': 10}
+]
+
+result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
+print(json.dumps(result, indent=3))
+```",,19.07679677,CORRECT,1,"{'agg_pipeline': [{'$match': {'data_description.modality.name': 'Extracellular electrophysiology'}}, {'$unwind': '$data_description.investigators'}, {'$group': {'_id': '$data_description.investigators.name', 'count': {'$sum': 1}}}, {'$sort': {'count': -1}}, {'$limit': 10}]}",CORRECT,1,385,analysis
+How many experiments used water as the chamber immersion medium?,"{""agg_pipeline"":[{""$match"":{""acquisition.chamber_immersion.medium"":""Water""}},{""$count"":""count""}]}","import json
+from aind_data_access_api.document_db import MetadataDbClient
+
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'acquisition.chamber_immersion.medium': 'Water'}},
+    {'$count': 'count'}
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+print(json.dumps(result, indent=3))","Based on the retrieved data, 244 experiments used water as the chamber immersion medium.
+
+","Based on the retrieved data, 244 experiments used water as the chamber immersion medium.
+
+To break this down, the MongoDB aggregation pipeline:
+1. Matched documents where the chamber immersion medium was 'Water'
+2. Counted the number of matching documents
+
+Here's a Python implementation to verify this result:
+
+```python
+import json
+
+from aind_data_access_api.document_db import MetadataDbClient
+
+API_GATEWAY_HOST = ""api.allenneuraldynamics.org""
+DATABASE = ""metadata_index""
+COLLECTION = ""data_assets""
+
+docdb_api_client = MetadataDbClient(
+    host=API_GATEWAY_HOST,
+    database=DATABASE,
+    collection=COLLECTION,
+)
+
+agg_pipeline = [
+    {'$match': {'acquisition.chamber_immersion.medium': 'Water'}},
+    {'$count': 'count'}
+]
+
+result = docdb_api_client.aggregate_docdb_records(
+    pipeline=agg_pipeline
+)
+print(json.dumps(result, indent=3))
+```
+
+This query confirms that 244 experiments in the database used water as the chamber immersion medium.",,14.71475649,CORRECT,1,"{'agg_pipeline': [{'$match': {'acquisition.chamber_immersion.medium': 'Water'}}, {'$count': 'count'}]}",CORRECT,1,16,instrument
