@@ -21,6 +21,8 @@ test_api/
 panel_app.py
 test_python_gen.py
 test_models.py
+python_benchmark.csv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 huggingface_cache/

@@ -21,6 +21,10 @@ from metadata_chatbot.GAMER.workflow import stream_response, workflow
 
 warnings.filterwarnings("ignore")
 
+from code_editor import code_editor
+from langchain_experimental.utilities import PythonREPL
+python_repl = PythonREPL()
+
 load_dotenv()
 
 
@@ -56,10 +60,7 @@ def get_langchain_tracer(project):
 def get_example_questions():
     """Cache example questions"""
     return [
-        (
-            "What are the unique instrument ids for SmartSPIM experiments?"
-
-        ),
+        ("What are the unique instrument ids for SmartSPIM experiments?"),
         (
             "What is the MongoDB query to find the injections used in "
             "SmartSPIM_675387_2023-05-23_23-05-56"
@@ -152,6 +153,87 @@ async def main():
         st.header("GAMER: Generative Analysis of Metadata Retrieval")
         "Please note that it will take a few seconds to generate an answer."
 
+        with st.expander(
+            "Code playground:"
+        ):
+            custom_buttons = [
+                {
+                "name": "Copy",
+                "feather": "Copy",
+                "hasText": True,
+                "alwaysOn": True,
+                "commands": ["copyAll"],
+                "style": {"top": "0.46rem", "right": "0.4rem"}
+                },
+                {
+                "name": "Shortcuts",
+                "feather": "Type",
+                "class": "shortcuts-button",
+                "hasText": True,
+                "commands": ["toggleKeyboardShortcuts"],
+                "style": {"bottom": "calc(50% + 1.75rem)", "right": "0.4rem"}
+                },
+                {
+                "name": "Collapse",
+                "feather": "Minimize2",
+                "hasText": True,
+                "commands": ["selectall",
+                                "toggleSplitSelectionIntoLines",
+                                "gotolinestart",
+                                "gotolinestart",
+                                "backspace"],
+                "style": {"bottom": "calc(50% - 1.25rem)", "right": "0.4rem"}
+                },
+                {
+                "name": "Save",
+                "feather": "Save",
+                "hasText": True,
+                "commands": ["save-state", ["response","saved"]],
+                "response": "saved",
+                "style": {"bottom": "calc(50% - 4.25rem)", "right": "0.4rem"}
+                },
+                {
+                "name": "Run",
+                "feather": "Play",
+                "primary": True,
+                "hasText": True,
+                "showWithIcon": True,
+                "commands": ["submit"],
+                "style": {"bottom": "0.44rem", "right": "0.4rem"}
+                },
+                {
+                "name": "Command",
+                "feather": "Terminal",
+                "primary": True,
+                "hasText": True,
+                "commands": ["openCommandPallete"],
+                "style": {"bottom": "3.5rem", "right": "0.4rem"}
+                }
+                ]
+            
+            code = '''
+            #Start typing here...
+
+
+
+
+
+            
+
+
+            
+
+
+            '''
+
+            response_dict = code_editor(code, buttons = custom_buttons)
+
+            if len(response_dict['id']) != 0 and ( response_dict['type'] == "selection" or response_dict['type'] == "submit" ):
+                # Capture the text part
+                code_text = response_dict['text']
+                result = python_repl.run(code_text)
+                st.code(result, language='python')
+
         with st.popover(
             "Configurations :material/settings:", use_container_width=True
         ):
@@ -165,14 +247,15 @@ async def main():
             "Prompt engineering guide :memo:", use_container_width=True
         ):
             st.markdown(
-                "If you are experiencing issues related to latency or robustness, "
-                "it is likely that the model in the background is overwhelmed with "
+                "Issues related to latency or robustness are likely due "
+                "to the model in the background being overwhelmed with "
                 "the amount of information it has to retrieve or synthesize. "
                 "Here are some prompt optimization tips you can try: "
             )
             st.markdown(
                 "- Ensure that your query clearly labels the information "
-                "you seek (e.g. writing out the full project name to prevent ambiguity). "
+                "you seek (e.g. writing out the full project name to prevent "
+                "ambiguity). "
             )
             st.markdown(
                 "- Explicitly specify a limit for the model to retrieve "
@@ -180,28 +263,31 @@ async def main():
             )
             st.markdown(
                 "- Break up complex queries. Ask queries one at a time, "
-                "ideally starting with a simple, broad query and increasing complexity."
+                "ideally starting with a simple, broad query and increasing "
+                "complexity."
             )
             st.markdown(
-                "- The model is relatively poor at fetching one random asset and applying "
-                "the specified task to the asset. In this case, ask it to fetch a random "
-                "data asset meeting a requirement (e.g. ophys experiment) and then ask it "
-                "to apply the task."
+                "- The model is relatively poor at fetching a random asset "
+                "and applying the desired task to the asset. Hence, ask "
+                "GAMER to fetch a random asset meeting a requirement "
+                "(e.g. a specific modality, project name, subject etc) and "
+                "then ask it to apply the task."
             )
             st.markdown(
-                "- The model does not know today's date. When asking temporal queries "
-                "(i.e. Retrieve all the assets uploaded to the database in the past week) "
-                "specify the date."
+                "- The model does not know today's date. When asking temporal "
+                "queries specify the date. (i.e. Retrieve all the assets "
+                " uploaded to the database in the past week, "
+                "given that it's 3/31/25) "
+            )
+            st.markdown("Prompt GAMER to return python code.")
+            st.markdown(
+                "If the chat history becomes fuzzy, please refresh the"
+                " tab. Note that GAMER will not retain previous contexts if "
+                "this action is taken."
             )
             st.markdown(
-                "Prompt it to return python code using the AIND data access api."
-            )
-            st.markdown(
-                "If the chat history starts to become fuzzy, please refresh the tab. "
-                "Note that GAMER will not retain previous contexts if this action is taken."
-            )
-            st.markdown(
-                "Please leave feedback through the faces you see after a response is generated!"
+                "Please leave feedback through the faces you see after a "
+                "response is generated!"
             )
 
         (
@@ -214,6 +300,7 @@ async def main():
         )
 
     st.info("Type a query to start or pick one of these suggestions:")
+    
 
     examples = get_example_questions()
 
@@ -226,6 +313,8 @@ async def main():
     message.write("Hello! How can I help you?")
 
     user_query = st.chat_input("Ask a question about the AIND metadata!")
+    
+
 
     if user_query:
         st.session_state.query = user_query
@@ -369,6 +458,8 @@ async def main():
                 st.warning("Invalid feedback score.")
 
     st.session_state.query = ""
+
+    
 
 
 if __name__ == "__main__":

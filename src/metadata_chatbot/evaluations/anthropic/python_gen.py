@@ -110,9 +110,9 @@ async def python_executor(state: dict):
     python_code = state["python_code"]
     try:
         answer = python_repl.run(python_code)
-        return {"generation": answer, "error": None}
+        return {"generation": answer, "tool_output_size":len(answer), "error": None}
     except Exception as e:
-        return {"generation": str(e), "error": str(e)}
+        return {"generation": str(e), "tool_output_size":0, "error": str(e)}
     
 async def should_continue(state: dict):
     query = state['query']

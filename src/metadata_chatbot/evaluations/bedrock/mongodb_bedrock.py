@@ -45,10 +45,18 @@ async def tool_node(state: dict):
             )
         )
 
+
+
+    if outputs:
+        tool_output_size = sum(len(output.content.encode('utf-8')) for output in outputs)
+    else:
+        tool_output_size = 0
+
     return {
         "messages": outputs,
         "tool_output": outputs,
         "mongodb_query": agg_pipeline,
+        "tool_output_size": tool_output_size,
     }
 
 
@@ -80,6 +88,7 @@ class GraphState(TypedDict):
     route_to_mongodb: Optional[bool]
     mongodb_query: Optional[dict]
     error: Optional[str]
+    tool_output_size: Optional[int]
 
 
 workflow = StateGraph(GraphState)
@@ -109,7 +118,7 @@ bedrock_app = workflow.compile()
 #         "query": query
 #     }
 
-#     answer = await app.ainvoke(inputs)
+#     answer = await bedrock_app.ainvoke(inputs)
 
 #     return answer["generation"]
 

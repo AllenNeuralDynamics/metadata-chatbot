@@ -23,6 +23,7 @@ async def main():
         mongodb_score = 0
         response_evaluation = "ERROR"
         response_score = 0
+        tool_output_size = 0
 
         try:
             start = time.time()
@@ -36,12 +37,16 @@ async def main():
             if "mongodb_query" in answer and answer["mongodb_query"]:
                 if "tool_call_0" in answer["mongodb_query"]:
                     mongodb_query = answer["mongodb_query"]["tool_call_0"].get("args", "No arguments found")
+                    tool_output_size = answer["tool_output_size"]
                 else:
                     mongodb_query = "MongoDB query present but in different format"
+                    tool_output_size = 0
             else:
                 mongodb_query = "No MongoDB query was generated"
+                tool_output_size = 0
             if mongodb_query:
                 benchmark.at[index, "predicted_mongodb_query"] = mongodb_query
+                benchmark.at[index, "tool_output_size"] = tool_output_size 
                 
                 # Evaluate MongoDB query
                 try:
@@ -67,6 +72,8 @@ async def main():
     
             benchmark.at[index, "generation_time"] = time_taken
             benchmark.at[index, "data_source"] = data_source
+
+            
             # Evaluate response
             try:
                 response_result = await evaluator_python_chain.ainvoke({

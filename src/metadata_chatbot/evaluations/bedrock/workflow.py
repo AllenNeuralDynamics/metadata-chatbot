@@ -65,6 +65,7 @@ class GraphState(TypedDict):
     route_to_mongodb: Optional[bool]
     mongodb_query: Optional[dict]
     error: Optional[str]
+    tool_output_size: Optional[int]
 
 
 workflow = StateGraph(GraphState)

@@ -61,6 +61,7 @@ class GraphState(TypedDict):
     mongodb_query: Optional[dict]
     token_metadata: Optional[dict]
     cache_metadata: Optional[dict]
+    tool_output_size: Optional[int]
 
 
 workflow = StateGraph(GraphState)

@@ -19,6 +19,7 @@ async def main():
         mongodb_score = 0
         response_evaluation = "ERROR"
         response_score = 0
+        tool_output_size = 0
 
         query = row["input_question"]
         target_response = row["target_answer"]
@@ -33,6 +34,7 @@ async def main():
                 time_taken = end - start
                 response = answer["generation"]
                 mongodb_query = answer["mongodb_query"]["tool_call_0"]["args"]
+                tool_output_size = answer["tool_output_size"]
 
             except Exception as e:
                 response = f"Error: {e}"
@@ -43,6 +45,7 @@ async def main():
                 mongodb_query
             )
             benchmark.at[index, "generation_time"] = time_taken
+            benchmark.at[index, "tool_output_size"] = tool_output_size 
 
             mongodb_result = await evaluator_chain.ainvoke(
                 {

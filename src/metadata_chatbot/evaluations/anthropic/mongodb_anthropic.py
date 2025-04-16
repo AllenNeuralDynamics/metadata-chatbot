@@ -84,10 +84,13 @@ async def tool_node(state: dict):
             )
         )
 
+        tool_output_size = sum(len(output.content.encode('utf-8')) for output in outputs)
+
     return {
         "messages": outputs,
         "tool_output": outputs,
         "mongodb_query": agg_pipeline,
+        "tool_output_size": tool_output_size,
     }
 
 

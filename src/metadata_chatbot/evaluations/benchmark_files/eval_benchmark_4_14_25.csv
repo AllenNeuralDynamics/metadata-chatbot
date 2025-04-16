@@ -1,18 +1,18 @@
-input_question,output_answer,output_answer,output_mongodb_query,output_python
-Identify the number of assets where acquisition.experimenter_full_name exist as strings instead of a list of strings,There are 3984 records where acquisition.experimenter_full_name exist as strings instead of a list of strings,,,
+input_question,output_answer,output_answer,output_mongodb_query,output_python,query_type
+Identify the number of assets where acquisition.experimenter_full_name exist as strings instead of a list of strings,There are 3984 records where acquisition.experimenter_full_name exist as strings instead of a list of strings,,,,metadata_structure
 "for mouse 721291 can you make a table of sessions, date, and session_type?","Sessions for Mouse 721291
  Session, Date, Session Type
 1,2024-04-26,TRAINING_3_images_A_10uL_reward
 2,2024-04-29,TRAINING_3_images_A_10uL_reward 
 3,2024-04-30,TRAINING_3_images_A_10uL_reward 
- The table shows all three sessions recorded for mouse 721291, with dates extracted from the session_start_time field and the consistent session type across all sessions",,"{""filter"":{""subject.subject_id"":""721291""},""projection"":{""name"":1,""session.session_type"":1,""session.session_start_time"":1,""_id"":0}}",
+ The table shows all three sessions recorded for mouse 721291, with dates extracted from the session_start_time field and the consistent session type across all sessions",,"{""filter"":{""subject.subject_id"":""721291""},""projection"":{""name"":1,""session.session_type"":1,""session.session_start_time"":1,""_id"":0}}",,experiment_details
 Tell me about mouse 747107,"Mouse 747107 is a female Mus musculus with the genotype Slc32a1-IRES-Cre/wt;Oi1(TIT2L-jGCaMP8s-WPRE-ICL-IRES-tTA2)/wt. The mouse was housed in cage 8272325 in room 221 and was sourced from the Allen Institute. 
 
 The mouse underwent planar optical physiology (pophys) experiments using a mesoscope setup. The imaging was performed with a 920nm wavelength laser at various depths in the visual cortex (VISp). Multiple field of views (FOVs) were recorded at different imaging depths ranging from 68 to 260 micrometers, with a frame rate of 9.48 Hz. 
 
-The experimental setup included eye and face cameras to monitor the mouse's behavior, and the mouse was placed on a running disk platform manufactured by the Allen Institute for Neural Dynamics, which had a radius of 8.255 centimeters.",,"{""subject.subject_id"": ""747107""}",
-How many records use the session.data_streams.slap_fovs field,there are 5488 records with session.data_streams.slap_fovs,,"{""agg_pipeline"":[{""$match"":{""session.data_streams.slap_fovs"":{""$exists"":true}}},{""$count"":""count""}]}",
-Find how many experimental sessions conducted by experimenter Marton Rozsa in 2022.,86 sessions were conducted by Marton Rozsa,,"{""agg_pipeline"":[{""$match"":{""$or"":[{""acquisition.experimenter_full_name"":""Marton Rozsa"",""acquisition.session_start_time"":{""$regex"":""2022-"",""$options"":""i""}},{""session.experimenter_full_name"":{""$in"":[""Marton Rozsa""]},""session.session_start_time"":{""$regex"":""2022-"",""$options"":""i""}}]}},{""$count"":""total_sessions""}]}",
+The experimental setup included eye and face cameras to monitor the mouse's behavior, and the mouse was placed on a running disk platform manufactured by the Allen Institute for Neural Dynamics, which had a radius of 8.255 centimeters.",,"{""subject.subject_id"": ""747107""}",,subject
+How many records use the session.data_streams.slap_fovs field,there are 5488 records with session.data_streams.slap_fovs,,"{""agg_pipeline"":[{""$match"":{""session.data_streams.slap_fovs"":{""$exists"":true}}},{""$count"":""count""}]}",,metadata_structure
+Find how many experimental sessions conducted by experimenter Marton Rozsa in 2022.,86 sessions were conducted by Marton Rozsa,,"{""agg_pipeline"":[{""$match"":{""$or"":[{""acquisition.experimenter_full_name"":""Marton Rozsa"",""acquisition.session_start_time"":{""$regex"":""2022-"",""$options"":""i""}},{""session.experimenter_full_name"":{""$in"":[""Marton Rozsa""]},""session.session_start_time"":{""$regex"":""2022-"",""$options"":""i""}}]}},{""$count"":""total_sessions""}]}",,analysis
 Generate code to find experiments where the animal weight decreased by more than 10% between consecutive procedures.,"I'll create a MongoDB aggregation pipeline to find all unique subject IDs where the animal weight decreased by more than 10% between consecutive procedures. Here's the Python code that implements this:
 
 import json
@@ -215,7 +215,7 @@ for record in result:
     print(f""Subject ID: {record['subject_id']}"")
 
 # Print total count
-print(f""\nTotal number of unique subjects: {len(result)}"")"
+print(f""\nTotal number of unique subjects: {len(result)}"")",analysis
 What are the injections for SmartSPIM_675387_2023-05-23_23-05-56?,"
                     Based on the provided context, the injections for SmartSPIM_675387_2023-05-23_23-05-56 are:
                     1. AAVrg-Syn-H2B-Turquoise virus with titer 48000000000000 gc/mL, injected at coordinates ML 1.0 mm, AP 1.2 mm, depth 0.8 mm from Bregma, with injection volume 50.0 nanoliters, targeting the Isocortex in the right hemisphere.
@@ -245,12 +245,12 @@ records = docdb_api_client.retrieve_docdb_records(
     projection=projection,
 )
 
-print(records)"
-What is Acquisition?,An Acquisition in AIND metadata refers to the acquisition of a data asset specifically for in vitro imaging modalities like light sheet and confocal microscopy. This is distinct from a 'session' which is used in reference to physiology and behavior data collection.,,,
-How do I create a subject file?,"Based on the provided information, there are two ways to create a subject file:Using the GUI: You can use the metadata entry web application at https://metadata-entry.allenneuraldynamics.org/ Using Python code: You'll need to use the aind-data-schema library. ",,,
-Do I need to create a new rig/instrument file for each data asset?,"Ideally no. The rig/instrument file should be relatively stable and hopefully won’t change much from one day to the next, so you can reuse the same file for multiple data assets. However, when the devices in a rig do change, the rig/ instrument file must be updated. For instance, replacing a broken Neuropixels probe requires an updated file, as does adding or moving a camera to a rig. The rig_id and the date_of_modification should make it clear when the file was last updated.",,,
-How do I use the Calibration field?,"This is to track any device calibrations that are performed, such as gamma correction for monitors, reward valve delivery calibration, laser power calibration, etc. For calibrations that are done less frequently (e.g. gamma correction) this can be documented in the Rig schema. For calibrations that are done frequently, they can do documented in the Session schema. Both places use the same class. This class identifies which device is calibrated (using the device’s name), a description of the calibration (e.g. “Laser power calibration”), and then an input dictionary and an output dictionary. You can use this as makes most sense for your needs, but we envision the input dictionary having input values (say laser power percentage settings) and the output dictionary having output values (say the measured wattage out of the laser). You define the key and provide a list of the values. We recommed that you use the same dictionary structures when you do the same calibrations (when possible).",,,
-How do I create a processing file?,"You can create a procedure file using our metadata entry web application. The internal data transfer service creates a processing.json file when it performs data compression or other preprocessing prior to upload. When derived data assets are created, they should have a processing.json files that has appended new processing steps to that original file. This needs to be done using python code that imports aind-data-schema.",,,
+print(records)",experiment_details
+What is Acquisition?,An Acquisition in AIND metadata refers to the acquisition of a data asset specifically for in vitro imaging modalities like light sheet and confocal microscopy. This is distinct from a 'session' which is used in reference to physiology and behavior data collection.,,,,schema_docs
+How do I create a subject file?,"Based on the provided information, there are two ways to create a subject file:Using the GUI: You can use the metadata entry web application at https://metadata-entry.allenneuraldynamics.org/ Using Python code: You'll need to use the aind-data-schema library. ",,,,schema_docs
+Do I need to create a new rig/instrument file for each data asset?,"Ideally no. The rig/instrument file should be relatively stable and hopefully won’t change much from one day to the next, so you can reuse the same file for multiple data assets. However, when the devices in a rig do change, the rig/ instrument file must be updated. For instance, replacing a broken Neuropixels probe requires an updated file, as does adding or moving a camera to a rig. The rig_id and the date_of_modification should make it clear when the file was last updated.",,,,schema_docs
+How do I use the Calibration field?,"This is to track any device calibrations that are performed, such as gamma correction for monitors, reward valve delivery calibration, laser power calibration, etc. For calibrations that are done less frequently (e.g. gamma correction) this can be documented in the Rig schema. For calibrations that are done frequently, they can do documented in the Session schema. Both places use the same class. This class identifies which device is calibrated (using the device’s name), a description of the calibration (e.g. “Laser power calibration”), and then an input dictionary and an output dictionary. You can use this as makes most sense for your needs, but we envision the input dictionary having input values (say laser power percentage settings) and the output dictionary having output values (say the measured wattage out of the laser). You define the key and provide a list of the values. We recommed that you use the same dictionary structures when you do the same calibrations (when possible).",,,,schema_docs
+How do I create a processing file?,"You can create a procedure file using our metadata entry web application. The internal data transfer service creates a processing.json file when it performs data compression or other preprocessing prior to upload. When derived data assets are created, they should have a processing.json files that has appended new processing steps to that original file. This needs to be done using python code that imports aind-data-schema.",,,,schema_docs
 Assess the completeness of experimental metadata for subject_id '675387,"Metadata Completeness Assessment for Subject ID 675387
 Based on the provided data, I've analyzed the completeness of experimental metadata across all assets for subject_id '675387'.
 
@@ -268,7 +268,7 @@ Quality Control:
 QC evaluations present for SPIM modality
 Cell detection evaluations for channels 445 and 561 marked as ""Fail"" in thalamus region
 
-The experimental metadata for subject_id '675387' is largely complete with comprehensive documentation of procedures, acquisition parameters, and instrument details, though some optional fields could be improved for better traceability.",,,
+The experimental metadata for subject_id '675387' is largely complete with comprehensive documentation of procedures, acquisition parameters, and instrument details, though some optional fields could be improved for better traceability.",,,,metadata_structure
 what was the average age of animals injected with CVS N2cdG-H2B-tdTomato at time of perfusion use mongodb,"The analysis shows that the animals were perfused at the following ages:
 
 Subject ID	Date of Birth	Perfusion Date	Age at Perfusion (days)
@@ -279,7 +279,7 @@ Subject ID	Date of Birth	Perfusion Date	Age at Perfusion (days)
 698928	2023-07-18	2023-09-05	49
 Average age at perfusion: 55 days (approximately 7.9 weeks)
 
-All animals were born in mid-July 2023 and perfused in early-to-mid September 2023, after receiving CVS N2cdG-H2B-tdTomato injections in late August 2023.",,,
+All animals were born in mid-July 2023 and perfused in early-to-mid September 2023, after receiving CVS N2cdG-H2B-tdTomato injections in late August 2023.",,,,anatomical
 "For subject_id '675387', identify which brain structures have been imaged across multiple sessions and which imaging modalities were used for each.","Based on the provided context, I can identify the brain structures that have been imaged across multiple sessions for subject_id '675387' and the imaging modalities used.
 
 The subject had multiple imaging sessions using a SmartSPIM platform (Selective Plane Illumination Microscopy or SPIM). The imaging focused on several brain structures, with specific attention to the Thalamus as noted in the quality control evaluations.
@@ -299,7 +299,7 @@ Selective Plane Illumination Microscopy (SPIM) using three different laser wavel
 For Isocortex:
 
 Same SPIM modalities as above with the three laser wavelengths
-The imaging was performed using a SmartSPIM instrument (SmartSPIM1-1 and SmartSPIM1-2) with multiple imaging sessions occurring on May 23-24, 2023, with additional processing on June 1, 2023. Quality control evaluations noted that cell detection in both the 445 nm and 561 nm channels failed specifically in the Thalamus region.",,,
+The imaging was performed using a SmartSPIM instrument (SmartSPIM1-1 and SmartSPIM1-2) with multiple imaging sessions occurring on May 23-24, 2023, with additional processing on June 1, 2023. Quality control evaluations noted that cell detection in both the 445 nm and 561 nm channels failed specifically in the Thalamus region.",,,,subject
 what are the modalities of the assets for the 'U19 Thalamus in the Middle' project?,"""Selective plane illumination microscopy"",  is the most common, but there are other modalities involved like ""Extracellular electrophysiology"", ""Behavior videos"", ""Behavior""",,"agg_pipeline = [
     {'$match': {'data_description.project_name': {'$regex': 'Thalamus in the middle', '$options': 'i'}}},
     {'$unwind': {'path': '$data_description.modality', 'preserveNullAndEmptyArrays': True}},
@@ -334,7 +334,7 @@ agg_pipeline = [
 result = docdb_api_client.aggregate_docdb_records(
     pipeline=agg_pipeline
 )
-print(json.dumps(result, indent=3))"
+print(json.dumps(result, indent=3))",project
 can you tell me how many sessions exist for 775745,There are 8 sessions for subject 775745,,"filter = {""subject.subject_id"": ""775745""}
 projection = {""name"": 1, ""_id"": 1}","import json
 from aind_data_access_api.document_db import MetadataDbClient
@@ -364,15 +364,15 @@ print(f""Total number of sessions for subject 775745: {num_sessions}"")
 # Optional: Print session names
 print(""\nSession Names:"")
 for record in records:
-    print(record['name'])"
-"How many injections were performed across all animals in the thalamus in the middle project using the following coordinate: AP: 2.8, ML: 0.2, DV: 0.6?",There are 20 injections with that coordinate.,,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":""Thalamus in the middle"",""procedures.subject_procedures"":{""$elemMatch"":{""procedures"":{""$elemMatch"":{""injection_coordinate_ap"":""2.8"",""injection_coordinate_ml"":""0.2"",""injection_coordinate_depth"":""0.6""}}}}}},{""$project"":{""_id"":1,""name"":1,""data_description.project_name"":1,""procedures.subject_procedures.procedures"":{""$filter"":{""input"":{""$reduce"":{""input"":""$procedures.subject_procedures"",""initialValue"":[],""in"":{""$concatArrays"":[""$$value"",{""$filter"":{""input"":""$$this.procedures"",""as"":""proc"",""cond"":{""$and"":[{""$eq"":[""$$proc.injection_coordinate_ap"",""2.8""]},{""$eq"":[""$$proc.injection_coordinate_ml"",""0.2""]},{""$eq"":[""$$proc.injection_coordinate_depth"",""0.6""]}]}}}]}}},""as"":""proc"",""cond"":{""$eq"":[""$$proc.injection_coordinate_ap"",""2.8""]}}}}},{""$count"":""total_injections""}]}",
+    print(record['name'])",experiment_details
+"How many injections were performed across all animals in the thalamus in the middle project using the following coordinate: AP: 2.8, ML: 0.2, DV: 0.6?",There are 20 injections with that coordinate.,,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":""Thalamus in the middle"",""procedures.subject_procedures"":{""$elemMatch"":{""procedures"":{""$elemMatch"":{""injection_coordinate_ap"":""2.8"",""injection_coordinate_ml"":""0.2"",""injection_coordinate_depth"":""0.6""}}}}}},{""$project"":{""_id"":1,""name"":1,""data_description.project_name"":1,""procedures.subject_procedures.procedures"":{""$filter"":{""input"":{""$reduce"":{""input"":""$procedures.subject_procedures"",""initialValue"":[],""in"":{""$concatArrays"":[""$$value"",{""$filter"":{""input"":""$$this.procedures"",""as"":""proc"",""cond"":{""$and"":[{""$eq"":[""$$proc.injection_coordinate_ap"",""2.8""]},{""$eq"":[""$$proc.injection_coordinate_ml"",""0.2""]},{""$eq"":[""$$proc.injection_coordinate_depth"",""0.6""]}]}}}]}}},""as"":""proc"",""cond"":{""$eq"":[""$$proc.injection_coordinate_ap"",""2.8""]}}}}},{""$count"":""total_injections""}]}",,anatomical
  Are there any data assets within the patch foraging group that are missing metadata fields?,"Missing Metadata Fields in Patch Foraging Group:
 acquisition: 907 records
 instrument: 907 records
 quality_control: 907 records
 procedures: 372 records
 
-Total Records with Missing Fields: 907",,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$regex"":""patch foraging"",""$options"":""i""}}},{""$project"":{""_id"":1,""name"":1,""subject_id"":""$subject.subject_id"",""missing_fields"":{""$objectToArray"":{""subject"":{""$cond"":[{""$eq"":[""$subject"",null]},""missing"",""present""]},""data_description"":{""$cond"":[{""$eq"":[""$data_description"",null]},""missing"",""present""]},""procedures"":{""$cond"":[{""$eq"":[""$procedures"",null]},""missing"",""present""]},""session"":{""$cond"":[{""$eq"":[""$session"",null]},""missing"",""present""]},""rig"":{""$cond"":[{""$eq"":[""$rig"",null]},""missing"",""present""]},""processing"":{""$cond"":[{""$eq"":[""$processing"",null]},""missing"",""present""]},""acquisition"":{""$cond"":[{""$eq"":[""$acquisition"",null]},""missing"",""present""]},""instrument"":{""$cond"":[{""$eq"":[""$instrument"",null]},""missing"",""present""]},""quality_control"":{""$cond"":[{""$eq"":[""$quality_control"",null]},""missing"",""present""]}}}}},{""$match"":{""missing_fields.v"":""missing""}}]}",
+Total Records with Missing Fields: 907",,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$regex"":""patch foraging"",""$options"":""i""}}},{""$project"":{""_id"":1,""name"":1,""subject_id"":""$subject.subject_id"",""missing_fields"":{""$objectToArray"":{""subject"":{""$cond"":[{""$eq"":[""$subject"",null]},""missing"",""present""]},""data_description"":{""$cond"":[{""$eq"":[""$data_description"",null]},""missing"",""present""]},""procedures"":{""$cond"":[{""$eq"":[""$procedures"",null]},""missing"",""present""]},""session"":{""$cond"":[{""$eq"":[""$session"",null]},""missing"",""present""]},""rig"":{""$cond"":[{""$eq"":[""$rig"",null]},""missing"",""present""]},""processing"":{""$cond"":[{""$eq"":[""$processing"",null]},""missing"",""present""]},""acquisition"":{""$cond"":[{""$eq"":[""$acquisition"",null]},""missing"",""present""]},""instrument"":{""$cond"":[{""$eq"":[""$instrument"",null]},""missing"",""present""]},""quality_control"":{""$cond"":[{""$eq"":[""$quality_control"",null]},""missing"",""present""]}}}}},{""$match"":{""missing_fields.v"":""missing""}}]}",,metadata_structure
 "For subject 675387, create a timeline showing all procedures performed and identify any temporal overlaps between different experiment types.","Timeline of Procedures for Subject 675387
 Subject Procedures
 March 31, 2023: Surgery - Nanoject injections
@@ -430,7 +430,7 @@ Session end: May 24, 2023, 04:10:10
 Experimenter: John Rohde
 Temporal Overlaps
 No temporal overlaps between different experiment types were identified in the procedures.
-All procedures were performed sequentially with clear start and end dates.",,"{""filter"":{""subject.subject_id"":""675387""},""projection"":{""name"":1,""procedures"":1,""data_description.modality"":1}}",
+All procedures were performed sequentially with clear start and end dates.",,"{""filter"":{""subject.subject_id"":""675387""},""projection"":{""name"":1,""procedures"":1,""data_description.modality"":1}}",,subject
 Give me the query used to identify 5 subject IDs that appear in 3 different assets with different modalities,"import json
 from aind_data_access_api.document_db import MetadataDbClient
 
@@ -583,7 +583,7 @@ agg_pipeline = [
 ]
 
 result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
-print(json.dumps(result, indent=2))"
+print(json.dumps(result, indent=2))",analysis
 Find all experiments where the acquisition.instrument_id doesn't match any instrument.instrument_id in the database.,There are 592 assets where the acquisition.instrument_id doesn't match any instrument.instrument_id ,,,"from aind_data_access_api.document_db import MetadataDbClient
 
 docdb_api_client = MetadataDbClient(
@@ -637,7 +637,7 @@ for record in result:
     print(f""Name: {record['name']}, Instrument ID: {record['acquisition_instrument_id']}"")
 
 # Optional: Count of unrecognized instrument IDs
-print(f""\nTotal unrecognized instrument ID experiments: {len(result)}"")"
+print(f""\nTotal unrecognized instrument ID experiments: {len(result)}"")",metadata_structure
 what are the unique instrument ids for smartspim experiments,"Unique SmartSPIM Instrument IDs:
 440_SmartSPIM1_20240229
 440_SmartSPIM1_20240325
@@ -708,7 +708,7 @@ print(""Unique SmartSPIM Instrument IDs:"")
 for instrument_id in unique_instrument_ids:
     print(instrument_id)
 
-print(f""\nTotal unique instrument IDs: {len(unique_instrument_ids)}"")"
+print(f""\nTotal unique instrument IDs: {len(unique_instrument_ids)}"")",instrument
 "For asset SmartSPIM_675387_2023-05-23_23-05-56, extract all coordinate_transformations from the tiles","Total number of tiles: 84
 
 Unique Coordinate Transformations:
@@ -776,7 +776,7 @@ for record in records:
 
     print(""\nUnique Coordinate Transformations:"")
     for transform in unique_transformations:
-        print(json.loads(transform))"
+        print(json.loads(transform))",experiment_details
 "for the thalamus in the middle project, what brain structures are data collected from?","Brain structures data was collected from:
 [
    {
@@ -855,7 +855,7 @@ for record in result:
 
 print(""Targeted Brain Structures in 'Thalamus in the middle' Project:"")
 for structure, count in structure_counts.items():
-    print(f""{structure}: {count} records"")"
+    print(f""{structure}: {count} records"")",project
 "generate a query i can use to find the number of animals in the thalamus in the middle project who received injections in the following coordinate: AP: 2.8, ML: 0.2, DV: 0.6?","import json
 from aind_data_access_api.document_db import MetadataDbClient
 
@@ -945,7 +945,7 @@ result = docdb_api_client.aggregate_docdb_records(
     pipeline=agg_pipeline
 )
 
-print(json.dumps(result, indent=2))"
+print(json.dumps(result, indent=2))",anatomical
 determine the unique genotypes used in the Brain Computer Interface project,"There are 12 unique genotypes. These are the genotypes: 
 Emx1-IRES-Cre/wt;Camk2a-tTA/wt;Ai94(TITL-GCaMP6s)/wt
 Camk2a-tTA/wt;tetO-GCaMP6s/wt
@@ -995,7 +995,7 @@ result = docdb_api_client.aggregate_docdb_records(
 # Print unique genotypes
 print(""Unique Genotypes in Brain Computer Interface Project:"")
 for record in result:
-    print(record.get('genotype', 'No genotype specified'))"
+    print(record.get('genotype', 'No genotype specified'))",project
 what are the unique viruses in the brain computer interface project?,"Here are the unique viruses: 
 AiP32125
 CamKIIa_ChrimsonR_FusionRed_Kv2.1
@@ -1034,7 +1034,7 @@ result = docdb_api_client.aggregate_docdb_records(
 # Print unique viruses
 print(""Unique Viruses in Brain Computer Interface Project:"")
 for virus in result:
-    print(virus['virus_name'])"
+    print(virus['virus_name'])",project
 " list the subject ids, and virus names for mice in the ""Thalamus in the middle"" project that had injections in VM","Subject ID: 658207
 Virus Names:
 - ['SL1-hSyn-Cre', 'AAV1-CAG-H2B-mTurquoise2-WPRE']
@@ -1258,7 +1258,7 @@ for record in result:
     for virus_list in record.get('virus_names', []):
         for virus in virus_list:
             print(f""- {virus}"")
-    print(""---"")"
+    print(""---"")",anatomical
 Give me a timeline of Data Acquisition Streams for single-plane-ophys_621025_2022-07-05_17-48-34,"Stream 1:
 Start Time: 2022-07-05T16:45:38.865000-07:00
 End Time: 2022-07-05T16:46:40.913314-07:00
@@ -1350,7 +1350,7 @@ for i, stream in enumerate(data_streams, 1):
     print(f""End Time: {stream['stream_end_time']}"")
     print(f""DAQ Names: {stream['daq_names']}"")
     print(f""Stream Modalities: {[mod['name'] for mod in stream['stream_modalities']]}"")
-    print(f""Notes: {stream['notes']}"")"
+    print(f""Notes: {stream['notes']}"")",experiment_details
 return the count of how many subjects had sessions that contained both optical physiology and behavior data streams,There are 101 subjects that match the criteria.,,"{""agg_pipeline"":[{""$match"":{""data_description.modality"":{""$exists"":true}}},{""$project"":{""subject_id"":""$data_description.subject_id"",""modalities"":""$data_description.modality.name""}},{""$match"":{""subject_id"":{""$exists"":true,""$ne"":null}}},{""$group"":{""_id"":""$subject_id"",""modalities"":{""$addToSet"":""$modalities""}}},{""$match"":{""modalities"":{""$all"":[{""$elemMatch"":{""$regex"":""optical physiology"",""$options"":""i""}},{""$elemMatch"":{""$regex"":""behavior"",""$options"":""i""}}]}}},{""$project"":{""_id"":0,""subject_id"":""$_id"",""modalities"":1}},{""$limit"":50}]}","
 from aind_data_access_api.document_db import MetadataDbClient
 
@@ -1408,7 +1408,7 @@ result = docdb_api_client.aggregate_docdb_records(
 
 
 # Optional: Count of subjects
-print(f""Total Subjects Found: {len(result)}"")"
+print(f""Total Subjects Found: {len(result)}"")",analysis
 What is the genotype for subject 675387?,The genotype for subject 675387 is wt/wt,,"{
 ""filter"":{
 ""subject.subject_id"":""675387""
@@ -1445,7 +1445,7 @@ records = docdb_api_client.retrieve_docdb_records(
 print(""Genotype for subject 675387:"")
 for record in records:
     print(f""Subject ID: {record['subject']['subject_id']}"")
-    print(f""Genotype: {record['subject']['genotype']}"")"
+    print(f""Genotype: {record['subject']['genotype']}"")",subject
 What are all the assets using mouse 744330,"""""""behavior_744330_2024-09-18_09-19-56_processed_2024-09-25_04-01-44"""", """"behavior_744330_2024-10-09_09-28-02"""", """"behavior_744330_2024-12-05_17-09-52"""", """"behavior_744330_2024-12-04_13-24-28"""", """"behavior_744330_2024-12-02_13-45-51"""", """"behavior_744330_2024-12-03_10-56-30"""", """"behavior_744330_2024-11-13_13-59-24"""", """"behavior_744330_2024-11-21_14-06-34"""", 
 """"behavior_744330_2024-11-25_13-55-30"""", """"behavior_744330_2024-10-04_09-21-04_processed_2025-02-23_03-11-03"""",  """"behavior_744330_2024-09-20_09-07-42_processed_2025-02-23_01-24-27"""", """"behavior_744330_2024-09-16_09-33-31_processed_2025-02-23_00-40-08""""""",,"{""filter"":{""subject.subject_id"":""744330""},""projection"":{""name"":1,""_id"":0}}","import json
 
@@ -1468,7 +1468,7 @@ records = docdb_api_client.retrieve_docdb_records(
     projection=projection,
 )
 
-print(records)"
+print(records)",subject
 Write a MongoDB query to find the genotype of SmartSPIM_675387_2023-05-23_23-05-56,"
                     <query>{
                             ""$match"": {""name"":""SmartSPIM_675387_2023-05-23_23-05-56""},
@@ -1515,7 +1515,7 @@ records = docdb_api_client.retrieve_docdb_records(
 print(""Genotype for subject 675387:"")
 for record in records:
     print(f""Subject ID: {record['subject']['subject_id']}"")
-    print(f""Genotype: {record['subject']['genotype']}"")"
+    print(f""Genotype: {record['subject']['genotype']}"")",experiment_details
 What is the genotype for the subject in ecephys_737403_2024-09-27_10-30-18_sorted_2024-11-19_19-28-46?,The genotype for the subject in ecephys_737403_2024-09-27_10-30-18_sorted_2024-11-19_19-28-46 is Vip-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt,,"{
 ""filter"":{
 ""name"":""SmartSPIM_675387_2023-05-23_23-05-56""
@@ -1552,7 +1552,7 @@ records = docdb_api_client.retrieve_docdb_records(
 print(""Genotype for subject 737403:"")
 for record in records:
     print(f""Subject ID: {record['subject']['subject_id']}"")
-    print(f""Genotype: {record['subject']['genotype']}"")"
+    print(f""Genotype: {record['subject']['genotype']}"")",subject
 What are the stereotactic coordinates for all fiber implants in asset ophys_661797_2023-02-15_11-19-14?,"Based on the provided context, the stereotactic coordinates for the fiber implants in asset ""ophys_661797_2023-02-15_11-19-14"" are:
 
 Probe A:
@@ -1614,7 +1614,7 @@ for record in records:
 
 # Print the results
 print(""Fiber Implant Stereotactic Coordinates:"")
-print(json.dumps(fiber_implants, indent=2))"
+print(json.dumps(fiber_implants, indent=2))",anatomical
 What percentage of fiber photometry experiments include complementary behavioral data,"Analysis of the Results:
 
 Total Fiber Photometry Experiments: 2062
@@ -1671,7 +1671,7 @@ agg_pipeline = [
 ]
 
 result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
-print(json.dumps(result, indent=2))"
+print(json.dumps(result, indent=2))",metadata_structure
 Compare the processing durations for assets from the same subject (661797) across different experimental sessions.,"Processing Durations for Subject 661797:
 
 Session: HSFP_661797_2023-02-15_11-17-30
@@ -1762,7 +1762,7 @@ for record in records:
             print(f""Version: {version}"")
             print(f""Start Time: {start}"")
             print(f""End Time: {end}"")
-            print(f""Duration: {duration}\n"")"
+            print(f""Duration: {duration}\n"")",subject
 How many records are stored in the database?,"There are 15,000 records found in the database.
 ",,"{""agg_pipeline"":[{""$count"":""total_records""}]}","from aind_data_access_api.document_db import MetadataDbClient
 
@@ -1791,7 +1791,7 @@ result = docdb_api_client.aggregate_docdb_records(
 if result:
     print(f""Total number of records in the database: {result[0]['total_records']}"")
 else:
-    print(""No records found or error in query"")"
+    print(""No records found or error in query"")",metadata_structure
 How many assets have injections in the isocortex,There are 111 assets that have injections in the isocortex,,"{""agg_pipeline"":[{""$match"":{""procedures.subject_procedures"":{""$elemMatch"":{""procedures"":{""$elemMatch"":{""targeted_structure"":{""$regex"":""isocortex"",""$options"":""i""}}}}}}},{""$count"":""total""}]}","from aind_data_access_api.document_db import MetadataDbClient
 
 
@@ -1816,7 +1816,7 @@ records = docdb_api_client.retrieve_docdb_records(
 
 # Count the number of unique assets
 num_assets = len(records)
-"
+",anatomical
 What are the unique modalities found in the database?,"""The unique modalities in the database are Behavior
 Behavior videos
 Dual inverted selective plane illumination microscopy
@@ -1853,7 +1853,7 @@ result = docdb_api_client.aggregate_docdb_records(
 unique_modalities = [modality['_id'] for modality in result if modality['_id'] is not None]
 print(""Unique Modalities:"")
 for modality in unique_modalities:
-    print(f""- {modality}"")"
+    print(f""- {modality}"")",metadata_structure
 Which channels were imaged in asset SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06?,"The channels imaged in the asset are 488 nm, 561 nm, and 639 nm.",,"{""filter"":{""name"":""SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06""},""projection"":{""acquisition.tiles.channel"":1}}","from aind_data_access_api.document_db import MetadataDbClient
 
 # API setup
@@ -1912,7 +1912,7 @@ if record and len(record) > 0:
     for i, channel in enumerate(channel_details, 1):
         print(f""{i}. Channel: {channel['channel_name']}, Wavelength: {channel['laser_wavelength']}nm, Filter Index: {channel['filter_wheel_index']}"")
 else:
-    print(""Asset not found or has no channel information."")"
+    print(""Asset not found or has no channel information."")",experiment_details
 What is the total duration of the imaging session for the subject in SmartSPIM_675387_2023-05-23_23-05-56,The total duration of the imaging session for the subject in SmartSPIM_675387_2023-05-23_23-05-56 was approximately 5 hours and 4 minutes. This can be calculated from the session_start_time of 2023-05-23T23:05:56 and the session_end_time of 2023-05-24T04:10:10 provided in the context.,,"{""filter"":{""name"":""SmartSPIM_675387_2023-05-23_23-05-56""},""projection"":{""acquisition.session_start_time"":1,""acquisition.session_end_time"":1}}","import json
 from datetime import datetime
 from aind_data_access_api.document_db import MetadataDbClient
@@ -1955,7 +1955,7 @@ if records:
     print(f""Session End Time: {session_end}"")
     print(f""Total Session Duration: {session_duration}"")
 else:
-    print(""No records found for the specified SmartSPIM dataset."")"
+    print(""No records found for the specified SmartSPIM dataset."")",experiment_details
 What was the refractive index of the chamber immersion medium used in this experiment SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06?,"The refractive index of the chamber immersion medium used in the experiment SmartSPIM_675387_2023-05-23_23-05-56 was 1.558, the medium was Ethyl cinnamate.",,"{""filter"":{""name"":""SmartSPIM_692908_2023-11-08_16-48-13_stitched_2023-11-09_11-12-06""},""projection"":{""acquisition.chamber_immersion.refractive_index"":1}}","import json
 from aind_data_access_api.document_db import MetadataDbClient
 
@@ -1986,7 +1986,7 @@ records = docdb_api_client.retrieve_docdb_records(
 )
 
 # Print the results
-print(json.dumps(records, indent=2))"
+print(json.dumps(records, indent=2))",instrument
 "Can you list all the procedures performed on the specimen, including their start and end dates? in SmartSPIM_662616_2023-03-06_17-47-13","Subject procedures: 1. Surgery on 2023-01-25 with virus injections, 2. Surgery on 2023-01-25 with virus injection, Specimen procedures:1. Fixation (SHIELD OFF) from 2023-02-10 to 2023-02-122. Fixation (SHIELD ON) from 2023-02-12 to 2023-02-133. Delipidation (24h Delipidation) from 2023-02-15 to 2023-02-16  4. Delipidation (Active Delipidation) from 2023-02-16 to 2023-02-185. Refractive index matching (50% EasyIndex) from 2023-02-19 to 2023-02-206. Refractive index matching (100% EasyIndex) from 2023-02-20 to 2023-02-21, Imaging procedure: 1. SmartSPIM imaging session from 2023-03-06T17:47:13 to 2023-03-06T22:59:16",,"{""filter"":{""name"":""SmartSPIM_662616_2023-03-06_17-47-13""},""projection"":{""procedures.specimen_procedures"":1}}","import json
 from aind_data_access_api.document_db import MetadataDbClient
 
@@ -2021,7 +2021,7 @@ for record in records:
         print(f""Procedure Name: {procedure.get('procedure_name')}"")
         print(f""Start Date: {procedure.get('start_date')}"")
         print(f""End Date: {procedure.get('end_date')}"")
-        print(f""Experimenter: {procedure.get('experimenter_full_name')}"")"
+        print(f""Experimenter: {procedure.get('experimenter_full_name')}"")",experiment_details
 For the thalamus in the middle project what were the genotypes used,,"Genotypes used:
 [
   {
@@ -2081,7 +2081,7 @@ result = docdb_api_client.aggregate_docdb_records(
 
 print(""Genotypes in the Thalamus in the middle project:"")
 for genotype in result:
-    print(f""Genotype: {genotype['_id']}, Count: {genotype['count']}"")"
+    print(f""Genotype: {genotype['_id']}, Count: {genotype['count']}"")",project
 how many unique iacuc protocols are there?,Number of unique IACUC protocols: 22,,"{""agg_pipeline"":[{""$match"":{""procedures.subject_procedures"":{""$exists"":true,""$ne"":[]}}},{""$project"":{""iacuc_protocols"":""$procedures.subject_procedures.iacuc_protocol""}},{""$unwind"":""$iacuc_protocols""},{""$match"":{""iacuc_protocols"":{""$ne"":null}}},{""$group"":{""_id"":""$iacuc_protocols""}},{""$group"":{""_id"":null,""count"":{""$sum"":1}}}]}","
 from aind_data_access_api.document_db import MetadataDbClient
 
@@ -2129,7 +2129,7 @@ for protocol in result:
 
 # Count the number of unique protocols
 unique_protocols = [p.get('protocol') for p in result if p.get('protocol') is not None]
-print(f""\nTotal number of unique IACUC protocols: {len(unique_protocols)}"")"
+print(f""\nTotal number of unique IACUC protocols: {len(unique_protocols)}"")",metadata_structure
 I'm trying to understand an issue with misspelled project names. Could you help me write a query to get all project names and their counts? I don't need any other parts of the records for now.,"agg_pipeline = [{'$group': {'_id': '$project_name', 'count': {'$sum': 1}}},{'$sort': {'count': -1}}]",,"agg_pipeline = [{'$group': {'_id': '$project_name', 'count': {'$sum': 1}}},{'$sort': {'count': -1}}]","
 from aind_data_access_api.document_db import MetadataDbClient
 
@@ -2171,7 +2171,7 @@ for project in result:
 
 # Optional: Count of records with no project name
 unnamed_count = next((project['count'] for project in result if project['_id'] is None), 0)
-print(f""\nTotal records with no project name: {unnamed_count}"")"
+print(f""\nTotal records with no project name: {unnamed_count}"")",project
 Which assets have procedure dates that occurred before the subject's date of birth?,"[
   {
     ""_id"": ""a0ce0a8e-74bb-497e-ba13-9361c5b74dae"",
@@ -2346,7 +2346,7 @@ result = docdb_api_client.aggregate_docdb_records(
 )
 
 # Print results
-print(json.dumps(result, indent=2))"
+print(json.dumps(result, indent=2))",analysis
 How many injections were done in total in the Ai224 animals?,The total number of injections performed on Ai224 animals was 155.,,"{""agg_pipeline"":[{""$match"":{""procedures.subject_procedures"":{""$exists"":true},""subject.genotype"":{""$regex"":""Ai224"",""$options"":""i""}}},{""$unwind"":""$procedures.subject_procedures""},{""$unwind"":""$procedures.subject_procedures.procedures""},{""$match"":{""procedures.subject_procedures.procedures.procedure_type"":{""$regex"":""injection"",""$options"":""i""}}},{""$count"":""total_injections""}]}","import json
 from aind_data_access_api.document_db import MetadataDbClient
 
@@ -2392,8 +2392,8 @@ result = docdb_api_client.aggregate_docdb_records(
 )
 
 print(""Total Injections for Ai224 animals:"")
-print(json.dumps(result, indent=2))"
-Give me a a concise summary of missing metadata fields in the 'Cognitive flexibility in patch foraging' project,"Based on the provided metadata records, the following fields are missing or incomplete across the project: Data Description: data_summary field is consistently null across all records group field is consistently null label field is consistently null Rig Information: Some records have complete rig information while others have rig: null Missing lens information for some camera setups (e.g., focal length for Bottom face Camera) Session Information: trials_finished, trials_rewarded, and trials_total are consistently null in stimulus epochs protocol_id is often empty or incomplete headframe_registration is consistently null Subject Information: background_strain is null breeding_info is null light_cycle information is missing in housing data home_cage_enrichment details are missing Quality Control: quality_control field is consistently null across all records These missing fields could be important for comprehensive analysis and reproducibility of the research conducted in this project.",,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$regex"":""Cognitive flexibility in patch foraging"",""$options"":""i""}}},{""$project"":{""_id"":1,""name"":1,""subject_id"":""$subject.subject_id"",""project_name"":""$data_description.project_name"",""missing_subject_fields"":{""$objectToArray"":{""$ifNull"":[""$subject"",{}]}},""missing_data_description_fields"":{""$objectToArray"":{""$ifNull"":[""$data_description"",{}]}},""missing_procedures_fields"":{""$objectToArray"":{""$ifNull"":[""$procedures"",{}]}}}},{""$limit"":20}]}",
+print(json.dumps(result, indent=2))",anatomical
+Give me a a concise summary of missing metadata fields in the 'Cognitive flexibility in patch foraging' project,"Based on the provided metadata records, the following fields are missing or incomplete across the project: Data Description: data_summary field is consistently null across all records group field is consistently null label field is consistently null Rig Information: Some records have complete rig information while others have rig: null Missing lens information for some camera setups (e.g., focal length for Bottom face Camera) Session Information: trials_finished, trials_rewarded, and trials_total are consistently null in stimulus epochs protocol_id is often empty or incomplete headframe_registration is consistently null Subject Information: background_strain is null breeding_info is null light_cycle information is missing in housing data home_cage_enrichment details are missing Quality Control: quality_control field is consistently null across all records These missing fields could be important for comprehensive analysis and reproducibility of the research conducted in this project.",,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$regex"":""Cognitive flexibility in patch foraging"",""$options"":""i""}}},{""$project"":{""_id"":1,""name"":1,""subject_id"":""$subject.subject_id"",""project_name"":""$data_description.project_name"",""missing_subject_fields"":{""$objectToArray"":{""$ifNull"":[""$subject"",{}]}},""missing_data_description_fields"":{""$objectToArray"":{""$ifNull"":[""$data_description"",{}]}},""missing_procedures_fields"":{""$objectToArray"":{""$ifNull"":[""$procedures"",{}]}}}},{""$limit"":20}]}",,metadata_structure
 "Give me code to list List all experiments with 'ecephys' modality performed between September 15 and October 15, 2024.","import json
 from datetime import datetime
 from aind_data_access_api.document_db import MetadataDbClient
@@ -2494,7 +2494,7 @@ for record in results:
     print(f""Subject ID: {record['subject_id']}"")
     print(f""Created: {record['created']}"")
     print(f""Modality: {[mod['name'] for mod in record['modality']]}"")
-    print(""---"")"
+    print(""---"")",analysis
 Give me code to find the subject ids all female mice with the Vip-IRES-Cre allele that had ecephys recordings in September 2024.,"import json
 
 from aind_data_access_api.document_db import MetadataDbClient
@@ -2587,7 +2587,7 @@ results = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
 # Extract and print unique subject IDs
 unique_subject_ids = list(set(result['_id'] for result in results))
 print(""Unique Subject IDs:"", unique_subject_ids)
-print(""Total number of unique subjects:"", len(unique_subject_ids))"
+print(""Total number of unique subjects:"", len(unique_subject_ids))",analysis
 Which projects have the most recorded assets?,Dynamic routing has the most recorded assets,,"{""agg_pipeline"":[{""$match"":{""data_description.project_name"":{""$exists"":true,""$ne"":null}}},{""$group"":{""_id"":""$data_description.project_name"",""count"":{""$sum"":1}}},{""$sort"":{""count"":-1}},{""$limit"":20}]}","import json
 from aind_data_access_api.document_db import MetadataDbClient
 
@@ -2605,7 +2605,7 @@ agg_pipeline = [
 ]
 
 result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
-print(json.dumps(result, indent=3))"
+print(json.dumps(result, indent=3))",project
 Which projects involve the highest number of different investigators?,"The top 3 projects with the most number of investigators are: 
 Project: Thalamus in the middle
 Number of Unique Investigators: 12
@@ -2699,7 +2699,7 @@ for project in results:
     print(f""Number of Unique Investigators: {project['investigator_count']}"")
     print(""Investigators:"")
     for investigator in project['investigators']:
-        print(f""- {investigator}"")"
+        print(f""- {investigator}"")",project
 What stereotactic coordinates are most commonly used for VM thalamus injections?,"Based on the retrieved results, here's a summary of the most common stereotactic coordinates for VM thalamus injections:
 
 Most Frequent Coordinates:
@@ -2758,7 +2758,7 @@ agg_pipeline = [
 ]
 
 results = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
-print(json.dumps(results, indent=2))"
+print(json.dumps(results, indent=2))",anatomical
 What's the most common chamber immersion medium used in our experiments?,"Chamber Immersion Medium Distribution:
 Cargille 1.52: 608 experiments
 other: 556 experiments
@@ -2805,7 +2805,7 @@ percentage = (most_common_count / total_experiments) * 100
 
 print(f""\nMost Common Medium: {most_common_medium}"")
 print(f""Used in {most_common_count} experiments"")
-print(f""Represents {percentage:.2f}% of total experiments"")"
+print(f""Represents {percentage:.2f}% of total experiments"")",instrument
 Give me code to find the sex distribution of subjects across the dynamic routing project,"import json
 
 from aind_data_access_api.document_db import MetadataDbClient
@@ -2872,7 +2872,7 @@ for entry in sex_distribution:
     sex = entry['_id'] if entry['_id'] is not None else 'Unspecified'
     count = entry['count']
     percentage = (count / sum(e['count'] for e in sex_distribution)) * 100
-    print(f""{sex}: {count} subjects ({percentage:.2f}%)"")"
+    print(f""{sex}: {count} subjects ({percentage:.2f}%)"")",project
 "Identify the experimenter who has conducted the most sessions in the smartspim modality, and list the unique instruments they've used over time.","Here are the top 3:
 Top Experimenters in SmartSPIM Sessions:
 
@@ -2951,7 +2951,7 @@ for result in results:
     print(f""Total Sessions: {result['session_count']}"")
     print(""Unique Instruments:"")
     for instrument in result['instruments']:
-        print(f""  - {instrument}"")"
+        print(f""  - {instrument}"")",analysis
 Give me code to Identify all SmartSPIM assets in the thalamus in the middle project where the chamber_immersion and sample_immersion had different refractive indices,"import json
 
 from aind_data_access_api.document_db import MetadataDbClient
@@ -3070,7 +3070,7 @@ for asset in result:
     print(f""Sample Refractive Index: {asset['sample_refractive_index']}"")
     print(f""Chamber Medium: {asset['chamber_medium']}"")
     print(f""Sample Medium: {asset['sample_medium']}"")
-    print(""---"")"
+    print(""---"")",instrument
 In 2024 which month had the most number of metadata assets collected?,"July (month 7) had the most metadata assets collected in 2024 with 9,360 assets.",,"{""agg_pipeline"":[{""$match"":{""created"":{""$gte"":""2024-01-01T00:00:00.000Z"",""$lt"":""2025-01-01T00:00:00.000Z""}}},{""$project"":{""month"":{""$month"":{""$toDate"":""$created""}}}},{""$group"":{""_id"":""$month"",""count"":{""$sum"":1}}},{""$sort"":{""count"":-1}}]}","import json
 
 from aind_data_access_api.document_db import MetadataDbClient
@@ -3109,7 +3109,7 @@ max_month_name = [
     'July', 'August', 'September', 'October', 'November', 'December'
 ][max_month['_id'] - 1]
 
-print(f""\nMonth with Most Metadata Assets: {max_month_name} ({max_month['count']} assets)"")"
+print(f""\nMonth with Most Metadata Assets: {max_month_name} ({max_month['count']} assets)"")",analysis
 "Which experimenter who conducted the most sessions in the past 6 months, given that the date is 3/31/25?",Bowen Tan,,"{""agg_pipeline"":[{""$match"":{""$or"":[{""session.session_start_time"":{""$gte"":""2024-10-01T00:00:00"",""$lte"":""2025-03-31T23:59:59""}},{""acquisition.session_start_time"":{""$gte"":""2024-10-01T00:00:00"",""$lte"":""2025-03-31T23:59:59""}}]}},{""$project"":{""experimenter"":{""$cond"":{""if"":{""$isArray"":""$session.experimenter_full_name""},""then"":""$session.experimenter_full_name"",""else"":{""$cond"":{""if"":{""$isArray"":""$acquisition.experimenter_full_name""},""then"":""$acquisition.experimenter_full_name"",""else"":[]}}}}}},{""$unwind"":""$experimenter""},{""$group"":{""_id"":""$experimenter"",""count"":{""$sum"":1}}},{""$sort"":{""count"":-1}},{""$limit"":1}]}","import json
 from datetime import datetime, timedelta
 
@@ -3170,7 +3170,7 @@ for experimenter in result:
 top_experimenter = result[0] if result else None
 if top_experimenter:
     print(f""\nTop Experimenter: {top_experimenter['_id']} ""
-          f""with {top_experimenter['session_count']} sessions"")"
+          f""with {top_experimenter['session_count']} sessions"")",analysis
 give me code so that i can Compare the genotype distribution across the thalamus in the middle project,"import json
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -3323,7 +3323,7 @@ print(genotype_project_counts)
 # Additional analysis
 total_samples = df.groupby('genotype')['count'].sum().sort_values(ascending=False)
 print(""\nTotal Samples per Genotype:"")
-print(total_samples)"
+print(total_samples)",project
 Show me how to create a mongodb query for the imaging channels present in a specific stitched data asset.,"import json
 from aind_data_access_api.document_db import MetadataDbClient
 
@@ -3403,7 +3403,7 @@ for record in records:
         unique_channels.add(channel.get('channel_name'))
 
 print(""Unique Channels:"")
-print(json.dumps(list(unique_channels), indent=2))"
+print(json.dumps(list(unique_channels), indent=2))",experiment_details
 Provide the mongodb query needed to find the channels used in the SmartSPIM session from subject 699834 on oct 31st 2023,"import json
 from datetime import datetime, timedelta
 
@@ -3480,7 +3480,7 @@ unique_channels = set(channel['channel_name'] for record in result for channel i
 
 print(""Unique Channels Used:"")
 for channel in unique_channels:
-    print(f""- {channel} nm"")"
+    print(f""- {channel} nm"")",experiment_details
 Can you show me how to construct a mongodb query to identify a specific smartspim experiment?,"To construct a MongoDB query for a specific SmartSPIM experiment:
 
 1. Use the `$match` stage to filter for SmartSPIM experiments.
@@ -3557,7 +3557,7 @@ This shows that the query successfully identified the specific SmartSPIM experim
       ""subject.subject_id"": 1,
       ""data_description.creation_time"": 1
     }
-  }]",
+  }]",,analysis
 Which investigators have contributed to the most ecephys assets in the database?,"Based on the aggregation results, here are the top investigators who have contributed to the most extracellular electrophysiology (ecephys) assets in the database:
 
 Unknown: 528 assets
@@ -3594,7 +3594,7 @@ agg_pipeline = [
 ]
 
 result = docdb_api_client.aggregate_docdb_records(pipeline=agg_pipeline)
-print(json.dumps(result, indent=3))"
+print(json.dumps(result, indent=3))",analysis
 How many experiments used water as the chamber immersion medium?,"Based on the retrieved data, 244 experiments used water as the chamber immersion medium.
 
 ",,"{""agg_pipeline"":[{""$match"":{""acquisition.chamber_immersion.medium"":""Water""}},{""$count"":""count""}]}","import json
@@ -3615,4 +3615,4 @@ agg_pipeline = [
 result = docdb_api_client.aggregate_docdb_records(
     pipeline=agg_pipeline
 )
-print(json.dumps(result, indent=3))"
+print(json.dumps(result, indent=3))",instrument

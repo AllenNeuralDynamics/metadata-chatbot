@@ -31,6 +31,7 @@ test_benchmark = benchmark.head(5)
 
 mongodb_benchmark = benchmark.dropna(subset=["target_mongodb_query"])
 mongodb_python_benchmark = mongodb_benchmark.dropna(subset=["target_python"])
+mongodb_python_benchmark["tool_output_size"] = pd.Series(dtype="int")
 mongodb_python_benchmark = mongodb_python_benchmark.reset_index(drop=True)
 
 mongodb_benchmark = mongodb_benchmark.drop(columns=["target_python"])
@@ -40,6 +41,7 @@ python_benchmark = benchmark.dropna(subset=["target_python"])
 python_benchmark["predicted_python"] = pd.Series(dtype="str")
 python_benchmark["python_evaluation"] = pd.Series(dtype="str")
 python_benchmark["python_score"] = pd.Series(dtype="int")
+python_benchmark["tool_output_size"] = pd.Series(dtype="int")
 python_benchmark = python_benchmark.drop(columns=["data_source",
                                                   'predicted_mongodb_query',
                                                   'mongodb_evaluation', 
