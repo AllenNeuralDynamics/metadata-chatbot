@@ -25,6 +25,7 @@ dependencies = [
     'langchain_experimental',
     'langgraph',
     "sentence_transformers",
+    "langchain_anthropic",
 ]
 
 [project.optional-dependencies]
