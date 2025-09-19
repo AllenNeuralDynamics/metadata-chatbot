@@ -7,6 +7,8 @@
 ![Coverage](https://img.shields.io/badge/coverage-0%25-red?logo=codecov)
 ![Python](https://img.shields.io/badge/python->=3.11-blue?logo=python)
 
+This repository has been archived.
+
 ## Installation
 
 Install a virtual environment with python 3.11 (install a version of python 3.11 that's compatible with your operating system).
